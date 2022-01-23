@@ -144,6 +144,17 @@ const portCellOptions = {
     ]
 }
 
+const rootPortCellOptions = {
+    groups: {
+        "bottom": {
+            position: "bottom"
+        }
+    },
+    items: [
+        portBottom
+    ]
+}
+
 const directedGraphOptions = {
     dagre: dagre,
     graphlib: graphlib,
@@ -167,50 +178,61 @@ function layout(graph) {
     theLinks.forEach(link => {
         let targetCell = link.getTargetCell()
         let sourceCell = link.getSourceCell()
-        let targetPort = targetCell.getPort(link.attributes.target.port);
-        console.log(link, targetCell, targetPort)
-        let portPosition = targetPort.group;
-        switch (portPosition) {
-            case "left":
-                layoutLR.push(targetCell)
-                layoutLR.push(sourceCell)
-                break;
-            case "right":
-                layoutRL.push(targetCell)
-                layoutRL.push(sourceCell)
-                break;
-            case "top":
-                layoutTB.push(targetCell)
-                layoutTB.push(sourceCell)
-                break;
-            case "bottom":
-                layoutBT.push(targetCell)
-                layoutBT.push(sourceCell)
-                break;
-        
-            default:
-                break;
+        // if (targetCell && sourceCell) {
+        //     let targetPort = targetCell.getPort(link.attributes.target.port);
+        //     console.log(link, targetCell, targetPort)
+        //     let portPosition = targetPort.group;
+        //     switch (portPosition) {
+        //         case "left":
+
+        //             layoutLR.push(sourceCell)
+        //             layoutLR.push(targetCell)
+        //             break;
+        //         case "right":
+        //             layoutRL.push(sourceCell)
+        //             layoutRL.push(targetCell)
+        //             break;
+        //         case "top":
+        //             layoutTB.push(sourceCell)
+        //             layoutTB.push(targetCell)
+        //             break;
+        //         case "bottom":
+        //             layoutBT.push(sourceCell)
+        //             layoutBT.push(targetCell)
+        //             break;
+
+        //         default:
+        //             break;
+        //     }
+        // }
+        if (targetCell.attributes.type === "root") {
+            
+            // let targetPort = targetCell.getPort(link.attributes.target.port);
+            // let sourcePort = sourceCell.getPort(link.attributes.source.port);
+            // console.log(targetPort, sourcePort)
+            link.target(sourceCell)
+            link.source(targetCell)
         }
     })
-    graph.getElements().forEach(function(el) {
+    graph.getElements().forEach(function (el) {
         var neighbors = graph.getNeighbors(el, { inbound: true });
         console.log(neighbors)
         // if (theNeighbors.length > 0) {
-            // manualLayoutElements.push(el);
+        // manualLayoutElements.push(el);
         // } else {
-            autoLayoutElements.push(el);
+        autoLayoutElements.push(el);
         // }
     });
     // Automatic Layout
     // check source neighbors
-    
+
 
     joint.layout.DirectedGraph.layout(graph.getSubgraph(autoLayoutElements), {
         dagre: dagre,
         graphlib: graphlib,
         setVertices: true,
-        marginX: 50,
-        marginY: 50,
+        marginX: 320,
+        marginY: 320,
         nodeSep: 50,
         edgeSep: 80,
         setLinkVertices: false
@@ -271,12 +293,43 @@ function layout(graph) {
     //     var neighborPosition = neighbors[0].getBBox().center();
     //     el.position(neighborPosition.x + 100, neighborPosition.y - el.size().height / 2);
     // });
-    // layoutTB.forEach(function(el) {
-    //     let neighbors = graph.getNeighbors(el, { inbound: true });
-    //     console.log(neighbors)
-    //     if (neighbors.length === 0) return;
-    //     let neighborPosition = neighbors[0].getBBox().center();
-    //     el.position(neighborPosition.x + 100, neighborPosition.y - el.size().height / 2);
+
+    // layoutTB.forEach(function (el) {
+    //     let sources = graph.getNeighbors(el, { outbound: true });
+    //     // console.log(neighbors)
+    //     if (sources.length === 0) return;
+    //     let sourcePosition = sources[0].getBBox().center();
+    //     let targetPosition = el.getBBox().center();
+    //     el.position(sourcePosition.x, sourcePosition.y - 200);
+    // });
+
+    // layoutBT.forEach(function (el) {
+    //     let sources = graph.getNeighbors(el, { outbound: true });
+    //     // console.log(neighbors)
+    //     if (sources.length === 0) return;
+    //     let sourcePosition = sources[0].getBBox().center();
+    //     let targetPosition = el.getBBox().center();
+    //     el.position(sourcePosition.x, sourcePosition.y + 200);
+    // });
+
+
+    // layoutLR.forEach(function (el) {
+    //     let sources = graph.getNeighbors(el, { outbound: true });
+    //     // console.log(neighbors)
+    //     if (sources.length === 0) return;
+    //     let sourcePosition = sources[0].getBBox().center();
+    //     let targetPosition = el.getBBox().center();
+    //     el.position(sourcePosition.x - 200, sourcePosition.y - el.size().height / 2);
+    // });
+
+
+    // layoutRL.forEach(function (el) {
+    //     let sources = graph.getNeighbors(el, { outbound: true });
+    //     // console.log(neighbors)
+    //     if (sources.length === 0) return;
+    //     let sourcePosition = sources[0].getBBox().center();
+    //     let targetPosition = el.getBBox().center();
+    //     el.position(sourcePosition.x + 100, sourcePosition.y - el.size().height / 2);
     // });
 }
 
@@ -315,7 +368,8 @@ function Paper() {
             attrs: {
                 label: {
                     text: event.dataTransfer.getData('text')
-                }
+                },
+                '.': { magnet: false }
             },
             position: {
                 x: event.clientX - rectBounds.left,
@@ -372,13 +426,18 @@ function Paper() {
             async: true,
             cellViewNamespace: joint.shapes,
             defaultLink: connector,
+            linkPinning: false,
+            allowLink: (linkView, paper) => {
+                // console.log(linkView.getNodeBBox())
+                return true
+            }
         });
         // paper.setGrid({
         //     name: "dot"})
         // paper.drawGrid()
 
         cells.cells.forEach(cellData => {
-            let cell = new joint.shapes.standard.Rectangle({ ...cellData, ports: portCellOptions });
+            let cell = new joint.shapes.standard.Rectangle({ ...cellData, ports: cellData.type === "root" && rootPortCellOptions || portCellOptions });
             graph.addCell(cell);
         });
         paper.on("link:connect", (linkView, event, elementViewConnected, magnet, arrowhead) => {
@@ -393,8 +452,8 @@ function Paper() {
         paper.unfreeze();
         // setGraphEl(graph);
 
-        
-        graph.on('change:position', function(cell) {
+
+        graph.on('change:position', function (cell) {
             // has an obstacle been moved? Then reroute the link.
             // if (graph.getCells().indexOf(cell) > -1 && paper.findViewByModel(connector)) {
             //     paper.findViewByModel(connector).requestConnectionUpdate();
