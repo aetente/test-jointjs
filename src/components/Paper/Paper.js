@@ -159,28 +159,125 @@ const directedGraphOptions = {
 function layout(graph) {
     var autoLayoutElements = [];
     var manualLayoutElements = [];
-    graph.getElements().forEach(function(el) {
-        if (el.get('type') === 'fta.ConditioningEvent') {
-            manualLayoutElements.push(el);
-        } else {
-            autoLayoutElements.push(el);
+    let theLinks = graph.getLinks();
+    let layoutTB = [];
+    let layoutBT = [];
+    let layoutRL = [];
+    let layoutLR = [];
+    theLinks.forEach(link => {
+        let targetCell = link.getTargetCell()
+        let sourceCell = link.getSourceCell()
+        let targetPort = targetCell.getPort(link.attributes.target.port);
+        console.log(link, targetCell, targetPort)
+        let portPosition = targetPort.group;
+        switch (portPosition) {
+            case "left":
+                layoutLR.push(targetCell)
+                layoutLR.push(sourceCell)
+                break;
+            case "right":
+                layoutRL.push(targetCell)
+                layoutRL.push(sourceCell)
+                break;
+            case "top":
+                layoutTB.push(targetCell)
+                layoutTB.push(sourceCell)
+                break;
+            case "bottom":
+                layoutBT.push(targetCell)
+                layoutBT.push(sourceCell)
+                break;
+        
+            default:
+                break;
         }
+    })
+    graph.getElements().forEach(function(el) {
+        var neighbors = graph.getNeighbors(el, { inbound: true });
+        console.log(neighbors)
+        // if (theNeighbors.length > 0) {
+            // manualLayoutElements.push(el);
+        // } else {
+            autoLayoutElements.push(el);
+        // }
     });
     // Automatic Layout
+    // check source neighbors
+    
+
     joint.layout.DirectedGraph.layout(graph.getSubgraph(autoLayoutElements), {
         dagre: dagre,
         graphlib: graphlib,
         setVertices: true,
         marginX: 50,
-        marginY: 50
+        marginY: 50,
+        nodeSep: 50,
+        edgeSep: 80,
+        setLinkVertices: false
+        // ranker: "longest-path"
     });
+    // joint.layout.DirectedGraph.layout(graph.getSubgraph(layoutTB), {
+    //     dagre: dagre,
+    //     graphlib: graphlib,
+    //     setVertices: true,
+    //     marginX: 50,
+    //     marginY: 50,
+    //     nodeSep: 50,
+    //     edgeSep: 80,
+    //     setLinkVertices: false
+    //     // ranker: "longest-path"
+    // });
+    // joint.layout.DirectedGraph.layout(graph.getSubgraph(layoutBT), {
+    //     dagre: dagre,
+    //     graphlib: graphlib,
+    //     setVertices: true,
+    //     marginX: 50,
+    //     marginY: 50,
+    //     nodeSep: 50,
+    //     edgeSep: 80,
+    //     setLinkVertices: false,
+    //     rankDir: "BT"
+    //     // ranker: "longest-path"
+    // });
+    // joint.layout.DirectedGraph.layout(graph.getSubgraph(layoutLR), {
+    //     dagre: dagre,
+    //     graphlib: graphlib,
+    //     setVertices: true,
+    //     marginX: 50,
+    //     marginY: 50,
+    //     nodeSep: 50,
+    //     edgeSep: 80,
+    //     setLinkVertices: false,
+    //     rankDir: "LR"
+    //     // ranker: "longest-path"
+    // });
+    // joint.layout.DirectedGraph.layout(graph.getSubgraph(layoutRL), {
+    //     dagre: dagre,
+    //     graphlib: graphlib,
+    //     setVertices: true,
+    //     marginX: 50,
+    //     marginY: 50,
+    //     nodeSep: 50,
+    //     edgeSep: 80,
+    //     setLinkVertices: false,
+    //     rankDir: "RL"
+    //     // ranker: "longest-path"
+    // });
     // Manual Layout
-    manualLayoutElements.forEach(function(el) {
-        var neighbor = graph.getNeighbors(el, { inbound: true })[0];
-        if (!neighbor) return;
-        var neighborPosition = neighbor.getBBox().bottomRight();
-        el.position(neighborPosition.x + 100, neighborPosition.y - el.size().height / 2);
-    });
+    // autoLayoutElements.forEach(function(el) {
+    //     var neighbors = graph.getNeighbors(el, { inbound: true });
+    //     console.log(neighbors)
+    //     if (neighbors.length === 0) return;
+    //     var neighborPosition = neighbors[0].getBBox().center();
+    //     el.position(neighborPosition.x + 100, neighborPosition.y - el.size().height / 2);
+    // });
+    // layoutTB.forEach(function(el) {
+    //     let neighbors = graph.getNeighbors(el, { inbound: true });
+    //     console.log(neighbors)
+    //     if (neighbors.length === 0) return;
+    //     let neighborPosition = neighbors[0].getBBox().center();
+    //     el.position(neighborPosition.x + 100, neighborPosition.y - el.size().height / 2);
+    // });
 }
 
 function Paper() {
@@ -266,13 +363,21 @@ function Paper() {
             background: {
                 color: '#F8F9FA',
             },
+            // grid: {
+            //     name: "dot"
+            // },
+            drawGrid: true,
+            gridSize: 10,
             frozen: true,
             async: true,
             cellViewNamespace: joint.shapes,
             defaultLink: connector,
         });
+        // paper.setGrid({
+        //     name: "dot"})
+        // paper.drawGrid()
 
-        cells.cells.map(cellData => {
+        cells.cells.forEach(cellData => {
             let cell = new joint.shapes.standard.Rectangle({ ...cellData, ports: portCellOptions });
             graph.addCell(cell);
         });
@@ -288,6 +393,17 @@ function Paper() {
         paper.unfreeze();
         // setGraphEl(graph);
 
+        
+        graph.on('change:position', function(cell) {
+            // has an obstacle been moved? Then reroute the link.
+            // if (graph.getCells().indexOf(cell) > -1 && paper.findViewByModel(connector)) {
+            //     paper.findViewByModel(connector).requestConnectionUpdate();
+            // }
+            let allLinks = graph.getLinks();
+            allLinks.forEach(link => { // TODO probably don't update all links, but only the ones near the cell
+                link.findView(paper).requestConnectionUpdate();
+            })
+        });
 
 
         window.addEventListener("dragstart", dragStart);
