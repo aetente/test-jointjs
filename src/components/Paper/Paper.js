@@ -206,12 +206,11 @@ function layout(graph) {
         //     }
         // }
         if (targetCell.attributes.type === "root") {
-            
-            // let targetPort = targetCell.getPort(link.attributes.target.port);
-            // let sourcePort = sourceCell.getPort(link.attributes.source.port);
-            // console.log(targetPort, sourcePort)
-            link.target(sourceCell)
-            link.source(targetCell)
+            // change the direction for root node as it has only output and you should be able to connect to it
+            let targetPort = targetCell.getPort(link.attributes.target.port);
+            let sourcePort = sourceCell.getPort(link.attributes.source.port);
+            link.target({id: sourceCell.id, port: sourcePort.id})
+            link.source({id: targetCell.id, port: targetPort.id})
         }
     })
     graph.getElements().forEach(function (el) {
@@ -235,7 +234,8 @@ function layout(graph) {
         marginY: 320,
         nodeSep: 50,
         edgeSep: 80,
-        setLinkVertices: false
+        setLinkVertices: false,
+        align: "UR"
         // ranker: "longest-path"
     });
     // joint.layout.DirectedGraph.layout(graph.getSubgraph(layoutTB), {
@@ -420,28 +420,29 @@ function Paper() {
             // grid: {
             //     name: "dot"
             // },
+            width: 800,
+            height: 800,
             drawGrid: true,
-            gridSize: 10,
+            gridSize: 15,
             frozen: true,
             async: true,
             cellViewNamespace: joint.shapes,
             defaultLink: connector,
-            linkPinning: false,
-            allowLink: (linkView, paper) => {
-                // console.log(linkView.getNodeBBox())
-                return true
-            }
+            linkPinning: false
         });
-        // paper.setGrid({
-        //     name: "dot"})
-        // paper.drawGrid()
+        paper.setGrid({
+            name: 'doubleMesh',
+            args: [
+                { color: 'red' },
+                { color: 'green', thickness: 10, scaleFactor: 8 }
+            ]
+        }).drawGrid();
 
         cells.cells.forEach(cellData => {
-            let cell = new joint.shapes.standard.Rectangle({ ...cellData, ports: cellData.type === "root" && rootPortCellOptions || portCellOptions });
+            let cell = new joint.shapes.standard.Rectangle({ ...cellData, ports: (cellData.type === "root" && rootPortCellOptions) || portCellOptions });
             graph.addCell(cell);
         });
         paper.on("link:connect", (linkView, event, elementViewConnected, magnet, arrowhead) => {
-            console.log(linkView, event, elementViewConnected, magnet, arrowhead)
             // joint.layout.DirectedGraph.layout(graph, directedGraphOptions);
             layout(graph)
         })
