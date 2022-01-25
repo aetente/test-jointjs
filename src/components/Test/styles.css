@@ -1,12 +1,15 @@
 
-.content {
-  display: flex;
-}
 
 .hold-content {
-  padding: 40px;
+  height: 100%;
+  width: 100%;
 }
 
+.content {
+  padding: 10px;
+  display: flex;
+  position: relative;
+}
 .content-title {
   font-family: "Work Sans";
   font-style: normal;

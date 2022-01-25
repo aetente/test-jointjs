@@ -8,7 +8,7 @@ export const cells = {
           },
           '.': { magnet: false }
         },
-        size: { width: 100, height: 50 },
+        size: { width: 100, height: 100 },
         inPorts: ['in'],
         outPorts: ['out'],
         type: "root"

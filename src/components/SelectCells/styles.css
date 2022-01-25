@@ -1,17 +1,19 @@
 .hold-cells {
     height: 100%;
+    position: absolute;
+    z-index: 99;
     display: flex;
     justify-content: space-between;
     border: 2px solid #F3F6F9;
-    padding: 15px 20px;
-    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.08);
+    /* box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.08); */
 }
 
 .list-cells {
     width: 195px;
-    height: 770px;
+    height: 100%;
     margin-right: 2px;
     background-color: white;
+    padding: 10px;
 }
 
 .list-row {
