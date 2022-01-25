@@ -27,3 +27,15 @@ export const cells = {
     ]
   };
   
+
+export const earnCell = {
+    attrs: {
+      label: {
+        text: "default text"
+      },
+      '.': { magnet: false }
+    },
+    size: { width: 100, height: 50 },
+    inPorts: ['in'],
+    outPorts: ['out']
+  }

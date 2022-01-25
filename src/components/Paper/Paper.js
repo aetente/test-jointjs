@@ -3,7 +3,7 @@ import ModalWindow from '../ModalWindow/ModalWindow';
 import * as joint from 'jointjs';
 import dagre from 'dagre';
 import graphlib from 'graphlib';
-import { cells } from './cells';
+import { cells, earnCell } from './cells';
 import { ports, portCellOptions, rootPortCellOptions } from './ports';
 import "./styles.css";
 
@@ -25,6 +25,7 @@ const svgFile = [
 
 function layout(graph, activeLink) {
     var autoLayoutElements = [];
+    console.log(graph.getLinks())
     // let theLinks = graph.getLinks();
     // theLinks.forEach(link => {
     //     let targetCell = link.getTargetCell()
@@ -73,11 +74,11 @@ function layout(graph, activeLink) {
         marginY: 35,
         nodeSep: 150,
         edgeSep: 150,
-        rankSep: 150,
+        rankSep: 100,
         setLinkVertices: false,
-        align: "UR"
+        align: "UL"
     });
-    
+
     // let graphRect = graph.getBBox();
     // console.log(graph.getBBox())
     // Manual Layout
@@ -88,6 +89,7 @@ function layout(graph, activeLink) {
     //     var neighborPosition = neighbors[0].getBBox().center();
     //     el.position(neighborPosition.x + 100, neighborPosition.y - el.size().height / 2);
     // });
+    
 }
 
 function Paper(props) {
@@ -97,7 +99,7 @@ function Paper(props) {
     const [openModalWindow, setOpenModalWindow] = useState(false);
     const [activeLink, setActiveLink] = useState(null);
 
-    const graph = new joint.dia.Graph();
+    const [graph, setGraph] = useState(new joint.dia.Graph());
 
     const dragStart = useCallback(event => {
         if (event.target.className !== "draggable") return;
@@ -138,6 +140,8 @@ function Paper(props) {
         newCell.attr('body/refPoints', '0,10 10,0 20,10 10,20')
         graph.addCell(newCell)
         layout(graph);
+        
+        setGraph(graph)
     }, []);
 
     useEffect(() => {
@@ -189,7 +193,7 @@ function Paper(props) {
         paper.on("link:connect", ((linkView, event, elementViewConnected, magnet, arrowhead) => {
             layout(graph, activeLink);
             setOpenModalWindow(true);
-        }))
+        }));
 
         graph.on('add', (eventElement) => {
             if (eventElement.isLink()) {
@@ -200,7 +204,7 @@ function Paper(props) {
                 layout(graph, eventElement);
                 setOpenModalWindow(true);
             }))
-        })
+        });
         layout(graph);
 
         paper.unfreeze();
@@ -212,6 +216,8 @@ function Paper(props) {
                 link.findView(paper).requestConnectionUpdate();
             })
         });
+
+        setGraph(graph)
 
 
         window.addEventListener("dragstart", dragStart);
@@ -232,8 +238,12 @@ function Paper(props) {
         <div className='hold-paper'>
             <div id='canvas' ref={canvas} />
             {openModalWindow && <ModalWindow
+                joint={joint}
+                portCellOptions={portCellOptions}
                 setOpenModalWindow={setOpenModalWindow}
                 activeLink={activeLink}
+                graph={graph}
+                cellData={earnCell}
             />}
         </div>
     );
