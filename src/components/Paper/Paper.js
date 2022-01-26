@@ -25,7 +25,7 @@ const svgFile = [
 
 function layout(graph, activeLink) {
     var autoLayoutElements = [];
-    console.log(graph.getLinks())
+
     // let theLinks = graph.getLinks();
     // theLinks.forEach(link => {
     //     let targetCell = link.getTargetCell()
@@ -70,7 +70,7 @@ function layout(graph, activeLink) {
         dagre: dagre,
         graphlib: graphlib,
         setVertices: true,
-        marginX: 320,
+        marginX: 620,
         marginY: 35,
         nodeSep: 150,
         edgeSep: 150,
@@ -186,14 +186,24 @@ function Paper(props) {
             graph.addCell(cell);
             return cell;
         });
-        link.source({ id: cells.cells[0].id, port: cells.cells[0].attributes.ports.items[0].id });
-        link.target({ id: cells.cells[1].id, port: cells.cells[1].attributes.ports.items[2].id });
-        link.addTo(graph);
+
+        // console.log(cells.cells[0])
+        // if (cells.cells[0].attributes.ports.items.length === 0) {
+            link.source({ id: cells.cells[0].id, port: cells.cells[0].attributes.ports.items[0].id });
+            link.target({ id: cells.cells[1].id, port: cells.cells[1].attributes.ports.items[2].id });
+            link.addTo(graph);
+        // }
 
         paper.on("link:connect", ((linkView, event, elementViewConnected, magnet, arrowhead) => {
             layout(graph, activeLink);
             setOpenModalWindow(true);
         }));
+
+        paper.on("link:pointerdblclick", ((linkView, event, x, y) => {
+            let currentLink = linkView.model;
+            setActiveLink(currentLink);
+            setOpenModalWindow(true);
+        }))
 
         graph.on('add', (eventElement) => {
             if (eventElement.isLink()) {
@@ -243,7 +253,9 @@ function Paper(props) {
                 setOpenModalWindow={setOpenModalWindow}
                 activeLink={activeLink}
                 graph={graph}
+                setGraph={setGraph}
                 cellData={earnCell}
+                layout={layout}
             />}
         </div>
     );

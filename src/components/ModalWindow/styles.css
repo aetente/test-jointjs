@@ -19,6 +19,20 @@
     flex-direction: column;
 }
 
+.modal-option {
+    padding-top: 20px
+}
+
+.modal-options {
+    overflow-y: scroll;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none; 
+}
+
+.modal-options::-webkit-scrollbar {
+    display: none;
+}
+
 .modal-title {
     display: flex;
     justify-content: space-between;
@@ -50,6 +64,7 @@
     font-weight: 600;
     font-size: 14px;
     line-height: 21px;
+    padding-bottom: 8px;
 }
 
 .modal-actions {
@@ -87,12 +102,55 @@
     margin-top: 24px;
 }
 
-select {
+select, input {
     background: #FAFAFA;
     border: 1px solid #FAFAFA;
     border-radius: 10px;
     width: 100%;
     height: 40px;
+    font-family: "Poppins";
+    font-style: normal;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 21px;
+    padding: 1px 16px;
+}
+
+input {
+    -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+    -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+    box-sizing: border-box;   
+}
+
+.hold-percentages {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px
+}
+
+.hold-percentages div {
+    background: #F9FAFB;
+    border-radius: 4px;
+    padding: 4px 20px ;
+    cursor: pointer;
+    font-family: "Poppins";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 18px;
+    /* identical to box height */
+
+    text-align: center;
+
+    color: #A2A2A2;
+}
+
+.matched-percentage {
+    background: #FCEB74 !important;
+    color: #081E3F !important;
+    border: 1px solid #FED700;
+    box-sizing: border-box;
+    border-radius: 4px;
 }
 
 option {
