@@ -70,6 +70,7 @@
 .modal-actions {
     display: flex;
     flex-direction: column;
+    padding-top: 16px;
 }
 
 .modal-actions button {

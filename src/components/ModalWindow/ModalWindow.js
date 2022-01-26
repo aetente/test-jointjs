@@ -6,7 +6,64 @@ import TokenInput from './TokenInput';
 import "./styles.css";
 
 import close from "./close.svg";
-import { layout } from 'dagre';
+
+function mapEarnOptions(earnArray, graph) {
+    return earnArray.map((earnData, i) => {
+        let earnLink = earnData[0];
+        let earnCell = earnData[1];
+        console.log("earnCell", earnCell)
+
+        let setEarn = (earn) => {
+            earnLink.label(0, {
+                attrs: {
+                    text: {
+                        text: `[ Earn ${earn} ]`,
+                        earn,
+                        tokenName: (earnLink.label(0) && earnLink.label(0).attrs.text.tokenName) || "COIN",
+                        fontWeight: 500,
+                        fontSize: "20px",
+                        lineHeight: "18px"
+                    },
+                    rect: {
+                        fill: "#f6f6f6"
+                    }
+                }
+            })
+        };
+
+        let setTokenName = (tokenName) => {
+            earnCell.attr({
+                label: {
+                    text: tokenName
+                }
+            });
+            let earnLinkEarnValue = (earnLink.label(0) && earnLink.label(0).attrs.text.earn) || "None";
+            earnLink.label(0, {
+                attrs: {
+                    text: {
+                        text: `[ Earn ${earnLinkEarnValue} ]`,
+                        earnLinkEarnValue,
+                        tokenName: tokenName,
+                        fontWeight: 500,
+                        fontSize: "20px",
+                        lineHeight: "18px"
+                    },
+                    rect: {
+                        fill: "#f6f6f6"
+                    }
+                }
+            })
+        }
+
+        return (
+            <>
+                <SelectEarn setEarn={setEarn} activeLink={earnLink.link} />
+                <TokenInput setTokenName={setTokenName} activeLink={earnLink.link} />
+            </>
+        );
+    }
+    )
+}
 
 export default function ModalWindow(props) {
 
@@ -29,8 +86,9 @@ export default function ModalWindow(props) {
     const [actionLink, setActionLink] = useState(null);
     const [earnLink, setEarnLink] = useState(null);
     const [earnCell, setEarnCell] = useState(null);
-    const [numberOfEarns, setNumberOfEarns] = useState(1);
-    
+    const [linksToAdd, setLinksToAdd] = useState([]);
+    const [cellsToAdd, setCellsToAdd] = useState([]);
+
     const [earnLinks, setEarnLinks] = useState([]);
 
     useEffect(() => {
@@ -46,7 +104,7 @@ export default function ModalWindow(props) {
             setActionLink(activeLink);
             setAction((activeLink.label(0) && activeLink.label(0).attrs.text.action) || "Stake")
             setAllocation((activeLink.label(0) && activeLink.label(0).attrs.text.allocation) || 50)
-            
+
             if (activeLink.attributes.attrs.earnLinkId) {
                 let earnLinkById = graph.getCell(activeLink.attributes.attrs.earnLinkId);
                 let earnCellById = graph.getCell(earnLinkById.attributes.attrs.earnCellId);
@@ -58,7 +116,7 @@ export default function ModalWindow(props) {
 
         } else if (activeLink.attributes.attrs.typeOfLink === "earn") {
 
-            
+
             let earnCellById = graph.getCell(activeLink.attributes.attrs.earnCellId);
             setEarnLink(activeLink);
             setEarnCell(earnCellById);
@@ -101,9 +159,52 @@ export default function ModalWindow(props) {
                 <SelectAction setAction={setAction} activeLink={actionLink} />
                 <SelectEarn setEarn={setEarn} activeLink={earnLink} />
                 <TokenInput setTokenName={setTokenName} activeLink={earnLink} />
+                {mapEarnOptions(earnLinks, graph)}
             </div>
             <div className="modal-actions">
-                <button className="action-button">+</button>
+                <button
+                    className="action-button"
+                    onClick={() => {
+                        // create link instance
+                        let newEarnLink = new joint.shapes.standard.Link();
+                        // set how the link looks and behaves
+                        newEarnLink.router('manhattan');
+                        newEarnLink.attr({
+                            typeOfLink: "earn",
+                            line: {
+                                strokeDasharray: '8 4',
+                                targetMarker: {
+                                    type: "none"
+                                }
+                            }
+                        });
+                        // create cell instance for the link
+                        let newEarnCell = new joint.shapes.standard.Rectangle({
+                            ...cellData,
+                            attrs: {
+                                ...cellData.attrs,
+                            },
+                            ports: portCellOptions
+                        });
+                        // connect the link with the cells
+                        let sourceCell = activeLink.getTargetCell();
+                        let sourcePort = sourceCell.attributes.ports.items[3].id;
+                        newEarnLink.source({ id: sourceCell.id, port: sourcePort });
+                        newEarnLink.target({ id: newEarnCell.id, port: newEarnCell.attributes.ports.items[2].id });
+                        // save information about connected links and cells
+                        activeLink.attr({
+                            earnLinkId: newEarnLink.id
+                        });
+                        newEarnLink.attr({
+                            actionLinkId: activeLink.id,
+                            earnCellId: newEarnCell.id
+                        })
+                        // save it to state to add them later to graph by iteration
+                        setLinksToAdd(linksToAdd => [...linksToAdd, newEarnLink])
+                        setCellsToAdd(cellsToAdd => [...cellsToAdd, newEarnCell])
+                        setEarnLinks(earnLinks => [...earnLinks, [newEarnLink, newEarnCell]]);
+                    }}
+                >+</button>
                 <button
                     className="finish-button"
                     onClick={() => {
@@ -201,7 +302,7 @@ export default function ModalWindow(props) {
 
                                     earnCell.attr({
                                         label: {
-                                            text:tokenName
+                                            text: tokenName
                                         }
                                     });
                                 }
@@ -237,13 +338,18 @@ export default function ModalWindow(props) {
                                 }
                             })
 
-                            
+
                             earnCell.attr({
                                 label: {
-                                    text:tokenName
+                                    text: tokenName
                                 }
                             });
                         }
+
+                        linksToAdd.forEach(la => la.addTo(graph));
+                        cellsToAdd.forEach(ca => graph.addCell(ca));
+
+                        layout(graph)
 
 
                         setGraph(graph);
@@ -251,19 +357,6 @@ export default function ModalWindow(props) {
                     }}
                 >Done</button>
             </div>
-            {/* <div>
-                <input
-                    // key={`node-change-${props.nodeDataToChange.key}`}
-                    ref={inputRef}
-                    className="nodrag"
-                    type="text"
-                />
-                <button
-                    onClick={() => {
-                        props.setOpenModalWindow(false);
-                    }}
-                >enter</button>
-            </div> */}
         </div>
     )
 }
