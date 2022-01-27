@@ -162,3 +162,27 @@ option {
     line-height: 21px;
     opacity: 0.4;
 }
+
+.hold-minimized {
+    
+    padding-top: 20px
+}
+
+.minimized-title {
+    display: flex;
+    justify-content: space-between;
+}
+
+.minimized-title-counter, .minimized-description span {
+    font-family: "Poppins";
+    font-style: normal;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 21px;
+    padding-bottom: 8px;
+}
+
+.unminimize {
+    cursor: pointer;
+    text-decoration: underline;
+}

@@ -3,9 +3,57 @@ import SelectAction from './SelectAction';
 import SelectEarn from './SelectEarn';
 import AllocationInput from './AllocationInput';
 import TokenInput from './TokenInput';
+import EarnInputsHolder from './EarnInputsHolder';
 import "./styles.css";
 
 import close from "./close.svg";
+
+function addStakeEarn(joint, activeLink, tokenName, setLinksAndCellsToAdd, setEarnLinks, cellData, portCellOptions) {
+    let newEarnLink = new joint.shapes.standard.Link();
+    // set how the link looks and behaves
+    newEarnLink.router('manhattan');
+    newEarnLink.attr({
+        typeOfLink: "earn",
+        line: {
+            strokeDasharray: '8 4',
+            targetMarker: {
+                type: "none"
+            }
+        }
+    });
+    // create cell instance for the link
+    let newEarnCell = new joint.shapes.standard.Rectangle({
+        ...cellData,
+        attrs: {
+            ...cellData.attrs,
+            label: {
+                text: tokenName
+            }
+        },
+        ports: portCellOptions
+    });
+    // connect the link with the cells
+    let sourceCell = activeLink.getTargetCell();
+    if (sourceCell) {
+
+        let sourcePort = sourceCell.attributes.ports.items[3].id;
+        newEarnLink.source({ id: sourceCell.id, port: sourcePort });
+        newEarnLink.target({ id: newEarnCell.id, port: newEarnCell.attributes.ports.items[2].id });
+        // save information about connected links and cells
+        activeLink.attr({
+            earnLinkId: newEarnLink.id
+        });
+        newEarnLink.attr({
+            actionLinkId: activeLink.id,
+            earnCellId: newEarnCell.id
+        })
+        // save it to state to add them later to graph by iteration
+        setLinksAndCellsToAdd(linksAndCellsToAdd => [...linksAndCellsToAdd, [newEarnLink, newEarnCell]])
+        // setCellsToAdd(cellsToAdd => [...cellsToAdd, newEarnCell])
+        setEarnLinks(earnLinks => [...earnLinks, [newEarnLink, newEarnCell]]);
+
+    }
+}
 
 function mapEarnOptions(earnArray, graph) {
     return earnArray.map((earnData, i) => {
@@ -31,7 +79,7 @@ function mapEarnOptions(earnArray, graph) {
         };
 
         let setTokenName = (tokenName) => {
-            
+
             earnCell.attr({
                 label: {
                     text: tokenName
@@ -55,10 +103,13 @@ function mapEarnOptions(earnArray, graph) {
             })
         }
         return (
-            <>
-                <SelectEarn setEarn={setEarn} activeLink={earnLink} />
-                <TokenInput setTokenName={setTokenName} activeLink={earnLink} />
-            </>
+            <EarnInputsHolder
+                arrayLength={earnArray.length}
+                setTokenName={setTokenName}
+                setEarn={setEarn}
+                activeLink={earnLink}
+                i={i}
+            />
         );
     }
     )
@@ -97,16 +148,18 @@ export default function ModalWindow(props) {
         // if user modifies earn link than there for sure would be action link 
         setTypeOfLink(activeLink.attributes.attrs.typeOfLink);
         if (!activeLink.attributes.attrs.typeOfLink || activeLink.attributes.attrs.typeOfLink === "action") {
-
+            let actionValue = (activeLink.label(0) && activeLink.label(0).attrs.text.action) || "Stake";
             setActionLink(activeLink);
-            setAction((activeLink.label(0) && activeLink.label(0).attrs.text.action) || "Stake")
+            setAction(actionValue)
             setAllocation((activeLink.label(0) && activeLink.label(0).attrs.text.allocation) || 50)
 
             if (activeLink.attributes.attrs.earnLinkId) {
                 let earnLinkById = graph.getCell(activeLink.attributes.attrs.earnLinkId);
-                setEarnLink(earnLinkById);
-                setEarn((earnLinkById.label(0) && earnLinkById.label(0).attrs.text.earn) || "None")
-                setTokenName((earnLinkById.label(0) && earnLinkById.label(0).attrs.text.tokenName) || "COIN")
+                if (earnLinkById) {
+                    setEarnLink(earnLinkById);
+                    setEarn((earnLinkById.label(0) && earnLinkById.label(0).attrs.text.earn) || "None")
+                    setTokenName((earnLinkById.label(0) && earnLinkById.label(0).attrs.text.tokenName) || "COIN")
+                }
             }
 
             if (activeLink.attributes.attrs.earnLinkIds) {
@@ -118,6 +171,9 @@ export default function ModalWindow(props) {
                 setEarnLinks(earnLinksToSet);
             }
 
+            if (actionValue === "Stake") {
+                addStakeEarn(joint, activeLink, tokenName, setLinksAndCellsToAdd, setEarnLinks, cellData, portCellOptions);
+            }
         } else if (activeLink.attributes.attrs.typeOfLink === "earn") {
 
             setEarnLink(activeLink);
@@ -147,7 +203,7 @@ export default function ModalWindow(props) {
             setEarnLink(null);
             setEarnLinks([])
         }
-    }, [])
+    }, [activeLink])
 
     return (
         <div
@@ -169,55 +225,17 @@ export default function ModalWindow(props) {
                 <SelectAction setAction={setAction} activeLink={actionLink} />
                 {/* <SelectEarn setEarn={setEarn} activeLink={earnLink} />
                 <TokenInput setTokenName={setTokenName} activeLink={earnLink} /> */}
-                {mapEarnOptions(earnLinks, graph)}
+                {action === "Stake" && mapEarnOptions(earnLinks, graph)}
             </div>
             <div className="modal-actions">
-                <button
-                    className="action-button"
-                    onClick={() => {
-                        // create link instance
-                        let newEarnLink = new joint.shapes.standard.Link();
-                        // set how the link looks and behaves
-                        newEarnLink.router('manhattan');
-                        newEarnLink.attr({
-                            typeOfLink: "earn",
-                            line: {
-                                strokeDasharray: '8 4',
-                                targetMarker: {
-                                    type: "none"
-                                }
-                            }
-                        });
-                        // create cell instance for the link
-                        let newEarnCell = new joint.shapes.standard.Rectangle({
-                            ...cellData,
-                            attrs: {
-                                ...cellData.attrs,
-                                label: {
-                                    text: tokenName
-                                }
-                            },
-                            ports: portCellOptions
-                        });
-                        // connect the link with the cells
-                        let sourceCell = activeLink.getTargetCell();
-                        let sourcePort = sourceCell.attributes.ports.items[3].id;
-                        newEarnLink.source({ id: sourceCell.id, port: sourcePort });
-                        newEarnLink.target({ id: newEarnCell.id, port: newEarnCell.attributes.ports.items[2].id });
-                        // save information about connected links and cells
-                        activeLink.attr({
-                            earnLinkId: newEarnLink.id
-                        });
-                        newEarnLink.attr({
-                            actionLinkId: activeLink.id,
-                            earnCellId: newEarnCell.id
-                        })
-                        // save it to state to add them later to graph by iteration
-                        setLinksAndCellsToAdd(linksAndCellsToAdd => [...linksAndCellsToAdd, [newEarnLink, newEarnCell]])
-                        // setCellsToAdd(cellsToAdd => [...cellsToAdd, newEarnCell])
-                        setEarnLinks(earnLinks => [...earnLinks, [newEarnLink, newEarnCell]]);
-                    }}
-                >+</button>
+                {action === "Stake" &&
+                    <button
+                        className="action-button"
+                        onClick={() => {
+                            addStakeEarn(joint, actionLink, tokenName, setLinksAndCellsToAdd, setEarnLinks, cellData, portCellOptions);
+                        }}
+                    >+</button>
+                }
                 <button
                     className="finish-button"
                     onClick={() => {
@@ -300,7 +318,7 @@ export default function ModalWindow(props) {
                                 setGraph(graph);
                             }
                         } else if (typeOfLink === "earn") {
-
+                            console.log("earn done")
                             actionLink.label(0, {
                                 attrs: {
                                     text: {
@@ -318,17 +336,19 @@ export default function ModalWindow(props) {
                             })
                         }
 
-                        linksAndCellsToAdd.forEach(la => {
-                            let earnValue = (la[0].label(0) && la[0].label(0).attrs.text.earn) || "None";
-                            if (earnValue !== "None") {
-                                let prevEarnIdsArray = activeLink.attributes.attrs.earnLinkIds || [];
-                                activeLink.attr({
-                                    earnLinkIds: [...prevEarnIdsArray, la[0].id]
-                                });
-                                la[0].addTo(graph);
-                                graph.addCell(la[1]);
-                            }
-                        });
+                        if (action === "Stake") {
+                            linksAndCellsToAdd.forEach(la => {
+                                let earnValue = (la[0].label(0) && la[0].label(0).attrs.text.earn) || "None";
+                                if (earnValue !== "None") {
+                                    let prevEarnIdsArray = actionLink.attributes.attrs.earnLinkIds || [];
+                                    actionLink.attr({
+                                        earnLinkIds: [...prevEarnIdsArray, la[0].id]
+                                    });
+                                    la[0].addTo(graph);
+                                    graph.addCell(la[1]);
+                                }
+                            });
+                        }
 
                         layout(graph)
 

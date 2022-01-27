@@ -23,7 +23,7 @@ const svgFile = [
     '</svg>'
 ].join('');
 
-const globalOffsetX = 650;
+const globalOffsetX = 350;
 const globalOffsetY = 35;
 
 function layout(graph, activeLink) {
@@ -46,16 +46,35 @@ function layout(graph, activeLink) {
     //         }
     //     }
     // })
+    // if (activeLink) {
+    //     let targetCell = activeLink.getTargetCell()
+    //     let sourceCell = activeLink.getSourceCell()
+    //     if (activeLink.attributes.target.port) {
+    //         let targetPort = targetCell.getPort(activeLink.attributes.target.port);
+    //         let sourcePort = sourceCell.getPort(activeLink.attributes.source.port);
+    //         // change the direction for root node as it has only output and you should be able to connect to it
+
+    //         activeLink.target({ id: sourceCell.id, port: sourcePort.id })
+    //         activeLink.source({ id: targetCell.id, port: targetPort.id })
+    //     }
+    // }
+    
     if (activeLink) {
         let targetCell = activeLink.getTargetCell()
         let sourceCell = activeLink.getSourceCell()
-        if (activeLink.attributes.target.port) {
-            let targetPort = targetCell.getPort(activeLink.attributes.target.port);
+        if (targetCell && sourceCell) {
             let sourcePort = sourceCell.getPort(activeLink.attributes.source.port);
-            // change the direction for root node as it has only output and you should be able to connect to it
-
-            activeLink.target({ id: sourceCell.id, port: sourcePort.id })
-            activeLink.source({ id: targetCell.id, port: targetPort.id })
+            let targetPort = targetCell.getPort(activeLink.attributes.target.port);
+            let sourcePortPosition = sourcePort.group;
+            let targetPortPosition = targetPort.group;
+            // if (sourcePortPosition === "top" && targetPortPosition === "bottom") {
+            // console.log(graph.getNeighbors(targetCell), graph.getNeighbors(sourceCell))
+            let sourceCellsNeighbors = graph.getNeighbors(sourceCell)
+            // if (targetPortPosition === "bottom") {
+            if (sourceCellsNeighbors.length <= 1) {
+                activeLink.target({ id: sourceCell.id, port: sourcePort.id })
+                activeLink.source({ id: targetCell.id, port: targetPort.id })
+            }
         }
     }
     graph.getElements().forEach(function (el) {
@@ -69,28 +88,28 @@ function layout(graph, activeLink) {
     // Automatic Layout
     // check source neighbors
 
-    // joint.layout.DirectedGraph.layout(graph, {
-    //     dagre: dagre,
-    //     graphlib: graphlib,
-    //     setVertices: true,
-    //     marginX: globalOffsetX,
-    //     marginY: globalOffsetY,
-    //     nodeSep: 0,
-    //     edgeSep: 150,
-    //     rankSep: 100,
-    //     setLinkVertices: false,
-    //     ranker: "tight-tree",
-    //     setPosition: function (element, glNode) {
-    //         // console.log(element, graph.getNeighbors(element, { inbound: true }))
-    //         element.set({
-    //             position: {
-    //                 x: glNode.x - glNode.width / 2,
-    //                 y: glNode.y - glNode.height / 2
-    //             },
-    //             refresher: (element.get('refresher') || 0) + 1
-    //         });
-    //     }
-    // });
+    joint.layout.DirectedGraph.layout(graph, {
+        dagre: dagre,
+        graphlib: graphlib,
+        setVertices: true,
+        marginX: globalOffsetX,
+        marginY: globalOffsetY,
+        nodeSep: 350,
+        edgeSep: 150,
+        rankSep: 100,
+        setLinkVertices: false,
+        ranker: "tight-tree",
+        setPosition: function (element, glNode) {
+            // console.log(element, graph.getNeighbors(element, { inbound: true }))
+            element.set({
+                position: {
+                    x: glNode.x - glNode.width / 2,
+                    y: glNode.y - glNode.height / 2
+                },
+                refresher: (element.get('refresher') || 0) + 1
+            });
+        }
+    });
 
     let theLinks = graph.getLinks()
     let layoutLR = [];
@@ -98,74 +117,114 @@ function layout(graph, activeLink) {
     let layoutTB = [];
     let layoutBT = [];
     let unlinkedCells = [];
+    // theLinks.forEach(link => {
+    //         let targetCell = link.getTargetCell()
+    //         let sourceCell = link.getSourceCell()
+    //         if (targetCell && sourceCell) {
+    //             let sourcePort = sourceCell.getPort(link.attributes.source.port);
+    //             let targetPort = targetCell.getPort(link.attributes.target.port);
+    //             let sourcePortPosition = sourcePort.group;
+    //             let targetPortPosition = targetPort.group;
+    //             if (sourcePortPosition === "top" && targetPortPosition === "bottom") {
+    //                 console.log("AAAAAAAAAAAAAAAAA")
+    //                 link.target({ id: sourceCell.id, port: sourcePort.id })
+    //                 link.source({ id: targetCell.id, port: targetPort.id })
+    //             }
+    //         }
+    // })
 
-    theLinks.forEach(link => {
-        let targetCell = link.getTargetCell()
-        let sourceCell = link.getSourceCell()
-        if (targetCell && sourceCell) {
-            let targetPort = targetCell.getPort(link.attributes.target.port);
-            console.log(link, targetCell, targetPort)
-            let portPosition = targetPort.group;
-            switch (portPosition) {
-                case "left":
-                    layoutLR.push(targetCell)
-                    break;
-                case "right":
-                    layoutRL.push(targetCell)
-                    break;
-                case "top":
-                    layoutTB.push(targetCell)
-                    break;
-                case "bottom":
-                    layoutBT.push(targetCell)
-                    break;
+    // if (activeLink) {
+    //     let targetCell = activeLink.getTargetCell()
+    //     let sourceCell = activeLink.getSourceCell()
+    //     if (targetCell && sourceCell) {
+    //         let sourcePort = sourceCell.getPort(activeLink.attributes.source.port);
+    //         let targetPort = targetCell.getPort(activeLink.attributes.target.port);
+    //         let sourcePortPosition = sourcePort.group;
+    //         let targetPortPosition = targetPort.group;
+    //         if (sourcePortPosition === "top" && targetPortPosition === "bottom") {
+    //             console.log("AAAAAAA")
+    //             activeLink.target({ id: sourceCell.id, port: sourcePort.id })
+    //             activeLink.source({ id: targetCell.id, port: targetPort.id })
+    //         }
+    //     }
+    // }
 
-                default:
-                    break;
-            }
-        }
-    });
+    // theLinks.forEach(link => {
+    //     let targetCell = link.getTargetCell()
+    //     let sourceCell = link.getSourceCell()
+    //     if (targetCell && sourceCell) {
+    //         let sourcePort = sourceCell.getPort(link.attributes.source.port);
+    //         let targetPort = targetCell.getPort(link.attributes.target.port);
+    //         let sourcePortPosition = sourcePort.group;
+    //         let targetPortPosition = targetPort.group;
+    //         if (sourcePortPosition === "top" && targetPortPosition === "bottom") {
+    //             layoutTB.push(targetCell)
+    //         } else if (sourcePortPosition === "bottom" && targetPortPosition === "top") {
+    //             layoutBT.push(sourceCell)
+    //         } else if (sourcePortPosition === "right" && targetPortPosition === "left") {
+    //             layoutRL.push(sourceCell)
+    //         } else if (sourcePortPosition === "left" && targetPortPosition === "right") {
+    //             layoutLR.push(sourceCell)
+    //         }
+    //         // switch (sourcePortPosition) {
+    //         //     case "left":
+    //         //         layoutRL.push(targetCell)
+    //         //         break;
+    //         //     case "right":
+    //         //         layoutLR.push(targetCell)
+    //         //         break;
+    //         //     case "top":
+    //         //         layoutBT.push(targetCell)
+    //         //         break;
+    //         //     case "bottom":
+    //         //         layoutTB.push(targetCell)
+    //         //         break;
 
-    console.log(layoutTB, layoutBT, layoutRL, layoutLR)
+    //         //     default:
+    //         //         break;
+    //         // }
+    //     }
+    // });
 
-    layoutTB.forEach(function (el) {
-        let sources = graph.getNeighbors(el, { inbound: true });
-        // console.log(neighbors)
-        if (sources.length === 0) return;
-        let sourcePosition = sources[0].getBBox().center();
-        let targetSize = el.getBBox();
-        console.log(el, sources, sourcePosition.x, sourcePosition.y)
-        el.position(sourcePosition.x - targetSize.width / 2, sourcePosition.y + 150);
-    });
+    // console.log(layoutTB, layoutBT, layoutRL, layoutLR)
 
-
-    layoutBT.forEach(function (el) {
-        let sources = graph.getNeighbors(el, { inbound: true });
-        // console.log(neighbors)
-        if (sources.length === 0) return;
-        let sourcePosition = sources[0].getBBox().center();
-        let targetSize = el.getBBox();
-        el.position(sourcePosition.x - targetSize.width / 2, sourcePosition.y - 150);
-    });
-
-    layoutRL.forEach(function (el) {
-        let sources = graph.getNeighbors(el, { inbound: true });
-        // console.log(neighbors)
-        if (sources.length === 0) return;
-        let sourcePosition = sources[0].getBBox().center();
-        let targetSize = el.getBBox();
-        el.position(sourcePosition.x - 150 - 3 * targetSize.width / 2, sourcePosition.y - targetSize.height / 2);
-    });
+    // layoutTB.forEach(function (el) {
+    //     let sources = graph.getNeighbors(el, { inbound: true });
+    //     // console.log(neighbors)
+    //     if (sources.length === 0) return;
+    //     let sourcePosition = sources[0].getBBox().center();
+    //     let targetSize = el.getBBox();
+    //     el.position(sourcePosition.x - targetSize.width / 2, sourcePosition.y - 150);
+    // });
 
 
-    layoutLR.forEach(function (el) {
-        let sources = graph.getNeighbors(el, { inbound: true });
-        // console.log(neighbors)
-        if (sources.length === 0) return;
-        let sourcePosition = sources[0].getBBox().center();
-        let targetSize = el.getBBox();
-        el.position(sourcePosition.x + 150 + targetSize.width / 2, sourcePosition.y - targetSize.height / 2);
-    });
+    // layoutBT.forEach(function (el) {
+    //     let sources = graph.getNeighbors(el, { outbound: true });
+    //     // console.log(neighbors)
+    //     if (sources.length === 0) return;
+    //     let sourcePosition = sources[0].getBBox().center();
+    //     let targetSize = el.getBBox();
+    //     el.position(sourcePosition.x - targetSize.width / 2, sourcePosition.y - 250);
+    // });
+
+    // layoutRL.forEach(function (el) {
+    //     let sources = graph.getNeighbors(el, { outbound: true });
+    //     // console.log(neighbors)
+    //     if (sources.length === 0) return;
+    //     let sourcePosition = sources[0].getBBox().center();
+    //     let targetSize = el.getBBox();
+    //     el.position(sourcePosition.x - 150 - 3 * targetSize.width / 2, sourcePosition.y - targetSize.height / 2);
+    // });
+
+
+    // layoutLR.forEach(function (el) {
+    //     let sources = graph.getNeighbors(el, { outbound: true });
+    //     // console.log(neighbors)
+    //     if (sources.length === 0) return;
+    //     let sourcePosition = sources[0].getBBox().center();
+    //     let targetSize = el.getBBox();
+    //     el.position(sourcePosition.x + 150 + targetSize.width / 2, sourcePosition.y - targetSize.height / 2);
+    // });
 
     // let graphRect = graph.getBBox();
     // console.log(graph.getBBox())
@@ -228,22 +287,39 @@ function Paper(props) {
         });
         newCell.attr('body/refPoints', '0,10 10,0 20,10 10,20')
         graph.addCell(newCell)
-        layout(graph);
+        // layout(graph);
 
         setGraph(graph)
     }, []);
 
     useEffect(() => {
-        let link = new joint.shapes.standard.Link();
+        // let link = new joint.shapes.standard.Link();
+        let link = new joint.dia.Link();
+
+
+        let targetArrowheadTool = new joint.linkTools.TargetArrowhead();
+        let toolsView = new joint.dia.ToolsView({
+            tools: [targetArrowheadTool]
+        })
 
         link.router('manhattan');
         link.attr({
-            line: {
-                strokeDasharray: '8 4',
-                targetMarker: {
-                    type: "none"
+            // line: {
+            //     strokeDasharray: '8 4',
+            //     targetMarker: {
+            //         type: "none"
+            //     }
+            // }
+            markup: [{
+                tagName: 'path',
+                selector: 'line',
+                attributes: {
+                    strokeDasharray: '8 4',
+                    targetMarker: {
+                        type: "none"
+                    }
                 }
-            }
+            }]
         });
 
         const paper = new joint.dia.Paper({
@@ -264,6 +340,8 @@ function Paper(props) {
             // restrictTranslate: true
         });
 
+        // link.findView(paper).addTools(toolsView)
+
         cells.cells = cells.cells.map(cellData => {
             let cell = new joint.shapes.standard.Rectangle({ ...cellData, ports: portCellOptions });
             if (cellData.type === "root") {
@@ -276,16 +354,20 @@ function Paper(props) {
             return cell;
         });
 
-        // console.log(cells.cells[0])
-        // if (cells.cells[0].attributes.ports.items.length === 0) {
         link.source({ id: cells.cells[0].id, port: cells.cells[0].attributes.ports.items[0].id });
         link.target({ id: cells.cells[1].id, port: cells.cells[1].attributes.ports.items[2].id });
         link.addTo(graph);
-        // }
 
         paper.on("link:connect", ((linkView, event, elementViewConnected, magnet, arrowhead) => {
             layout(graph, activeLink);
+            setActiveLink(linkView.model);
             setOpenModalWindow(true);
+        }));
+
+        paper.on("link:disconnect", ((linkView, event, elementViewConnected, magnet, arrowhead) => {
+            // layout(graph, activeLink);
+            setActiveLink(null);
+            setOpenModalWindow(false);
         }));
 
         paper.on("link:pointerdblclick", ((linkView, event, x, y) => {
@@ -295,12 +377,13 @@ function Paper(props) {
         }))
 
         graph.on('add', (eventElement) => {
-            if (eventElement.isLink()) {
-                setActiveLink(eventElement);
-            }
+            // if (eventElement.isLink()) {
+            //     setActiveLink(eventElement);
+            // }
             paper.off("link:connect")
             paper.on("link:connect", ((linkView, event, elementViewConnected, magnet, arrowhead) => {
                 layout(graph, eventElement);
+                setActiveLink(linkView.model);
                 setOpenModalWindow(true);
             }))
         });
