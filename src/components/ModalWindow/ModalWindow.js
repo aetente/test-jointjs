@@ -11,7 +11,6 @@ function mapEarnOptions(earnArray, graph) {
     return earnArray.map((earnData, i) => {
         let earnLink = earnData[0];
         let earnCell = earnData[1];
-        console.log("earnCell", earnCell)
 
         let setEarn = (earn) => {
             earnLink.label(0, {
@@ -32,17 +31,18 @@ function mapEarnOptions(earnArray, graph) {
         };
 
         let setTokenName = (tokenName) => {
+            
             earnCell.attr({
                 label: {
                     text: tokenName
                 }
-            });
+            })
             let earnLinkEarnValue = (earnLink.label(0) && earnLink.label(0).attrs.text.earn) || "None";
             earnLink.label(0, {
                 attrs: {
                     text: {
                         text: `[ Earn ${earnLinkEarnValue} ]`,
-                        earnLinkEarnValue,
+                        earn: earnLinkEarnValue,
                         tokenName: tokenName,
                         fontWeight: 500,
                         fontSize: "20px",
@@ -54,11 +54,10 @@ function mapEarnOptions(earnArray, graph) {
                 }
             })
         }
-
         return (
             <>
-                <SelectEarn setEarn={setEarn} activeLink={earnLink.link} />
-                <TokenInput setTokenName={setTokenName} activeLink={earnLink.link} />
+                <SelectEarn setEarn={setEarn} activeLink={earnLink} />
+                <TokenInput setTokenName={setTokenName} activeLink={earnLink} />
             </>
         );
     }
@@ -85,9 +84,7 @@ export default function ModalWindow(props) {
     const [typeOfLink, setTypeOfLink] = useState("action");
     const [actionLink, setActionLink] = useState(null);
     const [earnLink, setEarnLink] = useState(null);
-    const [earnCell, setEarnCell] = useState(null);
-    const [linksToAdd, setLinksToAdd] = useState([]);
-    const [cellsToAdd, setCellsToAdd] = useState([]);
+    const [linksAndCellsToAdd, setLinksAndCellsToAdd] = useState([]);
 
     const [earnLinks, setEarnLinks] = useState([]);
 
@@ -107,19 +104,23 @@ export default function ModalWindow(props) {
 
             if (activeLink.attributes.attrs.earnLinkId) {
                 let earnLinkById = graph.getCell(activeLink.attributes.attrs.earnLinkId);
-                let earnCellById = graph.getCell(earnLinkById.attributes.attrs.earnCellId);
                 setEarnLink(earnLinkById);
-                setEarnCell(earnCellById);
                 setEarn((earnLinkById.label(0) && earnLinkById.label(0).attrs.text.earn) || "None")
                 setTokenName((earnLinkById.label(0) && earnLinkById.label(0).attrs.text.tokenName) || "COIN")
             }
 
+            if (activeLink.attributes.attrs.earnLinkIds) {
+                let earnLinksToSet = activeLink.attributes.attrs.earnLinkIds.map(earnLinkId => {
+                    let earnLinkById = graph.getCell(earnLinkId);
+                    let earnCellById = graph.getCell(earnLinkById.attributes.attrs.earnCellId);
+                    return [earnLinkById, earnCellById];
+                });
+                setEarnLinks(earnLinksToSet);
+            }
+
         } else if (activeLink.attributes.attrs.typeOfLink === "earn") {
 
-
-            let earnCellById = graph.getCell(activeLink.attributes.attrs.earnCellId);
             setEarnLink(activeLink);
-            setEarnCell(earnCellById);
             setEarn((activeLink.label(0) && activeLink.label(0).attrs.text.earn) || "None")
             setTokenName((activeLink.label(0) && activeLink.label(0).attrs.text.tokenName) || "COIN")
 
@@ -128,13 +129,22 @@ export default function ModalWindow(props) {
                 setActionLink(actionLinkById);
                 setAction((actionLinkById.label(0) && actionLinkById.label(0).attrs.text.action) || "Stake")
                 setAllocation((actionLinkById.label(0) && actionLinkById.label(0).attrs.text.allocation) || 50)
+
+                if (actionLinkById.attributes.attrs.earnLinkIds) {
+                    let earnLinksToSet = actionLinkById.attributes.attrs.earnLinkIds.map(earnLinkId => {
+                        let earnLinkById = graph.getCell(earnLinkId);
+                        let earnCellById = graph.getCell(earnLinkById.attributes.attrs.earnCellId);
+                        return [earnLinkById, earnCellById];
+                    });
+                    setEarnLinks(earnLinksToSet);
+                }
+
             }
 
         }
         return () => {
             setActionLink(null);
             setEarnLink(null);
-            setEarnCell(null);
             setEarnLinks([])
         }
     }, [])
@@ -157,8 +167,8 @@ export default function ModalWindow(props) {
                 </div>
                 <AllocationInput key={actionLink} setAllocation={setAllocation} activeLink={actionLink} />
                 <SelectAction setAction={setAction} activeLink={actionLink} />
-                <SelectEarn setEarn={setEarn} activeLink={earnLink} />
-                <TokenInput setTokenName={setTokenName} activeLink={earnLink} />
+                {/* <SelectEarn setEarn={setEarn} activeLink={earnLink} />
+                <TokenInput setTokenName={setTokenName} activeLink={earnLink} /> */}
                 {mapEarnOptions(earnLinks, graph)}
             </div>
             <div className="modal-actions">
@@ -183,6 +193,9 @@ export default function ModalWindow(props) {
                             ...cellData,
                             attrs: {
                                 ...cellData.attrs,
+                                label: {
+                                    text: tokenName
+                                }
                             },
                             ports: portCellOptions
                         });
@@ -200,8 +213,8 @@ export default function ModalWindow(props) {
                             earnCellId: newEarnCell.id
                         })
                         // save it to state to add them later to graph by iteration
-                        setLinksToAdd(linksToAdd => [...linksToAdd, newEarnLink])
-                        setCellsToAdd(cellsToAdd => [...cellsToAdd, newEarnCell])
+                        setLinksAndCellsToAdd(linksAndCellsToAdd => [...linksAndCellsToAdd, [newEarnLink, newEarnCell]])
+                        // setCellsToAdd(cellsToAdd => [...cellsToAdd, newEarnCell])
                         setEarnLinks(earnLinks => [...earnLinks, [newEarnLink, newEarnCell]]);
                     }}
                 >+</button>
@@ -264,7 +277,7 @@ export default function ModalWindow(props) {
                                                 text: tokenName
                                             }
                                         },
-                                        ports: props.portCellOptions
+                                        ports: portCellOptions
                                     });
 
                                     graph.addCell(cell);
@@ -283,44 +296,10 @@ export default function ModalWindow(props) {
                                     })
 
                                     layout(graph);
-                                } else {
-                                    earnLink.label(0, {
-                                        attrs: {
-                                            text: {
-                                                text: `[ Earn ${earn} ]`,
-                                                earn,
-                                                tokenName,
-                                                fontWeight: 500,
-                                                fontSize: "20px",
-                                                lineHeight: "18px"
-                                            },
-                                            rect: {
-                                                fill: "#f6f6f6"
-                                            }
-                                        }
-                                    });
-
-                                    earnCell.attr({
-                                        label: {
-                                            text: tokenName
-                                        }
-                                    });
                                 }
                                 setGraph(graph);
                             }
                         } else if (typeOfLink === "earn") {
-                            earnLink.label(0, {
-                                attrs: {
-                                    text: {
-                                        text: `[ Earn ${earn} ]`,
-                                        earn,
-                                        tokenName,
-                                        fontWeight: 500,
-                                        fontSize: "20px",
-                                        lineHeight: "18px"
-                                    }
-                                }
-                            })
 
                             actionLink.label(0, {
                                 attrs: {
@@ -337,17 +316,19 @@ export default function ModalWindow(props) {
                                     }
                                 }
                             })
-
-
-                            earnCell.attr({
-                                label: {
-                                    text: tokenName
-                                }
-                            });
                         }
 
-                        linksToAdd.forEach(la => la.addTo(graph));
-                        cellsToAdd.forEach(ca => graph.addCell(ca));
+                        linksAndCellsToAdd.forEach(la => {
+                            let earnValue = (la[0].label(0) && la[0].label(0).attrs.text.earn) || "None";
+                            if (earnValue !== "None") {
+                                let prevEarnIdsArray = activeLink.attributes.attrs.earnLinkIds || [];
+                                activeLink.attr({
+                                    earnLinkIds: [...prevEarnIdsArray, la[0].id]
+                                });
+                                la[0].addTo(graph);
+                                graph.addCell(la[1]);
+                            }
+                        });
 
                         layout(graph)
 

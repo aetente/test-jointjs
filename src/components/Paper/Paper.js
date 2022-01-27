@@ -23,6 +23,9 @@ const svgFile = [
     '</svg>'
 ].join('');
 
+const globalOffsetX = 650;
+const globalOffsetY = 35;
+
 function layout(graph, activeLink) {
     var autoLayoutElements = [];
 
@@ -66,30 +69,116 @@ function layout(graph, activeLink) {
     // Automatic Layout
     // check source neighbors
 
-    joint.layout.DirectedGraph.layout(graph.getSubgraph(autoLayoutElements), {
-        dagre: dagre,
-        graphlib: graphlib,
-        setVertices: true,
-        marginX: 620,
-        marginY: 35,
-        nodeSep: 150,
-        edgeSep: 150,
-        rankSep: 100,
-        setLinkVertices: false,
-        align: "UL"
+    // joint.layout.DirectedGraph.layout(graph, {
+    //     dagre: dagre,
+    //     graphlib: graphlib,
+    //     setVertices: true,
+    //     marginX: globalOffsetX,
+    //     marginY: globalOffsetY,
+    //     nodeSep: 0,
+    //     edgeSep: 150,
+    //     rankSep: 100,
+    //     setLinkVertices: false,
+    //     ranker: "tight-tree",
+    //     setPosition: function (element, glNode) {
+    //         // console.log(element, graph.getNeighbors(element, { inbound: true }))
+    //         element.set({
+    //             position: {
+    //                 x: glNode.x - glNode.width / 2,
+    //                 y: glNode.y - glNode.height / 2
+    //             },
+    //             refresher: (element.get('refresher') || 0) + 1
+    //         });
+    //     }
+    // });
+
+    let theLinks = graph.getLinks()
+    let layoutLR = [];
+    let layoutRL = [];
+    let layoutTB = [];
+    let layoutBT = [];
+    let unlinkedCells = [];
+
+    theLinks.forEach(link => {
+        let targetCell = link.getTargetCell()
+        let sourceCell = link.getSourceCell()
+        if (targetCell && sourceCell) {
+            let targetPort = targetCell.getPort(link.attributes.target.port);
+            console.log(link, targetCell, targetPort)
+            let portPosition = targetPort.group;
+            switch (portPosition) {
+                case "left":
+                    layoutLR.push(targetCell)
+                    break;
+                case "right":
+                    layoutRL.push(targetCell)
+                    break;
+                case "top":
+                    layoutTB.push(targetCell)
+                    break;
+                case "bottom":
+                    layoutBT.push(targetCell)
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    });
+
+    console.log(layoutTB, layoutBT, layoutRL, layoutLR)
+
+    layoutTB.forEach(function (el) {
+        let sources = graph.getNeighbors(el, { inbound: true });
+        // console.log(neighbors)
+        if (sources.length === 0) return;
+        let sourcePosition = sources[0].getBBox().center();
+        let targetSize = el.getBBox();
+        console.log(el, sources, sourcePosition.x, sourcePosition.y)
+        el.position(sourcePosition.x - targetSize.width / 2, sourcePosition.y + 150);
+    });
+
+
+    layoutBT.forEach(function (el) {
+        let sources = graph.getNeighbors(el, { inbound: true });
+        // console.log(neighbors)
+        if (sources.length === 0) return;
+        let sourcePosition = sources[0].getBBox().center();
+        let targetSize = el.getBBox();
+        el.position(sourcePosition.x - targetSize.width / 2, sourcePosition.y - 150);
+    });
+
+    layoutRL.forEach(function (el) {
+        let sources = graph.getNeighbors(el, { inbound: true });
+        // console.log(neighbors)
+        if (sources.length === 0) return;
+        let sourcePosition = sources[0].getBBox().center();
+        let targetSize = el.getBBox();
+        el.position(sourcePosition.x - 150 - 3 * targetSize.width / 2, sourcePosition.y - targetSize.height / 2);
+    });
+
+
+    layoutLR.forEach(function (el) {
+        let sources = graph.getNeighbors(el, { inbound: true });
+        // console.log(neighbors)
+        if (sources.length === 0) return;
+        let sourcePosition = sources[0].getBBox().center();
+        let targetSize = el.getBBox();
+        el.position(sourcePosition.x + 150 + targetSize.width / 2, sourcePosition.y - targetSize.height / 2);
     });
 
     // let graphRect = graph.getBBox();
     // console.log(graph.getBBox())
     // Manual Layout
-    // autoLayoutElements.forEach(function(el) {
-    //     var neighbors = graph.getNeighbors(el, { inbound: true });
-    //     console.log(neighbors)
-    //     if (neighbors.length === 0) return;
-    //     var neighborPosition = neighbors[0].getBBox().center();
-    //     el.position(neighborPosition.x + 100, neighborPosition.y - el.size().height / 2);
+    // autoLayoutElements.forEach(function (el) {
+    //     console.log(graph.getPredecessors(el))
+    //     // var neighbors = graph.getNeighbors(el, { inbound: true });
+    //     // console.log(neighbors)
+    //     // if (neighbors.length === 0) return;
+    //     // var neighborPosition = neighbors[0].getBBox().center();
+    //     // el.position(neighborPosition.x + 100, neighborPosition.y - el.size().height / 2);
     // });
-    
+
 }
 
 function Paper(props) {
@@ -140,7 +229,7 @@ function Paper(props) {
         newCell.attr('body/refPoints', '0,10 10,0 20,10 10,20')
         graph.addCell(newCell)
         layout(graph);
-        
+
         setGraph(graph)
     }, []);
 
@@ -172,7 +261,7 @@ function Paper(props) {
                 color: '#F6F6F6',
             },
             perpendicularLinks: true,
-            restrictTranslate: true
+            // restrictTranslate: true
         });
 
         cells.cells = cells.cells.map(cellData => {
@@ -189,9 +278,9 @@ function Paper(props) {
 
         // console.log(cells.cells[0])
         // if (cells.cells[0].attributes.ports.items.length === 0) {
-            link.source({ id: cells.cells[0].id, port: cells.cells[0].attributes.ports.items[0].id });
-            link.target({ id: cells.cells[1].id, port: cells.cells[1].attributes.ports.items[2].id });
-            link.addTo(graph);
+        link.source({ id: cells.cells[0].id, port: cells.cells[0].attributes.ports.items[0].id });
+        link.target({ id: cells.cells[1].id, port: cells.cells[1].attributes.ports.items[2].id });
+        link.addTo(graph);
         // }
 
         paper.on("link:connect", ((linkView, event, elementViewConnected, magnet, arrowhead) => {
@@ -215,7 +304,6 @@ function Paper(props) {
                 setOpenModalWindow(true);
             }))
         });
-        layout(graph);
 
         paper.unfreeze();
 
@@ -228,6 +316,13 @@ function Paper(props) {
         });
 
         setGraph(graph)
+
+        let theCells = graph.getCells();
+
+        theCells.forEach(cell => {
+            cell.position(globalOffsetX, globalOffsetY);
+        })
+        layout(graph);
 
 
         window.addEventListener("dragstart", dragStart);
