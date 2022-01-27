@@ -9,7 +9,13 @@ import "./styles.css";
 import close from "./close.svg";
 
 function addStakeEarn(joint, activeLink, tokenName, setLinksAndCellsToAdd, setEarnLinks, cellData, portCellOptions) {
-    let newEarnLink = new joint.shapes.standard.Link();
+    let newEarnLink = new joint.dia.Link({
+        attrs: {
+            '.connection': {
+                    strokeDasharray: '8 4'
+            }
+        }
+    });
     // set how the link looks and behaves
     newEarnLink.router('manhattan');
     newEarnLink.attr({
@@ -146,6 +152,7 @@ export default function ModalWindow(props) {
         // and earn link would be (not necessary) found with the id which is stored inside action link
         // and if it is earn link than it goes the opposite way with the exception that
         // if user modifies earn link than there for sure would be action link 
+        console.log(activeLink)
         setTypeOfLink(activeLink.attributes.attrs.typeOfLink);
         if (!activeLink.attributes.attrs.typeOfLink || activeLink.attributes.attrs.typeOfLink === "action") {
             let actionValue = (activeLink.label(0) && activeLink.label(0).attrs.text.action) || "Stake";
@@ -259,7 +266,13 @@ export default function ModalWindow(props) {
                             if (earn !== "None") {
                                 if (!earnLink) {
                                     // create new earn link if there is none
-                                    let link = new joint.shapes.standard.Link();
+                                    let link = new joint.dia.Link({
+                                        attrs: {
+                                            '.connection': {
+                                                    strokeDasharray: '8 4'
+                                            }
+                                        }
+                                    });;
 
                                     link.label(0, {
                                         attrs: {

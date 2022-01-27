@@ -58,7 +58,8 @@ function layout(graph, activeLink) {
     //         activeLink.source({ id: targetCell.id, port: targetPort.id })
     //     }
     // }
-    
+
+    console.log(activeLink)
     if (activeLink) {
         let targetCell = activeLink.getTargetCell()
         let sourceCell = activeLink.getSourceCell()
@@ -294,7 +295,13 @@ function Paper(props) {
 
     useEffect(() => {
         // let link = new joint.shapes.standard.Link();
-        let link = new joint.dia.Link();
+        let link = new joint.dia.Link({
+            attrs: {
+                '.connection': {
+                    strokeDasharray: '8 4'
+                }
+            }
+        });
 
 
         let targetArrowheadTool = new joint.linkTools.TargetArrowhead();
@@ -310,16 +317,6 @@ function Paper(props) {
             //         type: "none"
             //     }
             // }
-            markup: [{
-                tagName: 'path',
-                selector: 'line',
-                attributes: {
-                    strokeDasharray: '8 4',
-                    targetMarker: {
-                        type: "none"
-                    }
-                }
-            }]
         });
 
         const paper = new joint.dia.Paper({
@@ -360,14 +357,16 @@ function Paper(props) {
 
         paper.on("link:connect", ((linkView, event, elementViewConnected, magnet, arrowhead) => {
             layout(graph, activeLink);
-            setActiveLink(linkView.model);
+            if (linkView.model.isLink()) {
+                setActiveLink(linkView.model);
+            }
             setOpenModalWindow(true);
         }));
 
         paper.on("link:disconnect", ((linkView, event, elementViewConnected, magnet, arrowhead) => {
             // layout(graph, activeLink);
-            setActiveLink(null);
-            setOpenModalWindow(false);
+            // setActiveLink(null);
+            // setOpenModalWindow(false);
         }));
 
         paper.on("link:pointerdblclick", ((linkView, event, x, y) => {
@@ -383,7 +382,9 @@ function Paper(props) {
             paper.off("link:connect")
             paper.on("link:connect", ((linkView, event, elementViewConnected, magnet, arrowhead) => {
                 layout(graph, eventElement);
-                setActiveLink(linkView.model);
+                if (linkView.model.isLink()) {
+                    setActiveLink(linkView.model);
+                }
                 setOpenModalWindow(true);
             }))
         });
