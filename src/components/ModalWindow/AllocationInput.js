@@ -38,9 +38,7 @@ export default function AllocationInput(props) {
     
     useEffect(() => {
         let linkLabel = props.activeLink && props.activeLink.label(0);
-        console.log(linkLabel)
         let defaultInputValue = linkLabel ? linkLabel.attrs.text.allocation : 50;
-        console.log(defaultInputValue)
         setAllocationValue(defaultInputValue)
     }, [])
 

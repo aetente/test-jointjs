@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ModalWindow from '../ModalWindow/ModalWindow';
+import InitButtons from '../InitButtons/InitButtons';
 import * as joint from 'jointjs';
 import dagre from 'dagre';
 import graphlib from 'graphlib';
@@ -59,7 +60,6 @@ function layout(graph, activeLink) {
     //     }
     // }
 
-    console.log(activeLink)
     if (activeLink) {
         let targetCell = activeLink.getTargetCell()
         let sourceCell = activeLink.getSourceCell()
@@ -249,6 +249,10 @@ function Paper(props) {
     const [activeLink, setActiveLink] = useState(null);
 
     const [graph, setGraph] = useState(new joint.dia.Graph());
+    const [paper, setPaper] = useState(null);
+
+    const [rootCell, setRootCell] = useState(null);
+    const [changeCount, setchangeCount] = useState(0);
 
     const dragStart = useCallback(event => {
         if (event.target.className !== "draggable") return;
@@ -292,6 +296,50 @@ function Paper(props) {
 
         setGraph(graph)
     }, []);
+
+    const addBaseToken = (tokenName, tokenUrl) => {
+
+        let newLink = new joint.dia.Link({
+            attrs: {
+                '.connection': {
+                    strokeDasharray: '8 4'
+                }
+            }
+        });
+        newLink.router('manhattan');
+
+        let newCell = new joint.shapes.standard.Rectangle({
+            ...earnCell,
+            attrs: {
+                ...earnCell.attrs,
+                label: {
+                    text: tokenName
+                }
+            },
+            ports: portCellOptions
+        });
+        graph.addCell(newCell);
+        console.log(rootCell, newCell)
+        newLink.source({ id: rootCell.id, port: rootCell.attributes.ports.items[0].id });
+        newLink.target({ id: newCell.id, port: newCell.attributes.ports.items[2].id });
+        newLink.addTo(graph);
+
+
+        layout(graph);
+        
+        // setGraph(graph)
+    }
+
+    const handleScroll = (e) => {
+        let prevScale = paper.scale();
+        let deltaY = e.deltaY;
+        if (deltaY < 0) {
+            paper.scale(prevScale.sx + 0.05, prevScale.sy + 0.05)
+        } else 
+        if (deltaY > 0) {
+            paper.scale(prevScale.sx - 0.05, prevScale.sy - 0.05)
+        }
+    }
 
     useEffect(() => {
         // let link = new joint.shapes.standard.Link();
@@ -339,21 +387,19 @@ function Paper(props) {
 
         // link.findView(paper).addTools(toolsView)
 
-        cells.cells = cells.cells.map(cellData => {
+        cells.cells = cells.cells.map((cellData, i) => {
             let cell = new joint.shapes.standard.Rectangle({ ...cellData, ports: portCellOptions });
             if (cellData.type === "root") {
                 cell = new joint.shapes.standard.Polygon({ ...cellData, ports: rootPortCellOptions });
                 cell.attr('body/refPoints', '0,10 10,0 20,10 10,20')
                 // cell.attr('image/xlinkHref', donkeylogo)
+                setRootCell(cell)
             }
-
-            graph.addCell(cell);
+            if (i == 0) {
+                graph.addCell(cell);
+            }
             return cell;
         });
-
-        link.source({ id: cells.cells[0].id, port: cells.cells[0].attributes.ports.items[0].id });
-        link.target({ id: cells.cells[1].id, port: cells.cells[1].attributes.ports.items[2].id });
-        link.addTo(graph);
 
         paper.on("link:connect", ((linkView, event, elementViewConnected, magnet, arrowhead) => {
             layout(graph, activeLink);
@@ -374,6 +420,31 @@ function Paper(props) {
             setActiveLink(currentLink);
             setOpenModalWindow(true);
         }))
+
+        
+        paper.on("blank:pointerdown", ((event, x, y) => {
+            let newClickPos = {x: event.clientX, y: event.clientY};
+            let paperPos = paper.translate();
+            setchangeCount(changeCount => changeCount + 1)
+            
+            paper.off("blank:pointermove");
+            paper.on("blank:pointermove", ((event, x, y) => {
+                let movePos = {x: event.clientX, y: event.clientY};
+                paper.translate(
+                    paperPos.tx + movePos.x - newClickPos.x,
+                    paperPos.ty + movePos.y - newClickPos.y
+                )
+            }))
+        }))
+
+        
+        paper.on("blank:pointermove", ((event, x, y) => {
+            console.log("OLD", x, y)
+        }))
+
+        paper.on("blank:scroll", () => {
+            console.log("A")
+        })
 
         graph.on('add', (eventElement) => {
             // if (eventElement.isLink()) {
@@ -400,6 +471,7 @@ function Paper(props) {
         });
 
         setGraph(graph)
+        setPaper(paper)
 
         let theCells = graph.getCells();
 
@@ -425,7 +497,7 @@ function Paper(props) {
 
     return (
         <div className='hold-paper'>
-            <div id='canvas' ref={canvas} />
+            <div id='canvas' onWheel={handleScroll} ref={canvas} />
             {openModalWindow && <ModalWindow
                 joint={joint}
                 portCellOptions={portCellOptions}
@@ -436,6 +508,9 @@ function Paper(props) {
                 cellData={earnCell}
                 layout={layout}
             />}
+            <InitButtons
+                addBaseToken={addBaseToken}
+            />
         </div>
     );
 }

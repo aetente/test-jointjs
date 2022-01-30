@@ -12,7 +12,7 @@ function addStakeEarn(joint, activeLink, tokenName, setLinksAndCellsToAdd, setEa
     let newEarnLink = new joint.dia.Link({
         attrs: {
             '.connection': {
-                    strokeDasharray: '8 4'
+                strokeDasharray: '8 4'
             }
         }
     });
@@ -41,7 +41,6 @@ function addStakeEarn(joint, activeLink, tokenName, setLinksAndCellsToAdd, setEa
     // connect the link with the cells
     let sourceCell = activeLink.getTargetCell();
     if (sourceCell) {
-
         let sourcePort = sourceCell.attributes.ports.items[3].id;
         newEarnLink.source({ id: sourceCell.id, port: sourcePort });
         newEarnLink.target({ id: newEarnCell.id, port: newEarnCell.attributes.ports.items[2].id });
@@ -61,64 +60,69 @@ function addStakeEarn(joint, activeLink, tokenName, setLinksAndCellsToAdd, setEa
     }
 }
 
-function mapEarnOptions(earnArray, graph) {
-    return earnArray.map((earnData, i) => {
-        let earnLink = earnData[0];
-        let earnCell = earnData[1];
+function mapEarnOptions(earnArray, graph, action) {
+    if (action[0] === "Stake") {
+        return earnArray.map((earnData, i) => {
+            let earnLink = earnData[0];
+            let earnCell = earnData[1];
 
-        let setEarn = (earn) => {
-            earnLink.label(0, {
-                attrs: {
-                    text: {
-                        text: `[ Earn ${earn} ]`,
-                        earn,
-                        tokenName: (earnLink.label(0) && earnLink.label(0).attrs.text.tokenName) || "COIN",
-                        fontWeight: 500,
-                        fontSize: "20px",
-                        lineHeight: "18px"
-                    },
-                    rect: {
-                        fill: "#f6f6f6"
+            let setEarn = (earn) => {
+                earnLink.label(0, {
+                    attrs: {
+                        text: {
+                            text: `[ Earn ${earn} ]`,
+                            earn,
+                            tokenName: (earnLink.label(0) && earnLink.label(0).attrs.text.tokenName) || "COIN",
+                            fontWeight: 500,
+                            fontSize: "20px",
+                            lineHeight: "18px"
+                        },
+                        rect: {
+                            fill: "#f6f6f6"
+                        }
                     }
-                }
-            })
-        };
+                })
+            };
 
-        let setTokenName = (tokenName) => {
+            let setTokenName = (tokenName) => {
 
-            earnCell.attr({
-                label: {
-                    text: tokenName
-                }
-            })
-            let earnLinkEarnValue = (earnLink.label(0) && earnLink.label(0).attrs.text.earn) || "None";
-            earnLink.label(0, {
-                attrs: {
-                    text: {
-                        text: `[ Earn ${earnLinkEarnValue} ]`,
-                        earn: earnLinkEarnValue,
-                        tokenName: tokenName,
-                        fontWeight: 500,
-                        fontSize: "20px",
-                        lineHeight: "18px"
-                    },
-                    rect: {
-                        fill: "#f6f6f6"
+                earnCell.attr({
+                    label: {
+                        text: tokenName
                     }
-                }
-            })
+                })
+                let earnLinkEarnValue = (earnLink.label(0) && earnLink.label(0).attrs.text.earn) || "None";
+                earnLink.label(0, {
+                    attrs: {
+                        text: {
+                            text: `[ Earn ${earnLinkEarnValue} ]`,
+                            earn: earnLinkEarnValue,
+                            tokenName: tokenName,
+                            fontWeight: 500,
+                            fontSize: "20px",
+                            lineHeight: "18px"
+                        },
+                        rect: {
+                            fill: "#f6f6f6"
+                        }
+                    }
+                })
+            }
+            return (
+                <EarnInputsHolder
+                    key={`earn-${i}`}
+                    arrayLength={earnArray.length}
+                    setTokenName={setTokenName}
+                    setEarn={setEarn}
+                    activeLink={earnLink}
+                    i={i}
+                />
+            );
         }
-        return (
-            <EarnInputsHolder
-                arrayLength={earnArray.length}
-                setTokenName={setTokenName}
-                setEarn={setEarn}
-                activeLink={earnLink}
-                i={i}
-            />
-        );
+        )
+    } else {
+        return <></>
     }
-    )
 }
 
 export default function ModalWindow(props) {
@@ -134,7 +138,7 @@ export default function ModalWindow(props) {
         setGraph
     } = props;
 
-    const [action, setAction] = useState("Stake");
+    const [action, setAction] = useState(["Stake"]);
     const [earn, setEarn] = useState("None");
     const [allocation, setAllocation] = useState(50);
     const [tokenName, setTokenName] = useState("COIN");
@@ -152,10 +156,9 @@ export default function ModalWindow(props) {
         // and earn link would be (not necessary) found with the id which is stored inside action link
         // and if it is earn link than it goes the opposite way with the exception that
         // if user modifies earn link than there for sure would be action link 
-        console.log(activeLink)
         setTypeOfLink(activeLink.attributes.attrs.typeOfLink);
         if (!activeLink.attributes.attrs.typeOfLink || activeLink.attributes.attrs.typeOfLink === "action") {
-            let actionValue = (activeLink.label(0) && activeLink.label(0).attrs.text.action) || "Stake";
+            let actionValue = [(activeLink.label(0) && activeLink.label(0).attrs.text.action) || "Stake"];
             setActionLink(activeLink);
             setAction(actionValue)
             setAllocation((activeLink.label(0) && activeLink.label(0).attrs.text.allocation) || 50)
@@ -178,7 +181,7 @@ export default function ModalWindow(props) {
                 setEarnLinks(earnLinksToSet);
             }
 
-            if (actionValue === "Stake") {
+            if (actionValue[0] === "Stake") {
                 addStakeEarn(joint, activeLink, tokenName, setLinksAndCellsToAdd, setEarnLinks, cellData, portCellOptions);
             }
         } else if (activeLink.attributes.attrs.typeOfLink === "earn") {
@@ -189,8 +192,9 @@ export default function ModalWindow(props) {
 
             if (activeLink.attributes.attrs.actionLinkId) {
                 let actionLinkById = graph.getCell(activeLink.attributes.attrs.actionLinkId);
+                let actionValue = [(actionLinkById.label(0) && actionLinkById.label(0).attrs.text.action) || "Stake"]
                 setActionLink(actionLinkById);
-                setAction((actionLinkById.label(0) && actionLinkById.label(0).attrs.text.action) || "Stake")
+                setAction(actionValue)
                 setAllocation((actionLinkById.label(0) && actionLinkById.label(0).attrs.text.allocation) || 50)
 
                 if (actionLinkById.attributes.attrs.earnLinkIds) {
@@ -229,13 +233,13 @@ export default function ModalWindow(props) {
                     </div>
                 </div>
                 <AllocationInput key={actionLink} setAllocation={setAllocation} activeLink={actionLink} />
-                <SelectAction setAction={setAction} activeLink={actionLink} />
+                <SelectAction actionIndex={0} setAction={setAction} activeLink={actionLink} />
                 {/* <SelectEarn setEarn={setEarn} activeLink={earnLink} />
                 <TokenInput setTokenName={setTokenName} activeLink={earnLink} /> */}
-                {action === "Stake" && mapEarnOptions(earnLinks, graph)}
+                {mapEarnOptions(earnLinks, graph, action)}
             </div>
             <div className="modal-actions">
-                {action === "Stake" &&
+                {action[0] === "Stake" &&
                     <button
                         className="action-button"
                         onClick={() => {
@@ -250,8 +254,8 @@ export default function ModalWindow(props) {
                             actionLink.label(0, {
                                 attrs: {
                                     text: {
-                                        text: `[ ${allocation}% ${action} ]`,
-                                        action,
+                                        text: `[ ${allocation}% ${action[0]} ]`,
+                                        action: action[0],
                                         allocation,
                                         fontWeight: 500,
                                         fontSize: "20px",
@@ -269,10 +273,10 @@ export default function ModalWindow(props) {
                                     let link = new joint.dia.Link({
                                         attrs: {
                                             '.connection': {
-                                                    strokeDasharray: '8 4'
+                                                strokeDasharray: '8 4'
                                             }
                                         }
-                                    });;
+                                    });
 
                                     link.label(0, {
                                         attrs: {
@@ -331,12 +335,11 @@ export default function ModalWindow(props) {
                                 setGraph(graph);
                             }
                         } else if (typeOfLink === "earn") {
-                            console.log("earn done")
                             actionLink.label(0, {
                                 attrs: {
                                     text: {
-                                        text: `[ ${allocation}% ${action} ]`,
-                                        action,
+                                        text: `[ ${allocation}% ${action[0]} ]`,
+                                        action: action[0],
                                         allocation,
                                         fontWeight: 500,
                                         fontSize: "20px",
@@ -349,7 +352,7 @@ export default function ModalWindow(props) {
                             })
                         }
 
-                        if (action === "Stake") {
+                        if (action[0] === "Stake") {
                             linksAndCellsToAdd.forEach(la => {
                                 let earnValue = (la[0].label(0) && la[0].label(0).attrs.text.earn) || "None";
                                 if (earnValue !== "None") {

@@ -5,7 +5,8 @@ import "./styles.css";
 
 export default function SelectAction(props) {
 
-    let linkLabel = props.activeLink && props.activeLink.label(0);
+    let actionIndex = props.actionIndex;
+    let linkLabel = props.activeLink && props.activeLink.label(actionIndex);
     let defaultSelectValue = linkLabel ? linkLabel.attrs.text.action : "Stake";
 
     return (
@@ -19,14 +20,24 @@ export default function SelectAction(props) {
                     key={defaultSelectValue}
                     className='select-actions'
                     onChange={e => {
-                        props.setAction(e.target.value);
+                        props.setAction(actionValue => {
+                            if (!actionValue[actionIndex]) {
+                                actionValue.push(e.target.value);
+                            } else {
+                                actionValue.splice(actionIndex, 1, e.target.value);
+                            }
+                            return [...actionValue];
+                        });
+                        // props.setAction(actionValue => [...actionValue.splice(actionIndex, 1, e.target.value)]);
                     }}
                     defaultValue={defaultSelectValue}
                 >
                     <option value="Stake">Stake</option>
                     <option value="Claim">Claim</option>
+                    <option value="Supply">Supply</option>
                     <option value="Borrow">Borrow</option>
                     <option value="Harvest">Harvest</option>
+                    <option value="Re-invest">Re-invest</option>
                 </select>
             </div>
         </div>

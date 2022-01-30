@@ -3,7 +3,7 @@ import Paper from '../Paper/Paper';
 import SelectCells from '../SelectCells/SelectCells';
 import "./styles.css";
 
-function Test() {
+function Content() {
 
 
   return (
@@ -16,4 +16,4 @@ function Test() {
   );
 }
 
-export default Test;
+export default Content;

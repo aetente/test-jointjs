@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 // import Test from "../Test/Test";
-import Test from "../Test/Test";
+import Content from "../Content/Content";
 import {
   BrowserRouter as Router,
   Route,
@@ -16,8 +16,8 @@ class Navigation extends Component {
     return (
       <Router>
         <Routes>
-          <Route exact path="/" element={<Test />} />
-          <Route path="/test" element={<Test />} />
+          <Route exact path="/" element={<Content />} />
+          <Route path="/test" element={<Content />} />
         </Routes>
       </Router>
     );

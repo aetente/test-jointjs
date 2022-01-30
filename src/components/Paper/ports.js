@@ -106,10 +106,38 @@ export const ports = {
             tagName: 'circle',
             selector: 'portBody'
         }]
+    },
+    rootPortBottom: {
+        group: "bottom",
+        position: {
+            name: 'bottom',
+        },
+        attrs: {
+            portBody: {
+                magnet: false,
+                r: 6,
+                fill: 'white',
+                stroke: '#023047'
+            },
+            '.': { magnet: false }
+        },
+        label: {
+            position: {
+                name: 'bottom',
+            },
+            markup: [{
+                tagName: 'text',
+                selector: 'label'
+            }]
+        },
+        markup: [{
+            tagName: 'circle',
+            selector: 'portBody'
+        }]
     }
 }
 
-export const  portCellOptions = {
+export const portCellOptions = {
     groups: {
         'top': {
             position: "top"
@@ -135,6 +163,6 @@ export const rootPortCellOptions = {
         }
     },
     items: [
-        ports.portBottom
+        ports.rootPortBottom
     ]
 }
