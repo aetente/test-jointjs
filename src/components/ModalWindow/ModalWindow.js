@@ -1,21 +1,21 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import SelectAction from './SelectAction';
-import SelectEarn from './SelectEarn';
 import AllocationInput from './AllocationInput';
-import TokenInput from './TokenInput';
 import EarnInputsHolder from './EarnInputsHolder';
 import "./styles.css";
 
 import close from "./close.svg";
 
 function addStakeEarn(joint, activeLink, tokenName, setLinksAndCellsToAdd, setEarnLinks, cellData, portCellOptions) {
-    let newEarnLink = new joint.dia.Link({
-        attrs: {
-            '.connection': {
-                strokeDasharray: '8 4'
-            }
-        }
-    });
+    let newEarnLink = new joint.shapes.standard.Link();
+    // let newEarnLink = new joint.dia.Link({
+    //     attrs: {
+    //         '.connection': {
+    //             strokeDasharray: '8 4'
+    //         }
+    //     }
+    // });
+
     // set how the link looks and behaves
     newEarnLink.router('manhattan');
     newEarnLink.attr({
@@ -40,7 +40,7 @@ function addStakeEarn(joint, activeLink, tokenName, setLinksAndCellsToAdd, setEa
     });
     // connect the link with the cells
     let sourceCell = activeLink.getTargetCell();
-    if (sourceCell) {
+    if (sourceCell && sourceCell.attributes.ports.items[3]) {
         let sourcePort = sourceCell.attributes.ports.items[3].id;
         newEarnLink.source({ id: sourceCell.id, port: sourcePort });
         newEarnLink.target({ id: newEarnCell.id, port: newEarnCell.attributes.ports.items[2].id });
@@ -135,7 +135,7 @@ export default function ModalWindow(props) {
         activeLink,
         cellData,
         layout,
-        setGraph
+        stackGraph
     } = props;
 
     const [action, setAction] = useState(["Stake"]);
@@ -270,13 +270,15 @@ export default function ModalWindow(props) {
                             if (earn !== "None") {
                                 if (!earnLink) {
                                     // create new earn link if there is none
-                                    let link = new joint.dia.Link({
-                                        attrs: {
-                                            '.connection': {
-                                                strokeDasharray: '8 4'
-                                            }
-                                        }
-                                    });
+                                    
+                                    let link = new joint.shapes.standard.Link();
+                                    // let link = new joint.dia.Link({
+                                    //     attrs: {
+                                    //         '.connection': {
+                                    //             strokeDasharray: '8 4'
+                                    //         }
+                                    //     }
+                                    // });
 
                                     link.label(0, {
                                         attrs: {
@@ -332,7 +334,7 @@ export default function ModalWindow(props) {
 
                                     layout(graph);
                                 }
-                                setGraph(graph);
+                                stackGraph(graph);
                             }
                         } else if (typeOfLink === "earn") {
                             actionLink.label(0, {
@@ -369,7 +371,7 @@ export default function ModalWindow(props) {
                         layout(graph)
 
 
-                        setGraph(graph);
+                        stackGraph(graph);
                         setOpenModalWindow(false);
                     }}
                 >Done</button>

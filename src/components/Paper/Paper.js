@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ModalWindow from '../ModalWindow/ModalWindow';
 import InitButtons from '../InitButtons/InitButtons';
+import SelectCells from '../SelectCells/SelectCells';
 import * as joint from 'jointjs';
 import dagre from 'dagre';
 import graphlib from 'graphlib';
@@ -60,7 +61,8 @@ function layout(graph, activeLink) {
     //     }
     // }
 
-    if (activeLink) {
+    if (activeLink && activeLink.isLink()) {
+        activeLink.vertices([])
         let targetCell = activeLink.getTargetCell()
         let sourceCell = activeLink.getSourceCell()
         if (targetCell && sourceCell) {
@@ -69,7 +71,6 @@ function layout(graph, activeLink) {
             let sourcePortPosition = sourcePort.group;
             let targetPortPosition = targetPort.group;
             // if (sourcePortPosition === "top" && targetPortPosition === "bottom") {
-            // console.log(graph.getNeighbors(targetCell), graph.getNeighbors(sourceCell))
             let sourceCellsNeighbors = graph.getNeighbors(sourceCell)
             // if (targetPortPosition === "bottom") {
             if (sourceCellsNeighbors.length <= 1) {
@@ -95,13 +96,12 @@ function layout(graph, activeLink) {
         setVertices: true,
         marginX: globalOffsetX,
         marginY: globalOffsetY,
-        nodeSep: 350,
+        nodeSep: 300,
         edgeSep: 150,
-        rankSep: 100,
+        rankSep: 97.5,
         setLinkVertices: false,
         ranker: "tight-tree",
         setPosition: function (element, glNode) {
-            // console.log(element, graph.getNeighbors(element, { inbound: true }))
             element.set({
                 position: {
                     x: glNode.x - glNode.width / 2,
@@ -113,133 +113,44 @@ function layout(graph, activeLink) {
     });
 
     let theLinks = graph.getLinks()
+    theLinks.forEach(alink => {
+        alink.vertices([]) // disable all vertices
+    })
     let layoutLR = [];
     let layoutRL = [];
     let layoutTB = [];
     let layoutBT = [];
     let unlinkedCells = [];
-    // theLinks.forEach(link => {
-    //         let targetCell = link.getTargetCell()
-    //         let sourceCell = link.getSourceCell()
-    //         if (targetCell && sourceCell) {
-    //             let sourcePort = sourceCell.getPort(link.attributes.source.port);
-    //             let targetPort = targetCell.getPort(link.attributes.target.port);
-    //             let sourcePortPosition = sourcePort.group;
-    //             let targetPortPosition = targetPort.group;
-    //             if (sourcePortPosition === "top" && targetPortPosition === "bottom") {
-    //                 console.log("AAAAAAAAAAAAAAAAA")
-    //                 link.target({ id: sourceCell.id, port: sourcePort.id })
-    //                 link.source({ id: targetCell.id, port: targetPort.id })
-    //             }
-    //         }
-    // })
-
-    // if (activeLink) {
-    //     let targetCell = activeLink.getTargetCell()
-    //     let sourceCell = activeLink.getSourceCell()
-    //     if (targetCell && sourceCell) {
-    //         let sourcePort = sourceCell.getPort(activeLink.attributes.source.port);
-    //         let targetPort = targetCell.getPort(activeLink.attributes.target.port);
-    //         let sourcePortPosition = sourcePort.group;
-    //         let targetPortPosition = targetPort.group;
-    //         if (sourcePortPosition === "top" && targetPortPosition === "bottom") {
-    //             console.log("AAAAAAA")
-    //             activeLink.target({ id: sourceCell.id, port: sourcePort.id })
-    //             activeLink.source({ id: targetCell.id, port: targetPort.id })
-    //         }
-    //     }
-    // }
-
-    // theLinks.forEach(link => {
-    //     let targetCell = link.getTargetCell()
-    //     let sourceCell = link.getSourceCell()
-    //     if (targetCell && sourceCell) {
-    //         let sourcePort = sourceCell.getPort(link.attributes.source.port);
-    //         let targetPort = targetCell.getPort(link.attributes.target.port);
-    //         let sourcePortPosition = sourcePort.group;
-    //         let targetPortPosition = targetPort.group;
-    //         if (sourcePortPosition === "top" && targetPortPosition === "bottom") {
-    //             layoutTB.push(targetCell)
-    //         } else if (sourcePortPosition === "bottom" && targetPortPosition === "top") {
-    //             layoutBT.push(sourceCell)
-    //         } else if (sourcePortPosition === "right" && targetPortPosition === "left") {
-    //             layoutRL.push(sourceCell)
-    //         } else if (sourcePortPosition === "left" && targetPortPosition === "right") {
-    //             layoutLR.push(sourceCell)
-    //         }
-    //         // switch (sourcePortPosition) {
-    //         //     case "left":
-    //         //         layoutRL.push(targetCell)
-    //         //         break;
-    //         //     case "right":
-    //         //         layoutLR.push(targetCell)
-    //         //         break;
-    //         //     case "top":
-    //         //         layoutBT.push(targetCell)
-    //         //         break;
-    //         //     case "bottom":
-    //         //         layoutTB.push(targetCell)
-    //         //         break;
-
-    //         //     default:
-    //         //         break;
-    //         // }
-    //     }
-    // });
-
-    // console.log(layoutTB, layoutBT, layoutRL, layoutLR)
-
-    // layoutTB.forEach(function (el) {
-    //     let sources = graph.getNeighbors(el, { inbound: true });
-    //     // console.log(neighbors)
-    //     if (sources.length === 0) return;
-    //     let sourcePosition = sources[0].getBBox().center();
-    //     let targetSize = el.getBBox();
-    //     el.position(sourcePosition.x - targetSize.width / 2, sourcePosition.y - 150);
-    // });
-
-
-    // layoutBT.forEach(function (el) {
-    //     let sources = graph.getNeighbors(el, { outbound: true });
-    //     // console.log(neighbors)
-    //     if (sources.length === 0) return;
-    //     let sourcePosition = sources[0].getBBox().center();
-    //     let targetSize = el.getBBox();
-    //     el.position(sourcePosition.x - targetSize.width / 2, sourcePosition.y - 250);
-    // });
-
-    // layoutRL.forEach(function (el) {
-    //     let sources = graph.getNeighbors(el, { outbound: true });
-    //     // console.log(neighbors)
-    //     if (sources.length === 0) return;
-    //     let sourcePosition = sources[0].getBBox().center();
-    //     let targetSize = el.getBBox();
-    //     el.position(sourcePosition.x - 150 - 3 * targetSize.width / 2, sourcePosition.y - targetSize.height / 2);
-    // });
-
-
-    // layoutLR.forEach(function (el) {
-    //     let sources = graph.getNeighbors(el, { outbound: true });
-    //     // console.log(neighbors)
-    //     if (sources.length === 0) return;
-    //     let sourcePosition = sources[0].getBBox().center();
-    //     let targetSize = el.getBBox();
-    //     el.position(sourcePosition.x + 150 + targetSize.width / 2, sourcePosition.y - targetSize.height / 2);
-    // });
-
-    // let graphRect = graph.getBBox();
-    // console.log(graph.getBBox())
-    // Manual Layout
-    // autoLayoutElements.forEach(function (el) {
-    //     console.log(graph.getPredecessors(el))
-    //     // var neighbors = graph.getNeighbors(el, { inbound: true });
-    //     // console.log(neighbors)
-    //     // if (neighbors.length === 0) return;
-    //     // var neighborPosition = neighbors[0].getBBox().center();
-    //     // el.position(neighborPosition.x + 100, neighborPosition.y - el.size().height / 2);
-    // });
 
 }
+
+const verticesTool = new joint.linkTools.Vertices({
+    redundancyRemoval: false
+});
+// const verticesTool = new joint.linkTools.Vertices.extend({
+//     onHandleChangeStart: (e) => {
+//         console.log("click!!!");
+//     }
+// })
+const segmentsTool = new joint.linkTools.Segments({
+    segmentLengthThreshold: 10,
+    redundancyRemoval: false
+});
+const sourceArrowheadTool = new joint.linkTools.SourceArrowhead();
+const targetArrowheadTool = new joint.linkTools.TargetArrowhead();
+const boundaryTool = new joint.linkTools.Boundary();
+const removeButton = new joint.linkTools.Remove();
+
+const toolsView = new joint.dia.ToolsView({
+    tools: [
+        verticesTool,
+        segmentsTool,
+        sourceArrowheadTool,
+        targetArrowheadTool,
+        boundaryTool,
+        removeButton
+    ]
+});
 
 function Paper(props) {
 
@@ -248,11 +159,14 @@ function Paper(props) {
     const [openModalWindow, setOpenModalWindow] = useState(false);
     const [activeLink, setActiveLink] = useState(null);
 
-    const [graph, setGraph] = useState(new joint.dia.Graph());
+    const [graph, setGraph] = useState(new joint.dia.Graph({}, { cellNamespace: joint.shapes }));
+    const [graphHistory, setGraphHistory] = useState([])
     const [paper, setPaper] = useState(null);
 
+    const paperRef = useRef(paper);
+    const graphRef = useRef(graph);
+
     const [rootCell, setRootCell] = useState(null);
-    const [changeCount, setchangeCount] = useState(0);
 
     const dragStart = useCallback(event => {
         if (event.target.className !== "draggable") return;
@@ -294,19 +208,30 @@ function Paper(props) {
         graph.addCell(newCell)
         // layout(graph);
 
-        setGraph(graph)
+        stackGraph(graph)
     }, []);
 
     const addBaseToken = (tokenName, tokenUrl) => {
 
-        let newLink = new joint.dia.Link({
-            attrs: {
-                '.connection': {
-                    strokeDasharray: '8 4'
+        // let newLink = new joint.dia.Link({
+        //     attrs: {
+        //         '.connection': {
+        //             strokeDasharray: '8 4'
+        //         }
+        //     }
+        // });
+        
+        let newLink = new joint.shapes.standard.Link();
+        newLink.router('manhattan');
+        
+        newLink.attr({
+            line: {
+                strokeDasharray: '8 4',
+                targetMarker: {
+                    type: "none"
                 }
             }
         });
-        newLink.router('manhattan');
 
         let newCell = new joint.shapes.standard.Rectangle({
             ...earnCell,
@@ -319,52 +244,89 @@ function Paper(props) {
             ports: portCellOptions
         });
         graph.addCell(newCell);
-        console.log(rootCell, newCell)
         newLink.source({ id: rootCell.id, port: rootCell.attributes.ports.items[0].id });
         newLink.target({ id: newCell.id, port: newCell.attributes.ports.items[2].id });
         newLink.addTo(graph);
 
 
         layout(graph);
-        
-        // setGraph(graph)
+
+        stackGraph(graph)
     }
+
+    // const offsetToLocalPoint = (x, y) => {
+    //     let svgPoint = paperRef.svg.createSVGPoint();
+    //     svgPoint.x = x;
+    //     svgPoint.y = y;
+    //     // Transform point into the viewport coordinate system.
+    //     let pointTransformed = svgPoint.matrixTransform(paperRef.viewport.getCTM().inverse());
+    //     return pointTransformed;
+    // }
 
     const handleScroll = (e) => {
         let prevScale = paper.scale();
         let deltaY = e.deltaY;
         if (deltaY < 0) {
             paper.scale(prevScale.sx + 0.05, prevScale.sy + 0.05)
-        } else 
-        if (deltaY > 0) {
-            paper.scale(prevScale.sx - 0.05, prevScale.sy - 0.05)
+        } else
+            if (deltaY > 0) {
+                paper.scale(prevScale.sx - 0.05, prevScale.sy - 0.05)
+            }
+    }
+
+    const stackGraph = (newGraph) => {
+        setGraphHistory(graphHistory => {
+            graphHistory.push(newGraph.toJSON())
+            return [...graphHistory];
+        });
+        graphRef.current = newGraph;
+        setGraph(newGraph);
+    }
+
+    const reverseGraph = () => {
+        setGraphHistory(graphHistory => {
+            if (graphHistory.length > 1) {
+                let graphJSON = graphHistory[graphHistory.length - 2];
+                graphHistory.pop();
+                let graph = graphRef.current.fromJSON(graphJSON);
+                graphRef.current = graph;
+                setGraph(graph);
+                return [...graphHistory];
+            } else {
+                let graph = graphRef.current.fromJSON(graphHistory[0]);
+                graphRef.current = graph;
+                setGraph(graph);
+                graphHistory.push(graphHistory[0]);
+            }
+            return graphHistory
+        });
+        setOpenModalWindow(false);
+    }
+
+    const handleKeyPress = (e) => {
+        if (e.key === "z" && e.ctrlKey) {
+            reverseGraph()
         }
     }
 
     useEffect(() => {
-        // let link = new joint.shapes.standard.Link();
-        let link = new joint.dia.Link({
-            attrs: {
-                '.connection': {
-                    strokeDasharray: '8 4'
-                }
-            }
-        });
-
-
-        let targetArrowheadTool = new joint.linkTools.TargetArrowhead();
-        let toolsView = new joint.dia.ToolsView({
-            tools: [targetArrowheadTool]
-        })
+        let link = new joint.shapes.standard.Link();
+        // let link = new joint.dia.Link({
+        //     attrs: {
+        //         '.connection': {
+        //             strokeDasharray: '8 4'
+        //         }
+        //     }
+        // });
 
         link.router('manhattan');
         link.attr({
-            // line: {
-            //     strokeDasharray: '8 4',
-            //     targetMarker: {
-            //         type: "none"
-            //     }
-            // }
+            line: {
+                strokeDasharray: '8 4',
+                targetMarker: {
+                    type: "none"
+                }
+            }
         });
 
         const paper = new joint.dia.Paper({
@@ -382,14 +344,21 @@ function Paper(props) {
                 color: '#F6F6F6',
             },
             perpendicularLinks: true,
-            // restrictTranslate: true
+            cellViewNamespace: joint.shapes,
+            interactive: (cellView) => {
+                if (cellView.model.isLink()) {
+                    return { vertexAdd: false }
+                }
+                return true;
+            },
+            restrictTranslate: true
         });
 
         // link.findView(paper).addTools(toolsView)
 
         cells.cells = cells.cells.map((cellData, i) => {
             let cell = new joint.shapes.standard.Rectangle({ ...cellData, ports: portCellOptions });
-            if (cellData.type === "root") {
+            if (cellData.typeOfCell === "root") {
                 cell = new joint.shapes.standard.Polygon({ ...cellData, ports: rootPortCellOptions });
                 cell.attr('body/refPoints', '0,10 10,0 20,10 10,20')
                 // cell.attr('image/xlinkHref', donkeylogo)
@@ -404,7 +373,9 @@ function Paper(props) {
         paper.on("link:connect", ((linkView, event, elementViewConnected, magnet, arrowhead) => {
             layout(graph, activeLink);
             if (linkView.model.isLink()) {
+                linkView.model.vertices([])
                 setActiveLink(linkView.model);
+                stackGraph(graph);
             }
             setOpenModalWindow(true);
         }));
@@ -421,30 +392,20 @@ function Paper(props) {
             setOpenModalWindow(true);
         }))
 
-        
+
         paper.on("blank:pointerdown", ((event, x, y) => {
-            let newClickPos = {x: event.clientX, y: event.clientY};
+            let newClickPos = { x: event.clientX, y: event.clientY };
             let paperPos = paper.translate();
-            setchangeCount(changeCount => changeCount + 1)
-            
+
             paper.off("blank:pointermove");
             paper.on("blank:pointermove", ((event, x, y) => {
-                let movePos = {x: event.clientX, y: event.clientY};
+                let movePos = { x: event.clientX, y: event.clientY };
                 paper.translate(
                     paperPos.tx + movePos.x - newClickPos.x,
                     paperPos.ty + movePos.y - newClickPos.y
                 )
             }))
         }))
-
-        
-        paper.on("blank:pointermove", ((event, x, y) => {
-            console.log("OLD", x, y)
-        }))
-
-        paper.on("blank:scroll", () => {
-            console.log("A")
-        })
 
         graph.on('add', (eventElement) => {
             // if (eventElement.isLink()) {
@@ -454,10 +415,20 @@ function Paper(props) {
             paper.on("link:connect", ((linkView, event, elementViewConnected, magnet, arrowhead) => {
                 layout(graph, eventElement);
                 if (linkView.model.isLink()) {
+                    linkView.model.vertices([])
                     setActiveLink(linkView.model);
+                    stackGraph(graph);
                 }
                 setOpenModalWindow(true);
             }))
+        });
+
+        paper.on('link:mouseenter', (linkView) => {
+            linkView.addTools(toolsView);
+        });
+
+        paper.on('blank:mouseover', () => {
+            paper.removeTools();
         });
 
         paper.unfreeze();
@@ -470,8 +441,9 @@ function Paper(props) {
             })
         });
 
-        setGraph(graph)
-        setPaper(paper)
+        stackGraph(graph)
+        paperRef.current = paper;
+        setPaper(paper);
 
         let theCells = graph.getCells();
 
@@ -485,26 +457,33 @@ function Paper(props) {
         window.addEventListener("dragenter", dragEnter);
         window.addEventListener("dragover", dragOver);
         window.addEventListener("drop", dragDrop);
+        window.addEventListener("keyup", handleKeyPress)
 
         return () => {
             window.removeEventListener("dragstart", dragStart);
             window.removeEventListener("dragenter", dragEnter);
             window.removeEventListener("dragover", dragOver);
             window.removeEventListener("drop", dragDrop);
+            window.removeEventListener("keyup", handleKeyPress)
         };
 
     }, []);
 
     return (
         <div className='hold-paper'>
-            <div id='canvas' onWheel={handleScroll} ref={canvas} />
-            {openModalWindow && <ModalWindow
+            <SelectCells reverseGraph={reverseGraph} />
+            <div
+                id='canvas'
+                onWheel={handleScroll}
+                ref={canvas}
+            />
+            {openModalWindow && activeLink && <ModalWindow
                 joint={joint}
                 portCellOptions={portCellOptions}
                 setOpenModalWindow={setOpenModalWindow}
                 activeLink={activeLink}
                 graph={graph}
-                setGraph={setGraph}
+                stackGraph={stackGraph}
                 cellData={earnCell}
                 layout={layout}
             />}

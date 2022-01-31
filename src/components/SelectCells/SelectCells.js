@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import UndoButton from "../UndoButton/UndoButton";
 import "./styles.css";
 
 class SelectCells extends Component {
@@ -16,6 +17,7 @@ class SelectCells extends Component {
             <div className="draggable" draggable="true">Tea</div>
           </div>
         </div>
+        <UndoButton reverseGraph={this.props.reverseGraph} />
       </div>
     );
   }
