@@ -5,21 +5,34 @@ import close from "./close.svg";
 
 export default function BaseToken(props) {
 
-    let { addBaseToken, setOpenModalWindow } = props;
+    let { addBaseToken, setOpenModalWindow, editBaseToken, baseTokenCellView } = props;
 
     let [tokenName, setTokenName] = useState("");
     let [tokenURL, setTokenURL] = useState("");
+
+    useEffect(() => {
+        if (baseTokenCellView) {
+            setTokenName(baseTokenCellView.model.attributes.attrs.label.tokenName)
+            setTokenURL(baseTokenCellView.model.attributes.attrs.label.tokenUrl)
+        }
+    }, [])
 
     return (
         <div
             className="hold-modal base-token"
         >
-            <div className='modal-options'>
+            <div className='modal-options add-token-options'>
                 <div className="modal-title">
                     <div>Base Token</div>
                     <div
                         className='title-close-button'
                         onClick={() => {
+                            if (baseTokenCellView) {
+                                editBaseToken(
+                                    baseTokenCellView.model.attributes.attrs.label.tokenName,
+                                    baseTokenCellView.model.attributes.attrs.label.tokenUrl
+                                );
+                            }
                             setOpenModalWindow(false);
                         }}
                     >
@@ -34,10 +47,10 @@ export default function BaseToken(props) {
                     >
                         <input
                             name="token-name"
-                            // key={defaultInputValue}
+                            // key={tokenName}
                             className='token-name-input base-token-input'
                             onChange={(e) => setTokenName(e.target.value)}
-                            // defaultValue={defaultInputValue}
+                            defaultValue={tokenName}
                             placeholder='Enter token name'
                         />
                     </div>
@@ -51,10 +64,10 @@ export default function BaseToken(props) {
                     >
                         <input
                             name="token-name"
-                            // key={defaultInputValue}
+                            // key={tokenURL}
                             className='token-name-input base-token-input'
                             onChange={(e) => setTokenURL(e.target.value)}
-                            // defaultValue={defaultInputValue}
+                            defaultValue={tokenURL}
                             placeholder='Enter token URL'
                         />
                     </div>
@@ -65,11 +78,16 @@ export default function BaseToken(props) {
                         className='add-base-token'
                         onClick={() => {
                             if (tokenName) {
-                                addBaseToken(tokenName, tokenURL);
+                                
+                                if (baseTokenCellView) {
+                                    editBaseToken(tokenName, tokenURL);
+                                } else {
+                                    addBaseToken(tokenName, tokenURL);
+                                }
                                 setOpenModalWindow(false);
                             }
                         }}
-                    >Add Base Token</button>
+                    >{(baseTokenCellView && "Edit Base Token") || "Add Base Token"}</button>
                 </div>
             </div>
         </div>

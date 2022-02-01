@@ -125,11 +125,13 @@ function layout(graph, activeLink) {
 }
 
 const verticesTool = new joint.linkTools.Vertices({
-    redundancyRemoval: false
+    redundancyRemoval: false,
+    stopPropagation: false
 });
-// const verticesTool = new joint.linkTools.Vertices.extend({
-//     onHandleChangeStart: (e) => {
+// const verticesTool = joint.linkTools.Vertices.extend({
+//     interactive: (e) => {
 //         console.log("click!!!");
+//         return true
 //     }
 // })
 const segmentsTool = new joint.linkTools.Segments({
@@ -142,14 +144,46 @@ const boundaryTool = new joint.linkTools.Boundary();
 const removeButton = new joint.linkTools.Remove();
 
 const toolsView = new joint.dia.ToolsView({
+    name: "toolsView",
     tools: [
-        verticesTool,
-        segmentsTool,
+        // segmentsTool,
         sourceArrowheadTool,
         targetArrowheadTool,
-        boundaryTool,
         removeButton
     ]
+});
+
+const toolsViewVertices = new joint.dia.ToolsView({
+    name: "toolsViewVertices",
+    tools: [
+        verticesTool,
+        // segmentsTool,
+        sourceArrowheadTool,
+        targetArrowheadTool,
+    ]
+});
+
+const diamondShape = joint.shapes.basic.Generic.extend({
+
+    markup: `
+    <g class="rotatable">
+        <g class="scalable">
+            <rect/>
+            <polygon/>
+        </g>
+        <text/>
+    </g>
+    `,
+
+    defaults: {
+        ...joint.shapes.basic.Generic.prototype.defaults,
+        type: 'basic.Rect',
+        attrs: {
+            'rect': { fill: '#FFFFFF', stroke: 'black', width: 1, height: 1,transform: 'rotate(45)' },
+            'text': { 'font-size': 14, text: '', 'ref-x': .5, 'ref-y': .5, ref: 'rect', 'y-alignment': 'middle', 'x-alignment': 'middle', fill: 'black', 'font-family': 'Arial, helvetica, sans-serif' }
+        }
+
+    }
 });
 
 function Paper(props) {
@@ -158,6 +192,9 @@ function Paper(props) {
 
     const [openModalWindow, setOpenModalWindow] = useState(false);
     const [activeLink, setActiveLink] = useState(null);
+    const [activeLinkView, setActiveLinkView] = useState(null);
+    const [baseTokenCellView, setBaseTokenCellView] = useState(null);
+    const [activeCellView, setActiveCellView] = useState(null);
 
     const [graph, setGraph] = useState(new joint.dia.Graph({}, { cellNamespace: joint.shapes }));
     const [graphHistory, setGraphHistory] = useState([])
@@ -165,6 +202,8 @@ function Paper(props) {
 
     const paperRef = useRef(paper);
     const graphRef = useRef(graph);
+    const activeLinkViewRef = useRef(activeLinkView);
+    const activeCellViewRef = useRef(activeCellView);
 
     const [rootCell, setRootCell] = useState(null);
 
@@ -187,6 +226,7 @@ function Paper(props) {
         if (!graph) return;
 
         let rectBounds = event.target.getBoundingClientRect();
+        let paperCoords = paperRef.current.translate();
 
         let newCell = new joint.shapes.standard.Polygon({
             attrs: {
@@ -196,8 +236,8 @@ function Paper(props) {
                 '.': { magnet: false }
             },
             position: {
-                x: event.clientX - rectBounds.left,
-                y: event.clientY - rectBounds.top
+                x: -paperCoords.tx + (event.clientX - rectBounds.left),
+                y: -paperCoords.ty + (event.clientY - rectBounds.top)
             },
             size: { width: 100, height: 100 },
             inPorts: ['in'],
@@ -220,10 +260,10 @@ function Paper(props) {
         //         }
         //     }
         // });
-        
+
         let newLink = new joint.shapes.standard.Link();
         newLink.router('manhattan');
-        
+
         newLink.attr({
             line: {
                 strokeDasharray: '8 4',
@@ -238,10 +278,13 @@ function Paper(props) {
             attrs: {
                 ...earnCell.attrs,
                 label: {
-                    text: tokenName
+                    text: tokenName,
+                    tokenName,
+                    tokenUrl
                 }
             },
-            ports: portCellOptions
+            ports: portCellOptions,
+            typeOfCell: "base_token",
         });
         graph.addCell(newCell);
         newLink.source({ id: rootCell.id, port: rootCell.attributes.ports.items[0].id });
@@ -251,6 +294,20 @@ function Paper(props) {
 
         layout(graph);
 
+        stackGraph(graph)
+    }
+
+    const editBaseToken = (tokenName, tokenUrl) => {
+        if (baseTokenCellView) {
+            baseTokenCellView.model.attr({
+                label: {
+                    text: tokenName,
+                    tokenName,
+                    tokenUrl
+                }
+            })
+            setBaseTokenCellView(null);
+        }
         stackGraph(graph)
     }
 
@@ -301,11 +358,42 @@ function Paper(props) {
             return graphHistory
         });
         setOpenModalWindow(false);
+        setActiveLink(null);
     }
 
     const handleKeyPress = (e) => {
         if (e.key === "z" && e.ctrlKey) {
             reverseGraph()
+        }
+
+        if (activeLinkViewRef.current) {
+            if (e.key === "Control") {
+                activeLinkViewRef.current.addTools(toolsView);
+            } else if (e.key === "Delete") {
+                // console.log(activeLinkViewRef.current)
+                stackGraph(graphRef.current)
+                activeLinkViewRef.current.model.remove();
+                activeLinkViewRef.current = null;
+                setActiveLinkView(null);
+                // stackGraph
+            }
+        } else if (activeCellViewRef.current) {
+            if (e.key === "Delete" && activeCellViewRef.current.model.attributes.typeOfCell !== "root") {
+                stackGraph(graphRef.current)
+                activeCellViewRef.current.model.remove();
+                activeCellViewRef.current = null;
+                setActiveCellView(null);
+            }
+        }
+    }
+
+    const handleKeyDown = (e) => {
+        if (e.key === "Control") {
+            if (activeLinkViewRef.current) {
+                if (!activeLinkViewRef.current.hasTools("toolsViewVertices")) {
+                    activeLinkViewRef.current.addTools(toolsViewVertices);
+                }
+            }
         }
     }
 
@@ -345,13 +433,18 @@ function Paper(props) {
             },
             perpendicularLinks: true,
             cellViewNamespace: joint.shapes,
-            interactive: (cellView) => {
+            interactive: (cellView, a) => {
                 if (cellView.model.isLink()) {
                     return { vertexAdd: false }
                 }
                 return true;
             },
-            restrictTranslate: true
+            // restrictTranslate: true,
+            validateConnection: (cellViewS, magnetS, cellViewT, magnetT, end, linkView) => {
+                return cellViewS.id !== cellViewT.id &&
+                !cellViewT.model.isLink() &&
+                cellViewS.model.attributes.typeOfCell !== "root";
+            }
         });
 
         // link.findView(paper).addTools(toolsView)
@@ -360,6 +453,11 @@ function Paper(props) {
             let cell = new joint.shapes.standard.Rectangle({ ...cellData, ports: portCellOptions });
             if (cellData.typeOfCell === "root") {
                 cell = new joint.shapes.standard.Polygon({ ...cellData, ports: rootPortCellOptions });
+                // cell = new diamondShape({ ...cellData, ports: rootPortCellOptions });
+                // cell.attrs({
+                //     ...cellData,
+                //     ports: rootPortCellOptions
+                // })
                 cell.attr('body/refPoints', '0,10 10,0 20,10 10,20')
                 // cell.attr('image/xlinkHref', donkeylogo)
                 setRootCell(cell)
@@ -386,10 +484,46 @@ function Paper(props) {
             // setOpenModalWindow(false);
         }));
 
-        paper.on("link:pointerdblclick", ((linkView, event, x, y) => {
-            let currentLink = linkView.model;
-            setActiveLink(currentLink);
-            setOpenModalWindow(true);
+        paper.on("cell:pointerclick", ((cellView, e, x, y) => {
+            if (!cellView.model.isLink()) {
+                if (activeCellViewRef.current) {
+                    // activeCellViewRef.current.model.attrs({
+                    //     strokeWidth: 2
+                    // });
+                    if (activeCellViewRef.current.id === cellView.id) {
+                        
+                        activeCellViewRef.current.unhighlight();
+                        activeCellViewRef.current = null;
+                        setActiveCellView(null);
+                    } else {
+                        
+                        activeCellViewRef.current.unhighlight();
+                        cellView.highlight();
+                        activeCellViewRef.current = cellView;
+                        setActiveCellView(cellView);    
+                    }
+                } else {
+                    
+                    cellView.highlight();
+                    activeCellViewRef.current = cellView;
+                    setActiveCellView(cellView);
+                }
+            }
+        }))
+
+        paper.on("cell:pointerdblclick", ((cellView, e, x, y) => {
+            if (!cellView.model.isLink() && cellView.model.attributes.typeOfCell === "base_token") {
+                // console.log("cell:pointerdblclick", cellView)
+                setBaseTokenCellView(cellView);
+            }
+        }))
+
+        paper.on("link:pointerdblclick", ((linkView, e, x, y) => {
+            if (!e.ctrlKey) {
+                let currentLink = linkView.model;
+                setActiveLink(currentLink);
+                setOpenModalWindow(true);
+            }
         }))
 
 
@@ -423,12 +557,16 @@ function Paper(props) {
             }))
         });
 
-        paper.on('link:mouseenter', (linkView) => {
+        paper.on('link:mouseenter', (linkView, e) => {
             linkView.addTools(toolsView);
+            activeLinkViewRef.current = linkView;
+            setActiveLinkView(linkView);
         });
 
         paper.on('blank:mouseover', () => {
             paper.removeTools();
+            activeLinkViewRef.current = null;
+            setActiveLinkView(null);
         });
 
         paper.unfreeze();
@@ -457,14 +595,16 @@ function Paper(props) {
         window.addEventListener("dragenter", dragEnter);
         window.addEventListener("dragover", dragOver);
         window.addEventListener("drop", dragDrop);
-        window.addEventListener("keyup", handleKeyPress)
+        window.addEventListener("keyup", handleKeyPress);
+        window.addEventListener("keydown", handleKeyDown);
 
         return () => {
             window.removeEventListener("dragstart", dragStart);
             window.removeEventListener("dragenter", dragEnter);
             window.removeEventListener("dragover", dragOver);
             window.removeEventListener("drop", dragDrop);
-            window.removeEventListener("keyup", handleKeyPress)
+            window.removeEventListener("keyup", handleKeyPress);
+            window.removeEventListener("keydown", handleKeyDown);
         };
 
     }, []);
@@ -489,6 +629,8 @@ function Paper(props) {
             />}
             <InitButtons
                 addBaseToken={addBaseToken}
+                baseTokenCellView={baseTokenCellView}
+                editBaseToken={editBaseToken}
             />
         </div>
     );

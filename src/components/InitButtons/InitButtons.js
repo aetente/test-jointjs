@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import "./styles.css";
+import CustomSelect from '../CustomSelect/CustomSelect';
 import ArrowDown from "./ArrowDown.svg";
 import BaseToken from './BaseToken';
 
@@ -7,7 +8,7 @@ import BaseToken from './BaseToken';
 
 export default function InitButtons(props) {
 
-    let { addBaseToken } = props;
+    let { addBaseToken, editBaseToken, baseTokenCellView } = props;
 
     let [openModalWindow, setOpenModalWindow] = useState(false);
 
@@ -15,7 +16,33 @@ export default function InitButtons(props) {
         <div className='hold-init-buttons'>
             <div className="init-buttons">
                 {/* <div className='select-wrapper'> */}
-                <select
+                <CustomSelect
+                    options={[
+                        {
+                            value: "Networks",
+                            hidden: true
+                        },
+                        {
+                            value: "Polygon"
+                        },
+                        {
+                            value: "Etherium"
+                        },
+                        {
+                            value: "Polkadot"
+                        },
+                        {
+                            value: "Solana"
+                        },
+                        {
+                            value: "BSC"
+                        },
+                        {
+                            value: "Network"
+                        }
+                    ]}
+                />
+                {/* <select
                     className='network-select'
                     onClick={() => {
                         if (openModalWindow) {
@@ -35,13 +62,15 @@ export default function InitButtons(props) {
                     <option value="Polkadot">Polkadot</option>
                     <option value="Solana">Solana</option>
                     <option value="BSC">BSC</option>
-                    <option value="BSC">Network</option>
-                </select>
+                    <option value="Network">Network</option>
+                </select> */}
                 {/* </div> */}
                 <button onClick={() => { setOpenModalWindow(!openModalWindow) }}>Base Token</button>
             </div>
-            {openModalWindow && <BaseToken
+            {(openModalWindow || baseTokenCellView) && <BaseToken
                 addBaseToken={addBaseToken}
+                editBaseToken={editBaseToken}
+                baseTokenCellView={baseTokenCellView}
                 setOpenModalWindow={setOpenModalWindow}
             />}
         </div>

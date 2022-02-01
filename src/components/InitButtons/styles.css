@@ -31,7 +31,7 @@
 
 
 
-button, .network-select {
+button, .network-select, .custom-select {
     border: none;
     border-radius: 10px;
     color: white;
@@ -51,7 +51,8 @@ button {
 }
 
 
-.network-select {
+.network-select, .custom-select {
+    color: white;
     -webkit-appearance: none;
     appearance: none;
     -moz-appearance: none;
@@ -63,15 +64,53 @@ button {
     background-position: calc(100% - 10px);
   }
 
-option {
+.custom-select {
+    display: flex;
+    align-items: center;
+    position: relative;
+    min-width: 122px;
+}
+
+.hold-custom-options {
+    position: absolute;
+    left: 0px;
+    top: 56px;
+    display: flex;
+    flex-direction: column;
+    height: fit-content;
     background: white;
+    padding: 2px;
+    box-shadow: 0 10px 16px 0 rgb(0 0 0 / 5%), 0 6px 20px 0 rgb(0 0 0 / 5%) !important;
+}
+
+.selected-option {
+    /* margin-left: 24px; */
+    margin: auto;
+}
+
+option, .custom-option {
     font-family: "Poppins";
     font-style: normal;
-    font-weight: 500;
-    font-size: 14px;
-    line-height: 21px;
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 18px;
     opacity: 0.4;
-    color: black
+    color: black;
+    min-width: 78px;
+    padding: 6px;
+    padding-left: 30px;
+    padding-right: 0px
+}
+
+.custom-option:hover {
+    background-color: rgb(230,230,230);
+}
+
+.add-token-options {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 

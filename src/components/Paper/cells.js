@@ -6,6 +6,7 @@ export const cells = {
           label: {
             text: "DonKey"
           },
+          text: "DonKey",
           '.': { magnet: false }
         },
         size: { width: 100, height: 100 },
@@ -22,7 +23,8 @@ export const cells = {
         },
         size: { width: 100, height: 50 },
         inPorts: ['in'],
-        outPorts: ['out']
+        outPorts: ['out'],
+        typeOfCell: "base_token"
       },
     ]
   };

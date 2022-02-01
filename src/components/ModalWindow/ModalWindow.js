@@ -6,6 +6,10 @@ import "./styles.css";
 
 import close from "./close.svg";
 
+function convertObjToStr(a) {
+    return (a && typeof a !== "string" && Object.keys(a).reduce((p, c) => p + a[c], "")) || a;
+}
+
 function addStakeEarn(joint, activeLink, tokenName, setLinksAndCellsToAdd, setEarnLinks, cellData, portCellOptions) {
     let newEarnLink = new joint.shapes.standard.Link();
     // let newEarnLink = new joint.dia.Link({
@@ -80,6 +84,9 @@ function mapEarnOptions(earnArray, graph, action) {
                         rect: {
                             fill: "#f6f6f6"
                         }
+                    },
+                    position: {
+                        distance: 0.6
                     }
                 })
             };
@@ -105,6 +112,9 @@ function mapEarnOptions(earnArray, graph, action) {
                         rect: {
                             fill: "#f6f6f6"
                         }
+                    },
+                    position: {
+                        distance: 0.6
                     }
                 })
             }
@@ -156,15 +166,17 @@ export default function ModalWindow(props) {
         // and earn link would be (not necessary) found with the id which is stored inside action link
         // and if it is earn link than it goes the opposite way with the exception that
         // if user modifies earn link than there for sure would be action link 
-        setTypeOfLink(activeLink.attributes.attrs.typeOfLink);
-        if (!activeLink.attributes.attrs.typeOfLink || activeLink.attributes.attrs.typeOfLink === "action") {
-            let actionValue = [(activeLink.label(0) && activeLink.label(0).attrs.text.action) || "Stake"];
+        let typeOfLink = convertObjToStr(activeLink.attributes.attrs.typeOfLink);
+        setTypeOfLink(typeOfLink);
+        if (!typeOfLink || typeOfLink === "action") {
+            let actionValue = [(activeLink.label(0) && convertObjToStr(activeLink.label(0).attrs.text.action)) || "Stake"];
             setActionLink(activeLink);
             setAction(actionValue)
             setAllocation((activeLink.label(0) && activeLink.label(0).attrs.text.allocation) || 50)
 
-            if (activeLink.attributes.attrs.earnLinkId) {
-                let earnLinkById = graph.getCell(activeLink.attributes.attrs.earnLinkId);
+            let earnLinkIdVal = convertObjToStr(activeLink.attributes.attrs.earnLinkId);
+            if (earnLinkIdVal) {
+                let earnLinkById = graph.getCell(earnLinkIdVal);
                 if (earnLinkById) {
                     setEarnLink(earnLinkById);
                     setEarn((earnLinkById.label(0) && earnLinkById.label(0).attrs.text.earn) || "None")
@@ -173,9 +185,13 @@ export default function ModalWindow(props) {
             }
 
             if (activeLink.attributes.attrs.earnLinkIds) {
-                let earnLinksToSet = activeLink.attributes.attrs.earnLinkIds.map(earnLinkId => {
+                let earnLinksArray = activeLink.attributes.attrs.earnLinkIds;
+                if (!earnLinksArray.map) {
+                    earnLinksArray = Object.values(earnLinksArray); 
+                } 
+                let earnLinksToSet = earnLinksArray.map(earnLinkId => {
                     let earnLinkById = graph.getCell(earnLinkId);
-                    let earnCellById = graph.getCell(earnLinkById.attributes.attrs.earnCellId);
+                    let earnCellById = graph.getCell(convertObjToStr(earnLinkById.attributes.attrs.earnCellId));
                     return [earnLinkById, earnCellById];
                 });
                 setEarnLinks(earnLinksToSet);
@@ -184,23 +200,28 @@ export default function ModalWindow(props) {
             if (actionValue[0] === "Stake") {
                 addStakeEarn(joint, activeLink, tokenName, setLinksAndCellsToAdd, setEarnLinks, cellData, portCellOptions);
             }
-        } else if (activeLink.attributes.attrs.typeOfLink === "earn") {
+        } else if (typeOfLink === "earn") {
 
             setEarnLink(activeLink);
-            setEarn((activeLink.label(0) && activeLink.label(0).attrs.text.earn) || "None")
-            setTokenName((activeLink.label(0) && activeLink.label(0).attrs.text.tokenName) || "COIN")
+            setEarn((activeLink.label(0) && convertObjToStr(activeLink.label(0).attrs.text.earn)) || "None")
+            setTokenName((activeLink.label(0) && convertObjToStr(activeLink.label(0).attrs.text.tokenName)) || "COIN")
 
-            if (activeLink.attributes.attrs.actionLinkId) {
-                let actionLinkById = graph.getCell(activeLink.attributes.attrs.actionLinkId);
-                let actionValue = [(actionLinkById.label(0) && actionLinkById.label(0).attrs.text.action) || "Stake"]
+            let actionLinkIdVal = convertObjToStr(activeLink.attributes.attrs.actionLinkId); 
+            if (actionLinkIdVal) {
+                let actionLinkById = graph.getCell(actionLinkIdVal);
+                let actionValue = [(actionLinkById.label(0) && convertObjToStr(actionLinkById.label(0).attrs.text.action)) || "Stake"]
                 setActionLink(actionLinkById);
                 setAction(actionValue)
                 setAllocation((actionLinkById.label(0) && actionLinkById.label(0).attrs.text.allocation) || 50)
-
+                
                 if (actionLinkById.attributes.attrs.earnLinkIds) {
-                    let earnLinksToSet = actionLinkById.attributes.attrs.earnLinkIds.map(earnLinkId => {
+                    let earnLinksArray = actionLinkById.attributes.attrs.earnLinkIds;
+                    if (!earnLinksArray.map) {
+                        earnLinksArray = Object.values(earnLinksArray); 
+                    } 
+                    let earnLinksToSet = earnLinksArray.map(earnLinkId => {
                         let earnLinkById = graph.getCell(earnLinkId);
-                        let earnCellById = graph.getCell(earnLinkById.attributes.attrs.earnCellId);
+                        let earnCellById = graph.getCell(convertObjToStr(earnLinkById.attributes.attrs.earnCellId));
                         return [earnLinkById, earnCellById];
                     });
                     setEarnLinks(earnLinksToSet);
@@ -264,6 +285,9 @@ export default function ModalWindow(props) {
                                     rect: {
                                         fill: "#f6f6f6"
                                     }
+                                },
+                                position: {
+                                    distance: 0.6
                                 }
                             });
                             actionLink.attr({ typeOfLink: "action" });
@@ -293,6 +317,9 @@ export default function ModalWindow(props) {
                                             rect: {
                                                 fill: "#f6f6f6"
                                             }
+                                        },
+                                        position: {
+                                            distance: 0.6
                                         }
                                     })
 
@@ -323,7 +350,6 @@ export default function ModalWindow(props) {
                                     link.source({ id: sourceCell.id, port: sourcePort });
                                     link.target({ id: cell.id, port: cell.attributes.ports.items[2].id });
                                     link.addTo(graph);
-
                                     activeLink.attr({
                                         earnLinkId: link.id
                                     });
@@ -350,6 +376,9 @@ export default function ModalWindow(props) {
                                     rect: {
                                         fill: "#f6f6f6"
                                     }
+                                },
+                                position: {
+                                    distance: 0.6
                                 }
                             })
                         }
