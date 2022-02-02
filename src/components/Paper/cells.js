@@ -6,7 +6,7 @@ export const cells = {
           label: {
             text: "DonKey"
           },
-          text: "DonKey",
+          text: {text: "DonKey"},
           '.': { magnet: false }
         },
         size: { width: 100, height: 100 },

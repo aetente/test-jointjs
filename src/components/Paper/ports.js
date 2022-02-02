@@ -114,12 +114,12 @@ export const ports = {
         },
         attrs: {
             portBody: {
-                magnet: false,
+                magnet: true,
                 r: 6,
                 fill: 'white',
                 stroke: '#023047'
             },
-            '.': { magnet: false }
+            '.': { magnet: true }
         },
         label: {
             position: {

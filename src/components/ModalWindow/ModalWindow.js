@@ -145,6 +145,7 @@ export default function ModalWindow(props) {
         activeLink,
         cellData,
         layout,
+        subLayout,
         stackGraph
     } = props;
 
@@ -358,7 +359,6 @@ export default function ModalWindow(props) {
                                         earnCellId: cell.id
                                     })
 
-                                    layout(graph);
                                 }
                                 stackGraph(graph);
                             }
@@ -384,20 +384,26 @@ export default function ModalWindow(props) {
                         }
 
                         if (action[0] === "Stake") {
+                            console.log(linksAndCellsToAdd)
                             linksAndCellsToAdd.forEach(la => {
-                                let earnValue = (la[0].label(0) && la[0].label(0).attrs.text.earn) || "None";
+                                let newLink = la[0];
+                                let newCell = la[1]
+                                let earnValue = (newLink.label(0) && newLink.label(0).attrs.text.earn) || "None";
                                 if (earnValue !== "None") {
                                     let prevEarnIdsArray = actionLink.attributes.attrs.earnLinkIds || [];
                                     actionLink.attr({
-                                        earnLinkIds: [...prevEarnIdsArray, la[0].id]
+                                        earnLinkIds: [...prevEarnIdsArray, newLink.id]
                                     });
-                                    la[0].addTo(graph);
-                                    graph.addCell(la[1]);
+                                    newLink.addTo(graph);
+                                    graph.addCell(newCell);
+                                    
                                 }
                             });
+                            
+                            subLayout(linksAndCellsToAdd[0][0]);
                         }
 
-                        layout(graph)
+                        // layout()
 
 
                         stackGraph(graph);

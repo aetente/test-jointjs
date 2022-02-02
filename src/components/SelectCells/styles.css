@@ -24,3 +24,18 @@
 .draggable {
     flex: 1;
 }
+
+.temp-auto-layout-button {
+    margin: 0px;
+    margin-top: 30px;
+}
+
+.protocol {
+    width: 50px;
+    height: 50px;
+    background: #DBD9D2;
+    border: 2px solid #313130;
+    box-sizing: border-box;
+    border-radius: 10px;
+    transform: rotate(45deg);
+}
