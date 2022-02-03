@@ -116,7 +116,7 @@ export const ports = {
             portBody: {
                 magnet: true,
                 r: 6,
-                fill: 'white',
+                fill: '#023047',
                 stroke: '#023047'
             },
             '.': { magnet: true }
@@ -158,11 +158,25 @@ export const portCellOptions = {
 };
 export const rootPortCellOptions = {
     groups: {
+        'top': {
+            position: "top"
+        },
         "bottom": {
             position: "bottom"
-        }
+        },
+        "right": {
+            position: "right"
+        },
+        "left": {
+            position: "left"
+        },
     },
     items: [
-        ports.rootPortBottom
+        {...ports.portBottom, attrs: { portBody: {...ports.portBottom.attrs.portBody, fill: '#023047', }}},
+        {...ports.portLeft, attrs: { portBody: {...ports.portLeft.attrs.portBody, fill: '#023047', }}},
+        {...ports.portRight, attrs: { portBody: {...ports.portRight.attrs.portBody, fill: '#023047', }}},
+        {...ports.portTop, attrs: { portBody: {...ports.portTop.attrs.portBody, fill: '#023047', }}},
+        // ports.portRight, ports.portTop, ports.portBottom
+        // ports.rootPortBottom
     ]
 }

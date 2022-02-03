@@ -4,7 +4,8 @@ export const cells = {
       {
         attrs: {
           label: {
-            text: "DonKey"
+            text: "DonKey",
+            fontFamily: 'Poppins, sans-serif'
           },
           text: {text: "DonKey"},
           '.': { magnet: false }
@@ -17,7 +18,11 @@ export const cells = {
       {
         attrs: {
           label: {
-            text: "COIN"
+            text: "COIN",
+            fontFamily: 'Poppins, sans-serif'
+          },
+          text: {
+            fontFamily: 'Poppins, sans-serif'
           },
           '.': { magnet: false }
         },
@@ -33,11 +38,22 @@ export const cells = {
 export const earnCell = {
     attrs: {
       label: {
-        text: "default text"
+        text: "default text",
+        fill: "#777E90",
+        fontFamily: 'Poppins, sans-serif'
+      },
+      body: {
+        rx: 8,
+        ry: 8,
+        fill: "#F9FAFB",
+        stroke: "#777E90"
+      },
+      text: {
+        fontFamily: 'Poppins, sans-serif'
       },
       '.': { magnet: false }
     },
-    size: { width: 100, height: 50 },
+    size: { width: 120, height: 43 },
     inPorts: ['in'],
     outPorts: ['out']
   }

@@ -59,6 +59,8 @@ export const diamondAttrs = {
         yAlignment: 'middle',
         xAlignment: 'middle',
         ref: 'polygon',
+        height: 25,
+        width: 25
     },
     text: {
         fontSize: 14,

@@ -2,13 +2,10 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import SelectAction from './SelectAction';
 import AllocationInput from './AllocationInput';
 import EarnInputsHolder from './EarnInputsHolder';
+import { convertObjToStr } from '../../utils/utils';
 import "./styles.css";
 
 import close from "./close.svg";
-
-function convertObjToStr(a) {
-    return (a && typeof a !== "string" && Object.keys(a).reduce((p, c) => p + a[c], "")) || a;
-}
 
 function addStakeEarn(joint, activeLink, tokenName, setLinksAndCellsToAdd, setEarnLinks, cellData, portCellOptions) {
     let newEarnLink = new joint.shapes.standard.Link();
@@ -40,7 +37,8 @@ function addStakeEarn(joint, activeLink, tokenName, setLinksAndCellsToAdd, setEa
                 text: tokenName
             }
         },
-        ports: portCellOptions
+        ports: portCellOptions,
+        typeOfCell: "earn_cell"
     });
     // connect the link with the cells
     let sourceCell = activeLink.getTargetCell();
@@ -74,7 +72,7 @@ function mapEarnOptions(earnArray, graph, action) {
                 earnLink.label(0, {
                     attrs: {
                         text: {
-                            text: `[ Earn ${earn} ]`,
+                            text: `[\u00a0Earn\u00a0${earn}\u00a0]`,
                             earn,
                             tokenName: (earnLink.label(0) && earnLink.label(0).attrs.text.tokenName) || "COIN",
                             fontWeight: 500,
@@ -102,7 +100,7 @@ function mapEarnOptions(earnArray, graph, action) {
                 earnLink.label(0, {
                     attrs: {
                         text: {
-                            text: `[ Earn ${earnLinkEarnValue} ]`,
+                            text: `[\u00a0Earn\u00a0${earnLinkEarnValue}\u00a0]`,
                             earn: earnLinkEarnValue,
                             tokenName: tokenName,
                             fontWeight: 500,
@@ -170,7 +168,15 @@ export default function ModalWindow(props) {
         let typeOfLink = convertObjToStr(activeLink.attributes.attrs.typeOfLink);
         setTypeOfLink(typeOfLink);
         if (!typeOfLink || typeOfLink === "action") {
-            let actionValue = [(activeLink.label(0) && convertObjToStr(activeLink.label(0).attrs.text.action)) || "Stake"];
+            let targetCell = activeLink.getTargetCell();
+            let sourceCell = activeLink.getSourceCell();
+            let targetCellType = convertObjToStr(targetCell.attributes.typeOfCell);
+            let sourceCellType = convertObjToStr(sourceCell.attributes.typeOfCell);
+            let defaultAction = ((
+            (sourceCellType === "earn_cell" && targetCellType === "earn_cell") ||
+            (sourceCellType === "earn_cell" && targetCellType === "base_token") ||
+            (targetCellType === "earn_cell" && sourceCellType === "base_token")) && "Re-invest") || "Stake";
+            let actionValue = [(activeLink.label(0) && convertObjToStr(activeLink.label(0).attrs.text.action)) || defaultAction];
             setActionLink(activeLink);
             setAction(actionValue)
             setAllocation((activeLink.label(0) && activeLink.label(0).attrs.text.allocation) || 50)
@@ -276,7 +282,7 @@ export default function ModalWindow(props) {
                             actionLink.label(0, {
                                 attrs: {
                                     text: {
-                                        text: `[ ${allocation}% ${action[0]} ]`,
+                                        text: `[\u00a0${allocation}%\u00a0${action[0]}\u00a0]`,
                                         action: action[0],
                                         allocation,
                                         fontWeight: 500,
@@ -308,7 +314,7 @@ export default function ModalWindow(props) {
                                     link.label(0, {
                                         attrs: {
                                             text: {
-                                                text: `[ Earn ${earn} ]`,
+                                                text: `[\u00a0Earn\u00a0${earn}\u00a0]`,
                                                 earn,
                                                 tokenName,
                                                 fontWeight: 500,
@@ -342,7 +348,8 @@ export default function ModalWindow(props) {
                                                 text: tokenName
                                             }
                                         },
-                                        ports: portCellOptions
+                                        ports: portCellOptions,
+                                        typeOfCell: "earn_cell"
                                     });
 
                                     graph.addCell(cell);
@@ -366,7 +373,7 @@ export default function ModalWindow(props) {
                             actionLink.label(0, {
                                 attrs: {
                                     text: {
-                                        text: `[ ${allocation}% ${action[0]} ]`,
+                                        text: `[\u00a0${allocation}%\u00a0${action[0]}\u00a0]`,
                                         action: action[0],
                                         allocation,
                                         fontWeight: 500,

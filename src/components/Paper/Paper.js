@@ -10,6 +10,7 @@ import { cells, earnCell } from './cells';
 import { ports, portCellOptions, rootPortCellOptions } from './ports';
 import { diamondShape, toolsView, toolsViewVertices } from './options';
 import "./styles.css";
+import { convertObjToStr } from '../../utils/utils';
 
 import donkeylogo from "./Group 3722.png";
 
@@ -40,6 +41,8 @@ function changeActiveLinkParenting(graph, activeLink) {
         // activeLink.vertices([])
         let targetCell = activeLink.getTargetCell()
         let sourceCell = activeLink.getSourceCell()
+        let targetCellType = convertObjToStr(targetCell.attributes.typeOfCell);
+        let sourceCellType = convertObjToStr(sourceCell.attributes.typeOfCell);
         if (targetCell && sourceCell) {
             let sourcePort = sourceCell.getPort(activeLink.attributes.source.port);
             let targetPort = targetCell.getPort(activeLink.attributes.target.port);
@@ -48,7 +51,10 @@ function changeActiveLinkParenting(graph, activeLink) {
             // if (sourcePortPosition === "top" && targetPortPosition === "bottom") {
             let sourceCellsNeighbors = graph.getNeighbors(sourceCell)
             // if (targetPortPosition === "bottom") {
-            if (sourceCellsNeighbors.length <= 1) {
+            let isNewCell = sourceCellsNeighbors.length <= 1;
+            let isConnectionBetweenEarns = sourceCellType === "earn_cell" && targetCellType === "base_token";
+            console.log(isConnectionBetweenEarns)
+            if (isNewCell || isConnectionBetweenEarns) {
                 activeLink.target({ id: sourceCell.id, port: sourcePort.id })
                 activeLink.source({ id: targetCell.id, port: targetPort.id })
             }
@@ -58,7 +64,6 @@ function changeActiveLinkParenting(graph, activeLink) {
 
 function Paper(props) {
 
-    const canvas = useRef(null);
 
     const [openModalWindow, setOpenModalWindow] = useState(false);
     const [activeLink, setActiveLink] = useState(null);
@@ -72,7 +77,16 @@ function Paper(props) {
 
     const [rootCell, setRootCell] = useState(null);
 
+    const [imageToDownload, setImageToDownload] = useState(null);
+
     // we need refs for events
+
+
+    const canvas = useRef(null);
+
+    const getCanvas = () => {
+        return canvas.current;
+    }
 
     const paperRef = useRef(paper);
 
@@ -117,9 +131,10 @@ function Paper(props) {
 
     const dragStart = useCallback(event => {
         if (!event.target.className.includes("draggable")) return;
-        console.log(event.target.getAttribute("color"))
-        event.dataTransfer.setData("text", event.target.textContent);
+        event.dataTransfer.setData("text", event.target.getAttribute("protocolname"));
         event.dataTransfer.setData("color", event.target.getAttribute("color") || "#FFFFFF");
+        event.dataTransfer.setData("borderColor", event.target.getAttribute("bordercolor") || "#222222");
+        event.dataTransfer.setData("image", event.target.getAttribute("image"));
         event.dataTransfer.setData("element", event.target);
     }, []);
 
@@ -156,8 +171,12 @@ function Paper(props) {
             outPorts: ['out'],
             ports: portCellOptions
         });
-        
+
         newCell.attr('polygon/fill', event.dataTransfer.getData('color'))
+        newCell.attr('polygon/stroke', event.dataTransfer.getData('borderColor'))
+        if (event.dataTransfer.getData('image') !== "null") {
+            newCell.attr('image/xlink:href', event.dataTransfer.getData('image'))
+        }
         graph.addCell(newCell)
         // layout();
 
@@ -165,13 +184,18 @@ function Paper(props) {
     }, []);
 
     const layout = (activeLink) => {
-    
+
         changeActiveLinkParenting(graph, activeLink)
-    
+
+        let theLinks = graph.getLinks()
+        theLinks.forEach(alink => {
+            alink.vertices([]) // disable all vertices
+        })
+
         joint.layout.DirectedGraph.layout(graph, {
             dagre: dagre,
             graphlib: graphlib,
-            // setVertices: true,
+            setVertices: true,
             marginX: globalOffsetX,
             marginY: globalOffsetY,
             nodeSep: NODE_SEP,
@@ -189,12 +213,8 @@ function Paper(props) {
                 });
             }
         });
-    
-        let theLinks = graph.getLinks()
-        theLinks.forEach(alink => {
-            alink.vertices([]) // disable all vertices
-        })
-    
+
+
     }
 
     const subLayout = (link, cell) => {
@@ -203,23 +223,25 @@ function Paper(props) {
         if (!sourceCell) {
             sourceCell = link.getSourceCell();
         }
-        let sourceChildren = graph.getSuccessors(sourceCell);
+        if (sourceCell) {
+            let sourceChildren = graph.getSuccessors(sourceCell);
 
-        let cellsToLayout = [sourceCell, ...sourceChildren];
+            let cellsToLayout = [sourceCell, ...sourceChildren];
 
-        let sourceCellPosition = sourceCell.attributes.position;
-        joint.layout.DirectedGraph.layout(graph.getSubgraph(cellsToLayout), {
-            dagre: dagre,
-            graphlib: graphlib,
-            // setVertices: true,
-            marginX: sourceCellPosition.x,
-            marginY: sourceCellPosition.y,
-            nodeSep: NODE_SEP,
-            edgeSep: EDGE_SEP,
-            rankSep: RANK_SEP,
-            setLinkVertices: false,
-            ranker: "tight-tree"
-        });
+            let sourceCellPosition = sourceCell.attributes.position;
+            joint.layout.DirectedGraph.layout(graph.getSubgraph(cellsToLayout), {
+                dagre: dagre,
+                graphlib: graphlib,
+                setVertices: true,
+                marginX: sourceCellPosition.x,
+                marginY: sourceCellPosition.y,
+                nodeSep: NODE_SEP,
+                edgeSep: EDGE_SEP,
+                rankSep: RANK_SEP,
+                setLinkVertices: false,
+                ranker: "tight-tree"
+            });
+        }
 
     }
 
@@ -370,6 +392,13 @@ function Paper(props) {
                 targetMarker: {
                     type: "none"
                 }
+            },
+            text: {
+                fontFamily: 'Roboto, sans-serif',
+                fontStyle: "normal",
+                fontWeight: 600,
+                fontSize: "15px",
+                lineHeight: "18px",
             }
         });
 
@@ -401,9 +430,10 @@ function Paper(props) {
                 let targetTypeOfCell = cellViewT.model.attributes.typeOfCell;
                 return cellViewS.id !== cellViewT.id &&
                     !cellViewT.model.isLink() &&
-                    (sourceTypeOfCell !== "root" || 
-                    (sourceTypeOfCell === "root" && targetTypeOfCell === "base_token") ||
-                    (sourceTypeOfCell === "base_token" && targetTypeOfCell === "root"));
+                    ((sourceTypeOfCell !== "root" &&
+                        targetTypeOfCell !== "root") ||
+                        (sourceTypeOfCell === "root" && targetTypeOfCell === "base_token") ||
+                        (sourceTypeOfCell === "base_token" && targetTypeOfCell === "root"));
             }
         });
 
@@ -554,7 +584,6 @@ function Paper(props) {
                 link.findView(paper).requestConnectionUpdate();
             })
         });
-
         stackGraph(graph)
         setPaperRef(paper);
         setPaper(paper);
@@ -590,8 +619,13 @@ function Paper(props) {
     return (
         <div className='hold-paper'>
             <SelectCells
+                svgElement={getCanvas()}
                 reverseGraph={reverseGraph}
+                protocols={props.protocols}
                 layout={layout}
+                setImageToDownload={setImageToDownload}
+                paper={getPaperRef()}
+                graph={graph}
             />
             <div
                 id='canvas'
@@ -614,6 +648,7 @@ function Paper(props) {
                 baseTokenCellView={baseTokenCellView}
                 editBaseToken={editBaseToken}
             />
+            {imageToDownload && <img src={imageToDownload} />}
         </div>
     );
 }
