@@ -9,13 +9,6 @@ import close from "./close.svg";
 
 function addStakeEarn(joint, activeLink, tokenName, setLinksAndCellsToAdd, setEarnLinks, cellData, portCellOptions) {
     let newEarnLink = new joint.shapes.standard.Link();
-    // let newEarnLink = new joint.dia.Link({
-    //     attrs: {
-    //         '.connection': {
-    //             strokeDasharray: '8 4'
-    //         }
-    //     }
-    // });
 
     // set how the link looks and behaves
     newEarnLink.router('manhattan');
@@ -26,6 +19,13 @@ function addStakeEarn(joint, activeLink, tokenName, setLinksAndCellsToAdd, setEa
             targetMarker: {
                 type: "none"
             }
+        },
+        text: {
+            fontFamily: 'Roboto, sans-serif',
+            fontStyle: "normal",
+            fontWeight: 600,
+            fontSize: "15px",
+            lineHeight: "18px",
         }
     });
     // create cell instance for the link
@@ -75,9 +75,11 @@ function mapEarnOptions(earnArray, graph, action) {
                             text: `[\u00a0Earn\u00a0${earn}\u00a0]`,
                             earn,
                             tokenName: (earnLink.label(0) && earnLink.label(0).attrs.text.tokenName) || "COIN",
-                            fontWeight: 500,
-                            fontSize: "20px",
-                            lineHeight: "18px"
+                            fontFamily: 'Roboto, sans-serif',
+                            fontStyle: "normal",
+                            fontWeight: 600,
+                            fontSize: "15px",
+                            lineHeight: "18px",
                         },
                         rect: {
                             fill: "#f6f6f6"
@@ -103,9 +105,11 @@ function mapEarnOptions(earnArray, graph, action) {
                             text: `[\u00a0Earn\u00a0${earnLinkEarnValue}\u00a0]`,
                             earn: earnLinkEarnValue,
                             tokenName: tokenName,
-                            fontWeight: 500,
-                            fontSize: "20px",
-                            lineHeight: "18px"
+                            fontFamily: 'Roboto, sans-serif',
+                            fontStyle: "normal",
+                            fontWeight: 600,
+                            fontSize: "15px",
+                            lineHeight: "18px",
                         },
                         rect: {
                             fill: "#f6f6f6"
@@ -285,9 +289,11 @@ export default function ModalWindow(props) {
                                         text: `[\u00a0${allocation}%\u00a0${action[0]}\u00a0]`,
                                         action: action[0],
                                         allocation,
-                                        fontWeight: 500,
-                                        fontSize: "20px",
-                                        lineHeight: "18px"
+                                        fontFamily: 'Roboto, sans-serif',
+                                        fontStyle: "normal",
+                                        fontWeight: 600,
+                                        fontSize: "15px",
+                                        lineHeight: "18px",
                                     },
                                     rect: {
                                         fill: "#f6f6f6"
@@ -303,13 +309,6 @@ export default function ModalWindow(props) {
                                     // create new earn link if there is none
                                     
                                     let link = new joint.shapes.standard.Link();
-                                    // let link = new joint.dia.Link({
-                                    //     attrs: {
-                                    //         '.connection': {
-                                    //             strokeDasharray: '8 4'
-                                    //         }
-                                    //     }
-                                    // });
 
                                     link.label(0, {
                                         attrs: {
@@ -317,9 +316,11 @@ export default function ModalWindow(props) {
                                                 text: `[\u00a0Earn\u00a0${earn}\u00a0]`,
                                                 earn,
                                                 tokenName,
-                                                fontWeight: 500,
-                                                fontSize: "20px",
-                                                lineHeight: "18px"
+                                                fontFamily: 'Roboto, sans-serif',
+                                                fontStyle: "normal",
+                                                fontWeight: 600,
+                                                fontSize: "15px",
+                                                lineHeight: "18px",
                                             },
                                             rect: {
                                                 fill: "#f6f6f6"
@@ -338,6 +339,13 @@ export default function ModalWindow(props) {
                                             targetMarker: {
                                                 type: "none"
                                             }
+                                        },
+                                        text: {
+                                            fontFamily: 'Roboto, sans-serif',
+                                            fontStyle: "normal",
+                                            fontWeight: 600,
+                                            fontSize: "15px",
+                                            lineHeight: "18px",
                                         }
                                     });
                                     let cell = new joint.shapes.standard.Rectangle({
@@ -376,9 +384,11 @@ export default function ModalWindow(props) {
                                         text: `[\u00a0${allocation}%\u00a0${action[0]}\u00a0]`,
                                         action: action[0],
                                         allocation,
-                                        fontWeight: 500,
-                                        fontSize: "20px",
-                                        lineHeight: "18px"
+                                        fontFamily: 'Roboto, sans-serif',
+                                        fontStyle: "normal",
+                                        fontWeight: 600,
+                                        fontSize: "15px",
+                                        lineHeight: "18px",
                                     },
                                     rect: {
                                         fill: "#f6f6f6"
@@ -406,8 +416,9 @@ export default function ModalWindow(props) {
                                     
                                 }
                             });
-                            
-                            subLayout(linksAndCellsToAdd[0][0]);
+                            if (linksAndCellsToAdd.length > 0) {
+                                subLayout(linksAndCellsToAdd[0][0]);
+                            }
                         }
 
                         // layout()

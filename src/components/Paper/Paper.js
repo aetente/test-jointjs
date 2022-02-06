@@ -6,7 +6,7 @@ import SelectCells from '../SelectCells/SelectCells';
 import * as joint from 'jointjs';
 import dagre from 'dagre';
 import graphlib from 'graphlib';
-import { cells, earnCell } from './cells';
+import { cells, earnCell, frameCell, frameHorizantalLine, frameVerticalLine } from './cells';
 import { ports, portCellOptions, rootPortCellOptions } from './ports';
 import { diamondShape, toolsView, toolsViewVertices } from './options';
 import "./styles.css";
@@ -25,7 +25,7 @@ const customNameSpace = Object.assign(joint.shapes, {
 // joint.shapes.basic.Rhombus = diamondShape;
 
 const globalOffsetX = 350;
-const globalOffsetY = 35;
+const globalOffsetY = 40;
 
 
 const NODE_SEP = 300;
@@ -70,6 +70,7 @@ function Paper(props) {
     const [activeLinkView, setActiveLinkView] = useState(null);
     const [baseTokenCellView, setBaseTokenCellView] = useState(null);
     const [activeCellView, setActiveCellView] = useState(null);
+    const [activeCellViewsArray, setActiveCellViewsArray] = useState([]);
 
     const [graph, setGraph] = useState(new joint.dia.Graph({}, { cellNamespace: customNameSpace }));
     const [graphHistory, setGraphHistory] = useState([])
@@ -129,6 +130,16 @@ function Paper(props) {
         activeCellViewRef.current = val;
     }
 
+    const activeCellViewsArrayRef = useRef(activeCellViewsArray);
+
+    const getActiveCellViewsArrayRef = () => {
+        return activeCellViewsArrayRef.current;
+    }
+
+    const setActiveCellViewsArrayRef = (val) => {
+        activeCellViewsArrayRef.current = val;
+    }
+
     const dragStart = useCallback(event => {
         if (!event.target.className.includes("draggable")) return;
         event.dataTransfer.setData("text", event.target.getAttribute("protocolname"));
@@ -148,10 +159,19 @@ function Paper(props) {
 
     const dragDrop = useCallback(event => {
         event.preventDefault();
-        if (!graph) return;
+        if (!graph || event.target.tagName !== "svg") return;
 
         let rectBounds = event.target.getBoundingClientRect();
         let paperCoords = getPaperRef().translate();
+        let paperScale = getPaperRef().scale().sx;
+        paperCoords.tx = paperCoords.tx / paperScale;
+        paperCoords.ty = paperCoords.ty / paperScale;
+        let cellCoords = {
+            x: -paperCoords.tx + (event.clientX - rectBounds.left) / paperScale,
+            y: -paperCoords.ty + (event.clientY - rectBounds.top) / paperScale
+        }
+        cellCoords.x = cellCoords.x - (cellCoords.x % 10);
+        cellCoords.y = cellCoords.y - (cellCoords.y % 10);
         let newCell = new diamondShape({
             attrs: {
                 label: {
@@ -163,8 +183,8 @@ function Paper(props) {
                 '.': { magnet: false }
             },
             position: {
-                x: -paperCoords.tx + (event.clientX - rectBounds.left),
-                y: -paperCoords.ty + (event.clientY - rectBounds.top)
+                x: cellCoords.x,
+                y: cellCoords.y
             },
             size: { width: 100, height: 100 },
             inPorts: ['in'],
@@ -192,7 +212,20 @@ function Paper(props) {
             alink.vertices([]) // disable all vertices
         })
 
-        joint.layout.DirectedGraph.layout(graph, {
+        let theElements = graph.getElements();
+        let elementsToLayout = theElements;
+        if (paper && paper.options.restrictTranslate) {
+            elementsToLayout = [];
+            theElements.forEach(element => {
+                console.log(element.attributes.typeOfCell)
+                if (element.attributes.typeOfCell !== "frame") {
+                    elementsToLayout.push(element)
+                }
+            })
+
+        }
+
+        joint.layout.DirectedGraph.layout(graph.getSubgraph(elementsToLayout), {
             dagre: dagre,
             graphlib: graphlib,
             setVertices: true,
@@ -256,6 +289,13 @@ function Paper(props) {
                 targetMarker: {
                     type: "none"
                 }
+            },
+            text: {
+                fontFamily: 'Roboto, sans-serif',
+                fontStyle: "normal",
+                fontWeight: 600,
+                fontSize: "15px",
+                lineHeight: "18px",
             }
         });
 
@@ -382,6 +422,59 @@ function Paper(props) {
         }
     }
 
+    const drawFrame = () => {
+        if (paper.options.restrictTranslate) {
+            paper.options.restrictTranslate = false;
+            let cells = graph.getElements();
+            cells.forEach(cell => {
+                if (cell.attributes.typeOfCell === "frame") {
+                    cell.remove();
+                }
+            })
+        } else {
+            let paperTranslation = paper.translate()
+            console.log(paperTranslation)
+            paper.options.restrictTranslate = {
+                x: 0,
+                y: 0,
+                width: 918,
+                height: 532
+            };
+
+            // paper.options.restrictTranslate = true
+            let frameCellElement = new joint.shapes.standard.Polyline({ ...frameHorizantalLine });
+            frameCellElement.attr('body/refPoints', '0,0 0,1 1,1 1,0 0,0');
+            frameCellElement.toBack();
+            graph.addCell(frameCellElement);
+
+
+            frameCellElement = new joint.shapes.standard.Polyline({ ...frameVerticalLine });
+            frameCellElement.attr('body/refPoints', '0,0 0,1 1,1 1,0 0,0');
+            frameCellElement.toBack();
+            graph.addCell(frameCellElement);
+
+
+            frameCellElement = new joint.shapes.standard.Polyline({ ...frameHorizantalLine });
+            frameCellElement.attr('body/refPoints', '0,0 0,1 1,1 1,0 0,0');
+            frameCellElement.position(0, 532);
+            frameCellElement.toBack();
+            graph.addCell(frameCellElement);
+
+
+            frameCellElement = new joint.shapes.standard.Polyline({ ...frameVerticalLine });
+            frameCellElement.attr('body/refPoints', '0,0 0,1 1,1 1,0 0,0');
+            frameCellElement.position(918, 0);
+            frameCellElement.toBack();
+            graph.addCell(frameCellElement);
+            // let cells = graph.getElements();
+            // cells.forEach(cell => {
+            //     if (cell.attributes.typeOfCell !== "frame") {
+            //         frameCellElement.embed(cell);
+            //     }
+            // })
+        }
+    }
+
     useEffect(() => {
         let link = new joint.shapes.standard.Link();
 
@@ -408,20 +501,21 @@ function Paper(props) {
             gridSize: 10,
             drawGrid: true,
             frozen: true,
-            height: 9999,
-            width: 9999,
+            height: 532,
+            width: 918,
             async: true,
             defaultLink: link,
             linkPinning: false,
             background: {
                 color: '#F6F6F6',
+                // color: 'linear-gradient(90deg, #F6F6F6 50%, #00FFFF 50%)'
             },
             perpendicularLinks: true,
             cellViewNamespace: customNameSpace,
             interactive: (cellView, a) => {
-                // if (cellView.model.isLink()) {
-                //     return { vertexAdd: false }
-                // }
+                if (cellView.model.attributes.typeOfCell === "frame") {
+                    return false;
+                }
                 return true;
             },
             // restrictTranslate: true,
@@ -510,7 +604,8 @@ function Paper(props) {
         }))
 
         paper.on("link:pointerdblclick", ((linkView, e, x, y) => {
-            if (!e.ctrlKey) {
+            // console.log(linkView.model.isLink())
+            if (!e.ctrlKey && linkView.model.isLink()) {
                 let currentLink = linkView.model;
                 setActiveLink(currentLink);
                 let targetCell = linkView.model.getTargetCell()
@@ -529,10 +624,23 @@ function Paper(props) {
             paper.off("blank:pointermove");
             paper.on("blank:pointermove", ((event, x, y) => {
                 let movePos = { x: event.clientX, y: event.clientY };
+                let newTranslate = {
+                    x: paperPos.tx + movePos.x - newClickPos.x,
+                    y: paperPos.ty + movePos.y - newClickPos.y
+                }
                 paper.translate(
-                    paperPos.tx + movePos.x - newClickPos.x,
-                    paperPos.ty + movePos.y - newClickPos.y
+                    newTranslate.x,
+                    newTranslate.y
                 )
+                if (paper.options.restrictTranslate) {
+                    let paperTranslate = paper.translate();
+                    paper.options.restrictTranslate = {
+                        x: paperTranslate.x,
+                        y: paperTranslate.y,
+                        width: 918,
+                        height: 532
+                    };
+                }
             }))
         }))
 
@@ -575,6 +683,18 @@ function Paper(props) {
             setActiveLinkView(null);
         });
 
+        paper.on('blank:pointerclick', () => {
+            if (getActiveCellViewRef()) {
+                getActiveCellViewRef().unhighlight();
+                setActiveCellViewRef(null);
+                setActiveCellView(null);
+            }
+        });
+
+        // paper.setInteractivity(function(elementView) {
+        //     return elementView.attributes.typeOfCell === "frame";
+        // });
+
         paper.unfreeze();
 
 
@@ -593,7 +713,7 @@ function Paper(props) {
         theCells.forEach(cell => {
             cell.position(globalOffsetX, globalOffsetY);
         })
-        // layout();
+        layout();
 
 
         window.addEventListener("dragstart", dragStart);
@@ -626,6 +746,7 @@ function Paper(props) {
                 setImageToDownload={setImageToDownload}
                 paper={getPaperRef()}
                 graph={graph}
+                drawFrame={drawFrame}
             />
             <div
                 id='canvas'

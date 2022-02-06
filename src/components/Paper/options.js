@@ -31,8 +31,7 @@ export const toolsView = new joint.dia.ToolsView({
         // segmentsTool,
         verticesTool,
         sourceArrowheadTool,
-        targetArrowheadTool,
-        removeButton
+        targetArrowheadTool
     ]
 });
 
@@ -43,6 +42,7 @@ export const toolsViewVertices = new joint.dia.ToolsView({
         // segmentsTool,
         sourceArrowheadTool,
         targetArrowheadTool,
+        removeButton
     ]
 });
 
