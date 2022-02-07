@@ -11,7 +11,7 @@ function addStakeEarn(joint, activeLink, tokenName, setLinksAndCellsToAdd, setEa
     let newEarnLink = new joint.shapes.standard.Link();
 
     // set how the link looks and behaves
-    newEarnLink.router('manhattan');
+    newEarnLink.router('manhattan', { excludeTypes: ['custom.Frame']});
     newEarnLink.attr({
         typeOfLink: "earn",
         line: {
@@ -331,7 +331,7 @@ export default function ModalWindow(props) {
                                         }
                                     })
 
-                                    link.router('manhattan');
+                                    link.router('manhattan', { excludeTypes: ['custom.Frame']});
                                     link.attr({
                                         typeOfLink: "earn",
                                         line: {
@@ -401,7 +401,6 @@ export default function ModalWindow(props) {
                         }
 
                         if (action[0] === "Stake") {
-                            console.log(linksAndCellsToAdd)
                             linksAndCellsToAdd.forEach(la => {
                                 let newLink = la[0];
                                 let newCell = la[1]

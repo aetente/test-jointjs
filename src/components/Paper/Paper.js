@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { findDOMNode } from 'react-dom';
+import React, { useState, useEffect, useRef, useCallback, useContext } from 'react';
 import ModalWindow from '../ModalWindow/ModalWindow';
 import InitButtons from '../InitButtons/InitButtons';
 import SelectCells from '../SelectCells/SelectCells';
+
+import { DiagramContext } from '../Content/context';
 import * as joint from 'jointjs';
 import dagre from 'dagre';
 import graphlib from 'graphlib';
 import { cells, earnCell, frameCell, frameHorizantalLine, frameVerticalLine } from './cells';
 import { ports, portCellOptions, rootPortCellOptions } from './ports';
-import { diamondShape, toolsView, toolsViewVertices } from './options';
+import { diamondShape, frameShape, toolsView, toolsViewVertices } from './options';
 import "./styles.css";
 import { convertObjToStr } from '../../utils/utils';
 
@@ -18,7 +19,8 @@ import donkeylogo from "./Group 3722.png";
 // in here we added custom node, so that now jointjs nows what to build when it finds that the type of a node is custom.Diamond
 const customNameSpace = Object.assign(joint.shapes, {
     custom: {
-        Diamond: diamondShape
+        Diamond: diamondShape,
+        Frame: frameShape
     }
 });
 
@@ -39,11 +41,11 @@ const RANK_SEP = 97.5;
 function changeActiveLinkParenting(graph, activeLink) {
     if (activeLink && activeLink.isLink()) {
         // activeLink.vertices([])
-        let targetCell = activeLink.getTargetCell()
-        let sourceCell = activeLink.getSourceCell()
-        let targetCellType = convertObjToStr(targetCell.attributes.typeOfCell);
-        let sourceCellType = convertObjToStr(sourceCell.attributes.typeOfCell);
+        let targetCell = activeLink.getTargetCell();
+        let sourceCell = activeLink.getSourceCell();
         if (targetCell && sourceCell) {
+            let targetCellType = convertObjToStr(targetCell.attributes.typeOfCell);
+            let sourceCellType = convertObjToStr(sourceCell.attributes.typeOfCell);
             let sourcePort = sourceCell.getPort(activeLink.attributes.source.port);
             let targetPort = targetCell.getPort(activeLink.attributes.target.port);
             let sourcePortPosition = sourcePort.group;
@@ -53,7 +55,7 @@ function changeActiveLinkParenting(graph, activeLink) {
             // if (targetPortPosition === "bottom") {
             let isNewCell = sourceCellsNeighbors.length <= 1;
             let isConnectionBetweenEarns = sourceCellType === "earn_cell" && targetCellType === "base_token";
-            console.log(isConnectionBetweenEarns)
+
             if (isNewCell || isConnectionBetweenEarns) {
                 activeLink.target({ id: sourceCell.id, port: sourcePort.id })
                 activeLink.source({ id: targetCell.id, port: targetPort.id })
@@ -79,6 +81,10 @@ function Paper(props) {
     const [rootCell, setRootCell] = useState(null);
 
     const [imageToDownload, setImageToDownload] = useState(null);
+
+    const [isFrameAdded, setIsFrameAdded] = useState(false);
+
+    const contextValues = useContext(DiagramContext);
 
     // we need refs for events
 
@@ -159,7 +165,7 @@ function Paper(props) {
 
     const dragDrop = useCallback(event => {
         event.preventDefault();
-        if (!graph || event.target.tagName !== "svg") return;
+        if (!graph || (event.target.tagName !== "svg" && event.target.tagName !== "path")) return;
 
         let rectBounds = event.target.getBoundingClientRect();
         let paperCoords = getPaperRef().translate();
@@ -214,16 +220,15 @@ function Paper(props) {
 
         let theElements = graph.getElements();
         let elementsToLayout = theElements;
-        if (paper && paper.options.restrictTranslate) {
-            elementsToLayout = [];
-            theElements.forEach(element => {
-                console.log(element.attributes.typeOfCell)
-                if (element.attributes.typeOfCell !== "frame") {
-                    elementsToLayout.push(element)
-                }
-            })
+        // if (paper && paper.options.restrictTranslate) {
+        elementsToLayout = [];
+        theElements.forEach(element => {
+            if (element.attributes.typeOfCell !== "frame") {
+                elementsToLayout.push(element)
+            }
+        })
 
-        }
+        // }
 
         joint.layout.DirectedGraph.layout(graph.getSubgraph(elementsToLayout), {
             dagre: dagre,
@@ -235,7 +240,7 @@ function Paper(props) {
             edgeSep: EDGE_SEP,
             rankSep: RANK_SEP,
             setLinkVertices: false,
-            ranker: "tight-tree",
+            ranker: "network-simplex",
             setPosition: function (element, glNode) {
                 element.set({
                     position: {
@@ -272,7 +277,7 @@ function Paper(props) {
                 edgeSep: EDGE_SEP,
                 rankSep: RANK_SEP,
                 setLinkVertices: false,
-                ranker: "tight-tree"
+                ranker: "network-simplex"
             });
         }
 
@@ -281,7 +286,7 @@ function Paper(props) {
     const addBaseToken = (tokenName, tokenUrl) => {
 
         let newLink = new joint.shapes.standard.Link();
-        newLink.router('manhattan');
+        newLink.router('manhattan', { excludeTypes: ['custom.Frame'] });
 
         newLink.attr({
             line: {
@@ -384,24 +389,31 @@ function Paper(props) {
         if (e.key === "z" && e.ctrlKey) {
             reverseGraph()
         }
+        let activeCells = getActiveCellViewsArrayRef()
 
         if (getActiveLinkViewRef()) {
             if (e.key === "Control") {
                 getActiveLinkViewRef().addTools(toolsView);
             } else if (e.key === "Delete") {
-                // console.log(activeLinkViewRef.current)
                 stackGraph(getGraphRef())
                 getActiveLinkViewRef().model.remove();
                 setActiveLinkViewRef(null);
                 setActiveLinkView(null);
                 // stackGraph
             }
-        } else if (getActiveCellViewRef()) {
-            if (e.key === "Delete" && getActiveCellViewRef().model.attributes.typeOfCell !== "root") {
-                stackGraph(getGraphRef())
-                getActiveCellViewRef().model.remove();
-                setActiveCellViewRef(null);
-                setActiveCellView(null);
+        } else if (activeCells.length > 0) {
+            if (e.key === "Delete") {
+                stackGraph(getGraphRef());
+                let newActiveCells = [];
+                activeCells.forEach(activeCell => {
+                    if (activeCell.model.attributes.typeOfCell !== "root") {
+                        activeCell.model.remove();
+                    } else {
+                        newActiveCells.push(activeCell)
+                    }
+                })
+                setActiveCellViewsArrayRef([...newActiveCells]);
+                setActiveCellViewsArray(a => [...newActiveCells]);
             }
         }
     }
@@ -423,8 +435,10 @@ function Paper(props) {
     }
 
     const drawFrame = () => {
-        if (paper.options.restrictTranslate) {
-            paper.options.restrictTranslate = false;
+        // if (paper.options.restrictTranslate) {
+        if (isFrameAdded) {
+            // paper.options.restrictTranslate = false;
+            setIsFrameAdded(false);
             let cells = graph.getElements();
             cells.forEach(cell => {
                 if (cell.attributes.typeOfCell === "frame") {
@@ -432,53 +446,24 @@ function Paper(props) {
                 }
             })
         } else {
-            let paperTranslation = paper.translate()
-            console.log(paperTranslation)
-            paper.options.restrictTranslate = {
-                x: 0,
-                y: 0,
-                width: 918,
-                height: 532
-            };
-
-            // paper.options.restrictTranslate = true
-            let frameCellElement = new joint.shapes.standard.Polyline({ ...frameHorizantalLine });
-            frameCellElement.attr('body/refPoints', '0,0 0,1 1,1 1,0 0,0');
-            frameCellElement.toBack();
-            graph.addCell(frameCellElement);
-
-
-            frameCellElement = new joint.shapes.standard.Polyline({ ...frameVerticalLine });
-            frameCellElement.attr('body/refPoints', '0,0 0,1 1,1 1,0 0,0');
-            frameCellElement.toBack();
-            graph.addCell(frameCellElement);
-
-
-            frameCellElement = new joint.shapes.standard.Polyline({ ...frameHorizantalLine });
-            frameCellElement.attr('body/refPoints', '0,0 0,1 1,1 1,0 0,0');
-            frameCellElement.position(0, 532);
-            frameCellElement.toBack();
-            graph.addCell(frameCellElement);
-
-
-            frameCellElement = new joint.shapes.standard.Polyline({ ...frameVerticalLine });
-            frameCellElement.attr('body/refPoints', '0,0 0,1 1,1 1,0 0,0');
-            frameCellElement.position(918, 0);
-            frameCellElement.toBack();
-            graph.addCell(frameCellElement);
-            // let cells = graph.getElements();
-            // cells.forEach(cell => {
-            //     if (cell.attributes.typeOfCell !== "frame") {
-            //         frameCellElement.embed(cell);
-            //     }
-            // })
+            setIsFrameAdded(true);
+            let frameElement = new frameShape({ ...frameCell });
+            frameElement.attr(".l/height", contextValues.frameDimensions.h)
+            frameElement.attr(".l/d", `M 0 0 L 0 ${contextValues.frameDimensions.h} Z`);
+            frameElement.attr(".t/width", contextValues.frameDimensions.w)
+            frameElement.attr(".t/d", `M 0 ${contextValues.frameDimensions.h} L ${contextValues.frameDimensions.w} ${contextValues.frameDimensions.h} Z`);
+            frameElement.attr(".r/height", contextValues.frameDimensions.h)
+            frameElement.attr(".r/d", `M ${contextValues.frameDimensions.w} ${contextValues.frameDimensions.h} L ${contextValues.frameDimensions.w} 0 Z`);
+            frameElement.attr(".b/width", contextValues.frameDimensions.w)
+            frameElement.attr(".b/d", `M ${contextValues.frameDimensions.w} 0 L 0 0 Z`);
+            graph.addCell(frameElement);
         }
     }
 
     useEffect(() => {
         let link = new joint.shapes.standard.Link();
 
-        link.router('manhattan');
+        link.router('manhattan', { excludeTypes: ['custom.Frame'] });
         link.attr({
             line: {
                 strokeDasharray: '8 4',
@@ -501,8 +486,8 @@ function Paper(props) {
             gridSize: 10,
             drawGrid: true,
             frozen: true,
-            height: 532,
-            width: 918,
+            height: 9999,
+            width: 9999,
             async: true,
             defaultLink: link,
             linkPinning: false,
@@ -513,9 +498,9 @@ function Paper(props) {
             perpendicularLinks: true,
             cellViewNamespace: customNameSpace,
             interactive: (cellView, a) => {
-                if (cellView.model.attributes.typeOfCell === "frame") {
-                    return false;
-                }
+                // if (cellView.model.attributes.typeOfCell === "frame") {
+                //     return false;
+                // }
                 return true;
             },
             // restrictTranslate: true,
@@ -523,11 +508,12 @@ function Paper(props) {
                 let sourceTypeOfCell = cellViewS.model.attributes.typeOfCell;
                 let targetTypeOfCell = cellViewT.model.attributes.typeOfCell;
                 return cellViewS.id !== cellViewT.id &&
-                    !cellViewT.model.isLink() &&
-                    ((sourceTypeOfCell !== "root" &&
-                        targetTypeOfCell !== "root") ||
-                        (sourceTypeOfCell === "root" && targetTypeOfCell === "base_token") ||
-                        (sourceTypeOfCell === "base_token" && targetTypeOfCell === "root"));
+                    !cellViewT.model.isLink()
+                // &&
+                // ((sourceTypeOfCell !== "root" &&
+                //     targetTypeOfCell !== "root") ||
+                //     (sourceTypeOfCell === "root" && targetTypeOfCell === "base_token") ||
+                //     (sourceTypeOfCell === "base_token" && targetTypeOfCell === "root"));
             }
         });
 
@@ -573,38 +559,114 @@ function Paper(props) {
         }));
 
         paper.on("cell:pointerclick", ((cellView, e, x, y) => {
+            let activeCells = getActiveCellViewsArrayRef();
             if (!cellView.model.isLink()) {
-                if (getActiveCellViewRef()) {
-                    if (getActiveCellViewRef().id === cellView.id) {
-
-                        getActiveCellViewRef().unhighlight();
-                        setActiveCellViewRef(null);
-                        setActiveCellView(null);
-                    } else {
-
-                        getActiveCellViewRef().unhighlight();
+                if (e.ctrlKey) {
+                    let deltedFromSelection = false;
+                    let newActiveCells = activeCells.filter((activeCell, i) => {
+                        if (activeCell.model.id === cellView.model.id) {
+                            deltedFromSelection = true;
+                            cellView.unhighlight();
+                            return false;
+                        }
+                        return true;
+                    });
+                    if (!deltedFromSelection) {
                         cellView.highlight();
-                        setActiveCellViewRef(cellView);
-                        setActiveCellView(cellView);
+                        newActiveCells = [...activeCells, cellView];
                     }
-                } else {
 
-                    cellView.highlight();
-                    setActiveCellViewRef(cellView);
-                    setActiveCellView(cellView);
+                    setActiveCellViewsArrayRef([...newActiveCells]);
+                    setActiveCellViewsArray(a => [...newActiveCells]);
+                } else {
+                    if (activeCells.length > 0) {
+                        if (activeCells.length === 1 && activeCells[0].id === cellView.id) {
+
+                            let activeCells = getActiveCellViewsArrayRef()
+                            activeCells.forEach(activeCell => {
+                                activeCell.unhighlight()
+                            })
+                            setActiveCellViewsArrayRef([]);
+                            setActiveCellViewsArray(a => []);
+                        } else {
+
+                            let activeCells = getActiveCellViewsArrayRef()
+                            activeCells.forEach(activeCell => {
+                                activeCell.unhighlight()
+                            })
+                            cellView.highlight();
+                            setActiveCellViewsArrayRef([cellView]);
+                            setActiveCellViewsArray(a => [cellView]);
+                        }
+                    } else {
+                        cellView.highlight();
+                        setActiveCellViewsArrayRef([cellView]);
+                        setActiveCellViewsArray(a => [cellView]);
+                    }
                 }
             }
         }))
 
+        paper.on("cell:pointermove", (cellView, e, x, y) => {
+            let activeCells = getActiveCellViewsArrayRef();
+            let isHighlighted = false;
+            activeCells.forEach(activeCell => {
+                if (activeCell.model.id === cellView.model.id) {
+                    isHighlighted = true;
+                }
+            })
+            if (isHighlighted) {
+                let { originalEvent } = e;
+                let paperScale = getPaperRef().scale().sx;
+                activeCells.forEach(activeCell => {
+                    let activeCellModel = activeCell.model;
+                    if (activeCellModel.id !== cellView.model.id) {
+                        activeCellModel.translate(
+                            originalEvent.movementX / paperScale,
+                            originalEvent.movementY / paperScale,
+                        );
+                    }
+                })
+            }
+        })
+
+        paper.on("cell:pointerup", (cellView, e, x, y) => {
+            let activeCells = getActiveCellViewsArrayRef();
+            let isHighlighted = false;
+            activeCells.forEach(activeCell => {
+                if (activeCell.model.id === cellView.model.id) {
+                    isHighlighted = true;
+                }
+            })
+            if (isHighlighted) {
+                activeCells.forEach(activeCell => {
+                    let activeCellModel = activeCell.model;
+                    if (activeCellModel.id !== cellView.model.id) {
+                        let thePos = activeCellModel.attributes.position;
+                        // first make it so the position is a fractional number
+                        activeCellModel.translate(
+                            -(thePos.x % 1),
+                            -(thePos.y % 1),
+                        );
+                        // then snap it to grid
+                        thePos = activeCellModel.attributes.position;
+                        activeCellModel.translate(
+                            -(thePos.x % 10),
+                            -(thePos.y % 10),
+                        );
+                    }
+                })
+            }
+
+        })
+
         paper.on("cell:pointerdblclick", ((cellView, e, x, y) => {
             if (!cellView.model.isLink() && cellView.model.attributes.typeOfCell === "base_token") {
-                // console.log("cell:pointerdblclick", cellView)
                 setBaseTokenCellView(cellView);
             }
         }))
 
         paper.on("link:pointerdblclick", ((linkView, e, x, y) => {
-            // console.log(linkView.model.isLink())
             if (!e.ctrlKey && linkView.model.isLink()) {
                 let currentLink = linkView.model;
                 setActiveLink(currentLink);
@@ -637,8 +699,8 @@ function Paper(props) {
                     paper.options.restrictTranslate = {
                         x: paperTranslate.x,
                         y: paperTranslate.y,
-                        width: 918,
-                        height: 532
+                        width: contextValues.frameDimensions.w,
+                        height: contextValues.frameDimensions.h
                     };
                 }
             }))
@@ -684,10 +746,14 @@ function Paper(props) {
         });
 
         paper.on('blank:pointerclick', () => {
-            if (getActiveCellViewRef()) {
-                getActiveCellViewRef().unhighlight();
-                setActiveCellViewRef(null);
-                setActiveCellView(null);
+            let activeCells = getActiveCellViewsArrayRef()
+            if (activeCells.length > 0) {
+
+                activeCells.forEach(activeCell => {
+                    activeCell.unhighlight()
+                })
+                setActiveCellViewsArrayRef([]);
+                setActiveCellViewsArray(a => []);
             }
         });
 
@@ -703,6 +769,28 @@ function Paper(props) {
             allLinks.forEach(link => { // TODO probably don't update all links, but only the ones near the cell
                 link.findView(paper).requestConnectionUpdate();
             })
+
+
+
+            // var parentId = cell.get('parent');
+            // if (!parentId) return;
+
+            // var parent = graph.getCell(parentId);
+            // var parentBbox = parent.getBBox();
+            // var cellBbox = cell.getBBox();
+
+            // if (parentBbox.containsPoint(cellBbox.origin()) &&
+            //     parentBbox.containsPoint(cellBbox.topRight()) &&
+            //     parentBbox.containsPoint(cellBbox.corner()) &&
+            //     parentBbox.containsPoint(cellBbox.bottomLeft())) {
+
+            //     // All the four corners of the child are inside
+            //     // the parent area.
+            //     return;
+            // }
+
+            // // Revert the child position.
+            // cell.set('position', cell.previous('position'));
         });
         stackGraph(graph)
         setPaperRef(paper);
@@ -747,6 +835,7 @@ function Paper(props) {
                 paper={getPaperRef()}
                 graph={graph}
                 drawFrame={drawFrame}
+                isFrameAdded={isFrameAdded}
             />
             <div
                 id='canvas'

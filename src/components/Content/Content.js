@@ -1,10 +1,8 @@
 import React, { useEffect, useRef, useState, createContext } from 'react';
 import Paper from '../Paper/Paper';
-import SelectCells from '../SelectCells/SelectCells';
+import { contextValues, DiagramContext } from './context';
 import { protocols } from './protocols';
 import "./styles.css";
-
-const DiagramContext = createContext({});
 
 function Content() {
 
@@ -12,9 +10,11 @@ function Content() {
   return (
     <div className="hold-content">
       <div className="content">
-        <Paper
-          protocols={protocols}
-        />
+        <DiagramContext.Provider value={contextValues}>
+          <Paper
+            protocols={protocols}
+          />
+        </DiagramContext.Provider>
       </div>
     </div>
   );

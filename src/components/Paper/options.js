@@ -120,3 +120,112 @@ export const diamondShape = joint.dia.Element.extend({
         selector: "text"
     }]
 });
+
+export const frameAttrs = {
+    g: {
+        height: 918,
+        width: 532
+    },
+    ".l": {
+        height: 918,
+        width: 10,
+        stroke: 'black',
+        strokeWidth: 4,
+        // refPoints: "0,0 0,1",
+        d: "M 0 0 L 0 532 Z"
+    },
+    ".t": {
+        height: 10,
+        width: 532,
+        stroke: 'black',
+        strokeWidth: 4,
+        // refPoints: "0,1 1,1",
+        d: "M 0 532 L 918 532 Z"
+    },
+    ".r": {
+        height: 918,
+        width: 10,
+        stroke: 'black',
+        strokeWidth: 4,
+        // refPoints: "1,1 1,0",
+        d: "M 918 532 L 918 0 Z"
+    },
+    ".b": {
+        height: 10,
+        width: 532,
+        stroke: 'black',
+        strokeWidth: 4,
+        // refPoints: "1,0 0,0",
+        d: "M 918 0 L 0 0 Z"
+    },
+};
+
+export const frameShape = joint.dia.Element.extend({
+
+    markup: '<g class="rotatable"><g class="scalable"><path class="l"/><path class="t"/><path class="r"/><path class="b"/></g></g>',
+    defaults: {
+        ...joint.dia.Element.prototype.defaults,
+        type: "custom.Frame",
+        size: {
+            width: 918,
+            height: 532
+        },
+        attrs: frameAttrs
+    }
+})
+.define("custom.Frame", {
+    // markup: '<g class="rotatable"><g class="scalable"><polygon class="polygon"/><image class="image"/></g><text/></g>',
+
+    markup: [{
+        tagName: "g",
+        selector: "g"
+    },
+    {
+        tagName: "path",
+        selector: ".l",
+        className: "l",
+    },
+    {
+        tagName: "path",
+        selector: ".t",
+        className: "t",
+    },
+    {
+        tagName: "path",
+        selector: ".r",
+        className: "r",
+    },
+    {
+        tagName: "path",
+        selector: ".b",
+        className: "b",
+    }],
+    attrs: frameAttrs
+
+}, {
+    markup: [{
+        tagName: "g",
+        selector: "g"
+    },
+    {
+        tagName: "path",
+        selector: ".l",
+        className: "l",
+    },
+    {
+        tagName: "path",
+        selector: ".t",
+        className: "t",
+    },
+    {
+        tagName: "path",
+        selector: ".r",
+        className: "r",
+    },
+    {
+        tagName: "path",
+        selector: ".b",
+        className: "b",
+    }]
+}
+);
