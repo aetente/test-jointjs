@@ -1,25 +1,33 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import UndoButton from "../UndoButton/UndoButton";
+import HideSelect from "./HideSelect";
 import SelectCellButtons from "./SelectCellsButtons";
+import SelectInput from "./SelectInput";
 import { DiagramContext } from '../Content/context';
 import { unicodeUnEscape } from "../../utils/utils";
 import "./styles.css";
 
+import caretDown from "./caret-down.svg"
+
 function SelectCells(props) {
 
+  let { recentlyUsedProtocols } = props;
+
+
+  const [filterString, setFilterString] = useState("");
+  const [category, setCategory] = useState("Protocols");
+  const [isOpenRecentlyUsed, setIsOpenRecentlyUsed] = useState(true);
+  const [isOpenAllProtocols, setIsOpenAllProtocols] = useState(true);
+
+  const [isSelectOpen, setIsSelectOpen] = useState(true);
 
   const contextValues = useContext(DiagramContext);
 
-  // constructor() {
-  //   super();
-  //   this.state = {
-  //     imageBlobUrl: null
-  //   };
-  //   this.listToMatrix = this.listToMatrix.bind(this);
-  //   this.mapProtocols = this.mapProtocols.bind(this);
-  //   this.handleImageDownload = this.handleImageDownload.bind(this);
-  //   this.handleShowFrame = this.handleShowFrame.bind(this);
-  // }
+  useEffect(() => {
+
+    return () => {
+    };
+  })
 
   const listToMatrix = (list, elementsPerSubArray) => {
     let matrix = [], i, k;
@@ -36,38 +44,44 @@ function SelectCells(props) {
     return matrix;
   }
 
-  const mapProtocols = (protocols) => {
-    protocols = listToMatrix(protocols.protocols, 2);
-    return protocols.map((pRow, i) => {
-      return (
-        <div key={`list-row-${i}`} className="list-row">
-          {pRow.map(p => (
-            <div key={p.name} className="hold-protocol">
-              <div
-                className="draggable protocol"
-                color={p.backgroundColor}
-                bordercolor={p.borderColor}
-                protocolname={p.name}
-                image={p.image}
-                style={{
-                  backgroundColor: p.backgroundColor,
-                  border: `2px solid ${p.borderColor}`
-                }}
-                draggable
-              >
-                {p.image && <div className="protocol-content">
-                  <img draggable={false} src={p.image} alt={p.name} />
-                </div>}
+  const mapProtocols = (protocols, isVisible) => {
+    protocols = protocols.filter((protocol) => {
+      return protocol.name.toLowerCase().includes(filterString.toLowerCase());
+    });
+    protocols = listToMatrix(protocols, 2);
+    return (<div className={`mapped-protocols ${!isVisible && "hidden-protocols"}`}>
+
+      {protocols.map((pRow, i) => {
+        return (
+          <div key={`list-row-${i}`} className={`list-row`}>
+            {pRow.map(p => (
+              <div key={p.name} className="hold-protocol">
+                <div
+                  className="draggable protocol"
+                  color={p.backgroundColor}
+                  bordercolor={p.borderColor}
+                  protocolname={p.name}
+                  image={p.image}
+                  style={{
+                    backgroundColor: p.backgroundColor,
+                    border: `2px solid ${p.borderColor}`
+                  }}
+                  draggable
+                >
+                  {p.image && p.image !== "null" && <div className="protocol-content">
+                    <img draggable={false} src={p.image} alt={p.name} />
+                  </div>}
+                </div>
+                <div
+                  className="protocol-title"
+                >
+                  {p.name}
+                </div>
               </div>
-              <div
-                className="protocol-title"
-              >
-                {p.name}
-              </div>
-            </div>
-          ))}
-        </div>)
-    })
+            ))}
+          </div>)
+      })}
+    </div>);
   }
 
   const cropImageFromCanvas = (ctx, w, h) => {
@@ -227,10 +241,10 @@ function SelectCells(props) {
           y: framePosition.y
         }
         let sourceDimensions = {
-          w: contextValues.frameDimensions.w, 
+          w: contextValues.frameDimensions.w,
           h: contextValues.frameDimensions.h
         }
-        
+
         if (isFrameAdded) {
           sourcePosition.x *= scaleValue;
           sourcePosition.y *= scaleValue;
@@ -284,22 +298,73 @@ function SelectCells(props) {
     // <div className="hold-select-cells" >
 
     // <SelectCellButtons />
-    <div className="hold-cells" >
-      <div className="list-cells">
-        {mapProtocols(protocols)}
+    <div className={`hold-cells ${!isSelectOpen && "hide-cells"}`} >
+      <div className={`list-cells`}>
         <div className="list-row">
-          <button className="temp-auto-layout-button" onClick={() => {
-            props.layout();
-          }}>Auto layout</button>
+          <SelectCellButtons
+            setCategory={setCategory}
+          />
         </div>
         <div className="list-row">
-          <button className="temp-auto-layout-button" onClick={handleImageDownload}>Save as image</button>
+          <SelectInput
+            setFilterString={setFilterString}
+          />
         </div>
-        <div className="list-row">
-          <button className="temp-auto-layout-button" onClick={handleShowFrame}>Show the frame</button>
-        </div>
+        {
+          (category === "Protocols" &&
+
+            (
+              <div>
+                <div className="list-row list-section">
+                  <div onClick={() => { setIsOpenRecentlyUsed(!isOpenRecentlyUsed) }} className="list-selection-title">
+                    <img src={caretDown} alt="" />
+                    <div>
+                      Recently used
+                    </div>
+                  </div>
+                </div>
+                {mapProtocols(recentlyUsedProtocols, isOpenRecentlyUsed)}
+                <div className="list-row list-section">
+                  <div onClick={() => { setIsOpenAllProtocols(!isOpenAllProtocols) }} className="list-selection-title">
+                    <img src={caretDown} alt="" />
+                    <div>
+                      All Protocols
+                    </div>
+                  </div>
+                  <div onClick={() => {  }} className="list-selection-title add-new">
+                    <div>
+                      + Add New
+                    </div>
+                  </div>
+                </div>
+                {mapProtocols(protocols, isOpenAllProtocols)}
+              </div>
+            )
+
+          ) ||
+          (category === "Actions" &&
+            (<>
+              <div className="list-row">
+                <button className="select-action-button" onClick={() => {
+                  props.layout();
+                }}>Auto layout</button>
+                
+                <button className="select-action-button" onClick={handleImageDownload}>Save as image</button>
+              </div>
+              <div className="list-row">
+              </div>
+              <div className="list-row">
+                <button className="select-action-button" onClick={handleShowFrame}>Show the frame</button>
+              </div>
+            </>)
+          )
+        }
       </div>
       <UndoButton reverseGraph={props.reverseGraph} />
+      <HideSelect
+        isSelectOpen={isSelectOpen}
+        setIsSelectOpen={setIsSelectOpen}
+      />
     </div>
     // </div>
   );

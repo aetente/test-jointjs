@@ -1,3 +1,25 @@
+const portSizes = {
+    // width: 112,
+    // height: 112,
+    // stroke: 'rgba(0,0,0,0)',
+    // outline: '3px solid #023047',
+    // strokeWidth: 96,
+} 
+
+// 'myPorts': {
+//     position: 'top',
+//     attrs: {
+//       '.port-body': {
+//         stroke: 'red',
+//         strokeWidth: 2,
+//         height: 10,
+//         width: 10,
+//         magnet: true
+//       }
+//     },
+//     markup: '<rect class="port-body"/>'
+//   }
+
 export const ports = {
     portRight: {
         group: "right",
@@ -9,7 +31,8 @@ export const ports = {
                 magnet: true,
                 r: 6,
                 fill: 'white',
-                stroke: '#023047'
+                stroke: '#023047',
+                ...portSizes
             }
         },
         label: {
@@ -36,7 +59,8 @@ export const ports = {
                 magnet: true,
                 r: 6,
                 fill: 'white',
-                stroke: '#023047'
+                stroke: '#023047',
+                ...portSizes
             }
         },
         label: {
@@ -63,7 +87,8 @@ export const ports = {
                 magnet: true,
                 r: 6,
                 fill: 'white',
-                stroke: '#023047'
+                stroke: '#023047',
+                ...portSizes
             }
         },
         label: {
@@ -90,7 +115,8 @@ export const ports = {
                 magnet: true,
                 r: 6,
                 fill: 'white',
-                stroke: '#023047'
+                stroke: '#023047',
+                ...portSizes
             }
         },
         label: {
@@ -117,7 +143,8 @@ export const ports = {
                 magnet: true,
                 r: 6,
                 fill: '#023047',
-                stroke: '#023047'
+                stroke: '#023047',
+                ...portSizes
             },
             '.': { magnet: true }
         },

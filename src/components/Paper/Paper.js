@@ -11,7 +11,7 @@ import { cells, earnCell, frameCell, frameHorizantalLine, frameVerticalLine } fr
 import { ports, portCellOptions, rootPortCellOptions } from './ports';
 import { diamondShape, frameShape, toolsView, toolsViewVertices } from './options';
 import "./styles.css";
-import { convertObjToStr } from '../../utils/utils';
+import { convertObjToStr, swapItems } from '../../utils/utils';
 
 import donkeylogo from "./Group 3722.png";
 
@@ -73,6 +73,8 @@ function Paper(props) {
     const [baseTokenCellView, setBaseTokenCellView] = useState(null);
     const [activeCellView, setActiveCellView] = useState(null);
     const [activeCellViewsArray, setActiveCellViewsArray] = useState([]);
+    const [recentlyUsedProtocols, setRecentlyUsedProtocols] = useState([]);
+    
 
     const [graph, setGraph] = useState(new joint.dia.Graph({}, { cellNamespace: customNameSpace }));
     const [graphHistory, setGraphHistory] = useState([])
@@ -146,6 +148,16 @@ function Paper(props) {
         activeCellViewsArrayRef.current = val;
     }
 
+    const recentlyUsedProtocolsRef = useRef(recentlyUsedProtocols);
+
+    const getRecentlyUsedProtocolsRef = () => {
+        return recentlyUsedProtocolsRef.current;
+    }
+
+    const setRecentlyUsedProtocolsRef = (val) => {
+        recentlyUsedProtocolsRef.current = val;
+    }
+
     const dragStart = useCallback(event => {
         if (!event.target.className.includes("draggable")) return;
         event.dataTransfer.setData("text", event.target.getAttribute("protocolname"));
@@ -207,28 +219,97 @@ function Paper(props) {
         // layout();
 
         stackGraph(graph)
+
+
+        let isProtocolAdded = false;
+        getRecentlyUsedProtocolsRef().forEach((protocol) => {
+            console.log(protocol.name, event.dataTransfer.getData("text"))
+            if (protocol.name === event.dataTransfer.getData("text")) {
+                isProtocolAdded = true;
+            }
+        })
+        if (!isProtocolAdded) {
+            let newRecentlyUsedProtocol = {
+                name: event.dataTransfer.getData("text"),
+                backgroundColor: event.dataTransfer.getData("color"),
+                borderColor: event.dataTransfer.getData("borderColor"),
+                image: event.dataTransfer.getData("image")
+            };
+            setRecentlyUsedProtocols(protocols => [...protocols, newRecentlyUsedProtocol]);
+            setRecentlyUsedProtocolsRef([...getRecentlyUsedProtocolsRef(), newRecentlyUsedProtocol]);
+            localStorage.setItem("recentlyUsedProtocols", JSON.stringify([...getRecentlyUsedProtocolsRef()]))
+        }
     }, []);
 
     const layout = (activeLink) => {
 
         changeActiveLinkParenting(graph, activeLink)
 
+        let theElements = graph.getElements();
+        let newElements = [...theElements];
+        let swapIndexes = [];
+        console.log("elements before", [...theElements]);
+
         let theLinks = graph.getLinks()
-        theLinks.forEach(alink => {
-            alink.vertices([]) // disable all vertices
+
+        // here we reorder elements according to what port they are connected (left, top, bottom, right)
+        theLinks.forEach((alink, i) => {
+            // disable all vertices
+            // it doesn't have to do anything with reordering
+            // it is because auto layout will add new vertices
+            alink.vertices([]);
+
+            let targetCell = alink.getTargetCell()
+            let sourceCell = alink.getSourceCell()
+            let sourcePort = sourceCell.getPort(alink.attributes.source.port);
+
+            // here we only write dowm which elements to swap
+            // we don't swap on the spot, because it is not really about ordering of the elements
+            // but about which element was updated last, which includes if it has changed position in the elements array
+            // the logic is that all elements , which has LEFT source port should be updated first
+            // then go BOTTOM and TOP source ports (doesn't matter which exactly)
+            // and lastly we update elements with RIGHT source ports
+            if (sourcePort.group === "left") {
+                let theIndexToReplace = theElements.findIndex(el => {
+                    return el.id === targetCell.id;
+                });
+                swapIndexes.unshift([0, theIndexToReplace, "L"])
+            } else if (sourcePort.group === "right") {
+                let theIndexToReplace = theElements.findIndex(el => {
+                    return el.id === targetCell.id;
+                });
+                swapIndexes.push([theElements.length - 1, theIndexToReplace, "R"])
+            } else {
+                let theIndexToReplace = theElements.findIndex(el => {
+                    return el.id === targetCell.id;
+                });
+                swapIndexes.splice(Math.floor((swapIndexes.length - 1) / 2), 0, [Math.floor((theElements.length - 1) / 2), theIndexToReplace, "B/T"])
+            }
         })
 
-        let theElements = graph.getElements();
+        // TODO for some reason the ordering could still be wrong
+        // so we have to iterate the array one more time to make sure
+        // needs to be fixed
+        swapIndexes.forEach((indexes, i) => {
+            if (indexes[2] === "L") {
+                swapIndexes = swapItems(swapIndexes, 0, i)
+            } else if (indexes[2] === "R") {
+                swapIndexes = swapItems(swapIndexes, swapIndexes.length - 1, i)
+            }
+        })
+
+        // here we finaly swap the elements according to logic described above
+        swapIndexes.forEach((indexes) => {
+            newElements = swapItems(theElements, indexes[0], indexes[1]);
+        })
+
         let elementsToLayout = theElements;
-        // if (paper && paper.options.restrictTranslate) {
         elementsToLayout = [];
         theElements.forEach(element => {
             if (element.attributes.typeOfCell !== "frame") {
                 elementsToLayout.push(element)
             }
         })
-
-        // }
 
         joint.layout.DirectedGraph.layout(graph.getSubgraph(elementsToLayout), {
             dagre: dagre,
@@ -536,9 +617,13 @@ function Paper(props) {
             changeActiveLinkParenting(graph, activeLink)
             if (linkView.model.isLink()) {
                 if (linkView.model.vertices().length === 0) {
+                    let verticeX = (linkView.sourceAnchor.x + linkView.targetAnchor.x) / 2;
+                    let verticeY = (linkView.sourceAnchor.y + linkView.targetAnchor.y) / 2;
+                    verticeX -= (verticeX % 10);
+                    verticeY -= (verticeY % 10);
                     linkView.model.vertices([{
-                        x: (linkView.sourceAnchor.x + linkView.targetAnchor.x) / 2,
-                        y: (linkView.sourceAnchor.y + linkView.targetAnchor.y) / 2
+                        x: verticeX,
+                        y: verticeY
                     }])
                 }
                 // linkView.model.vertices([])
@@ -608,6 +693,7 @@ function Paper(props) {
         }))
 
         paper.on("cell:pointermove", (cellView, e, x, y) => {
+            // console.log(e.target)
             let activeCells = getActiveCellViewsArrayRef();
             let isHighlighted = false;
             activeCells.forEach(activeCell => {
@@ -626,6 +712,22 @@ function Paper(props) {
                             originalEvent.movementY / paperScale,
                         );
                     }
+                })
+            }
+
+            if (cellView.model.isElement()) {
+                let theLinks = getGraphRef().getLinks();
+
+                theLinks.forEach(link => {
+                    let linkView = link.findView(getPaperRef());
+                    let verticeX = (linkView.sourceAnchor.x + linkView.targetAnchor.x) / 2;
+                    let verticeY = (linkView.sourceAnchor.y + linkView.targetAnchor.y) / 2;
+                    verticeX -= (verticeX % 10);
+                    verticeY -= (verticeY % 10);
+                    link.vertices([{
+                        x: verticeX,
+                        y: verticeY
+                    }]);
                 })
             }
         })
@@ -716,9 +818,13 @@ function Paper(props) {
                 changeActiveLinkParenting(graph, eventElement)
                 if (linkView.model.isLink()) {
                     if (linkView.model.vertices().length === 0) {
+                        let verticeX = (linkView.sourceAnchor.x + linkView.targetAnchor.x) / 2;
+                        let verticeY = (linkView.sourceAnchor.y + linkView.targetAnchor.y) / 2;
+                        verticeX -= (verticeX % 10);
+                        verticeY -= (verticeY % 10);
                         linkView.model.vertices([{
-                            x: (linkView.sourceAnchor.x + linkView.targetAnchor.x) / 2,
-                            y: (linkView.sourceAnchor.y + linkView.targetAnchor.y) / 2
+                            x: verticeX,
+                            y: verticeY
                         }])
                     }
                     // linkView.model.vertices([])
@@ -803,6 +909,11 @@ function Paper(props) {
         })
         layout();
 
+        let localStorageProtocols = localStorage.getItem("recentlyUsedProtocols");
+        if (localStorageProtocols) {
+            setRecentlyUsedProtocols(JSON.parse(localStorageProtocols));
+            setRecentlyUsedProtocolsRef(JSON.parse(localStorageProtocols));
+        }
 
         window.addEventListener("dragstart", dragStart);
         window.addEventListener("dragenter", dragEnter);
@@ -836,6 +947,7 @@ function Paper(props) {
                 graph={graph}
                 drawFrame={drawFrame}
                 isFrameAdded={isFrameAdded}
+                recentlyUsedProtocols={recentlyUsedProtocols}
             />
             <div
                 id='canvas'

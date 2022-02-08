@@ -76,7 +76,7 @@ export const diamondAttrs = {
 
 export const diamondShape = joint.dia.Element.extend({
 
-    markup: '<g class="rotatable"><g class="scalable"><polygon class="polygon"/><image class="image"/></g><text/></g>',
+    markup: '<g class="rotatable"><g class="scalable"><polygon className="polygon"/><image class="image"/></g><text/></g>',
 
     defaults: {
         ...joint.dia.Element.prototype.defaults,
@@ -89,15 +89,18 @@ export const diamondShape = joint.dia.Element.extend({
 
     markup: [{
         tagName: "polygon",
-        selector: "polygon"
+        selector: "polygon",
+        className: "joint-cell"
     },
     {
         tagName: "image",
-        selector: "image"
+        selector: "image",
+        className: "joint-cell"
     },
     {
         tagName: "text",
-        selector: "text"
+        selector: "text",
+        className: "joint-cell"
     }],
     attrs: diamondAttrs
 
@@ -109,15 +112,18 @@ export const diamondShape = joint.dia.Element.extend({
     // },
     markup: [{
         tagName: "polygon",
-        selector: "polygon"
+        selector: "polygon",
+        className: "joint-cell"
     },
     {
         tagName: "image",
-        selector: "image"
+        selector: "image",
+        className: "joint-cell"
     },
     {
         tagName: "text",
-        selector: "text"
+        selector: "text",
+        className: "joint-cell"
     }]
 });
 

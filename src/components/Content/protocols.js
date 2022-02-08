@@ -1,7 +1,6 @@
 import ethereum from "./ethereum.png";
 
-export const protocols = {
-    protocols: [
+export const protocols = [
         {
             name: "Ethereum",
             backgroundColor: "#f6f6f6",
@@ -23,5 +22,4 @@ export const protocols = {
             backgroundColor: "#a2f2a2",
             borderColor: "#22a222"
         }
-    ]
-}
+    ];
