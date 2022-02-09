@@ -69,27 +69,3 @@ export const earnCell = {
     size: { width: 918, height: 532 },
     typeOfCell: "frame"
   }
-
-  export const frameHorizantalLine = {
-    attrs: {
-      body: {
-        fill: "rgba(0,0,0,0)",
-        stroke: "#777E90"
-      },
-      '.': { magnet: false }
-    },
-    size: { width: 918, height: 1 },
-    typeOfCell: "frame"
-  }
-  
-  export const frameVerticalLine = {
-    attrs: {
-      body: {
-        fill: "rgba(0,0,0,0)",
-        stroke: "#777E90"
-      },
-      '.': { magnet: false }
-    },
-    size: { width: 1, height: 532 },
-    typeOfCell: "frame"
-  }

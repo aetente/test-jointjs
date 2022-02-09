@@ -20,147 +20,93 @@ const portSizes = {
 //     markup: '<rect class="port-body"/>'
 //   }
 
+const portAttrs = {
+    portBody: {
+        magnet: true,
+        r: 6,
+        fill: 'white',
+        stroke: '#023047',
+        ...portSizes
+    },
+    portBody2: {
+        magnet: true,
+        r: 26,
+        fill: 'rgba(0,0,0,0)',
+        // stroke: '#023047',
+        stroke: 'rgba(0,0,0,0)',
+        ...portSizes
+    }
+}
+
+const rootPortAttrs = {
+    portBody: {
+        magnet: true,
+        r: 6,
+        fill: '#023047',
+        stroke: '#023047',
+        ...portSizes
+    },
+    // portBody2: {
+    //     magnet: true,
+    //     r: 26,
+    //     fill: 'rgba(0,0,0,0)',
+    //     // stroke: '#023047',
+    //     stroke: 'rgba(0,0,0,0)',
+    //     ...portSizes
+    // }
+}
+
+const portMarkup = [{
+        tagName: 'circle',
+        selector: 'portBody'
+    },
+    // {
+    //     tagName: 'circle',
+    //     selector: 'portBody2'
+    // }
+];
+
 export const ports = {
     portRight: {
         group: "right",
         position: {
             name: 'right'
         },
-        attrs: {
-            portBody: {
-                magnet: true,
-                r: 6,
-                fill: 'white',
-                stroke: '#023047',
-                ...portSizes
-            }
-        },
-        label: {
-            position: {
-                name: 'right',
-            },
-            markup: [{
-                tagName: 'text',
-                selector: 'label'
-            }]
-        },
-        markup: [{
-            tagName: 'circle',
-            selector: 'portBody'
-        }]
+        attrs: portAttrs,
+        markup: portMarkup
+        // markup: '<circle joint-selector="c1" class="c1"/><circle class="c2"/>'
     },
     portLeft: {
         group: "left",
         position: {
             name: 'left',
         },
-        attrs: {
-            portBody: {
-                magnet: true,
-                r: 6,
-                fill: 'white',
-                stroke: '#023047',
-                ...portSizes
-            }
-        },
-        label: {
-            position: {
-                name: 'left',
-            },
-            markup: [{
-                tagName: 'text',
-                selector: 'label'
-            }]
-        },
-        markup: [{
-            tagName: 'circle',
-            selector: 'portBody'
-        }]
+        attrs: portAttrs,
+        markup: portMarkup
     },
     portTop: {
         group: "top",
         position: {
             name: 'top',
         },
-        attrs: {
-            portBody: {
-                magnet: true,
-                r: 6,
-                fill: 'white',
-                stroke: '#023047',
-                ...portSizes
-            }
-        },
-        label: {
-            position: {
-                name: 'top',
-            },
-            markup: [{
-                tagName: 'text',
-                selector: 'label'
-            }]
-        },
-        markup: [{
-            tagName: 'circle',
-            selector: 'portBody'
-        }]
+        attrs: portAttrs,
+        markup: portMarkup
     },
     portBottom: {
         group: "bottom",
         position: {
             name: 'bottom',
         },
-        attrs: {
-            portBody: {
-                magnet: true,
-                r: 6,
-                fill: 'white',
-                stroke: '#023047',
-                ...portSizes
-            }
-        },
-        label: {
-            position: {
-                name: 'bottom',
-            },
-            markup: [{
-                tagName: 'text',
-                selector: 'label'
-            }]
-        },
-        markup: [{
-            tagName: 'circle',
-            selector: 'portBody'
-        }]
+        attrs:portAttrs,
+        markup: portMarkup
     },
     rootPortBottom: {
         group: "bottom",
         position: {
             name: 'bottom',
         },
-        attrs: {
-            portBody: {
-                magnet: true,
-                r: 6,
-                fill: '#023047',
-                stroke: '#023047',
-                ...portSizes
-            },
-            '.': { magnet: true }
-        },
-        label: {
-            position: {
-                name: 'bottom',
-            },
-            markup: [{
-                tagName: 'text',
-                selector: 'label'
-            }]
-        },
-        markup: [{
-            tagName: 'circle',
-            selector: 'portBody'
-        }]
+        attrs: rootPortAttrs,
+        markup: portMarkup
     }
 }
 
@@ -199,10 +145,10 @@ export const rootPortCellOptions = {
         },
     },
     items: [
-        {...ports.portBottom, attrs: { portBody: {...ports.portBottom.attrs.portBody, fill: '#023047', }}},
-        {...ports.portLeft, attrs: { portBody: {...ports.portLeft.attrs.portBody, fill: '#023047', }}},
-        {...ports.portRight, attrs: { portBody: {...ports.portRight.attrs.portBody, fill: '#023047', }}},
-        {...ports.portTop, attrs: { portBody: {...ports.portTop.attrs.portBody, fill: '#023047', }}},
+        {...ports.portBottom, attrs: rootPortAttrs},
+        {...ports.portLeft, attrs: rootPortAttrs},
+        {...ports.portRight, attrs: rootPortAttrs},
+        {...ports.portTop, attrs: rootPortAttrs},
         // ports.portRight, ports.portTop, ports.portBottom
         // ports.rootPortBottom
     ]

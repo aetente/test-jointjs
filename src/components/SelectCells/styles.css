@@ -316,3 +316,7 @@ button.unselected-category {
     justify-content: center;
     align-items: center;
 }
+
+.rotate-180 {
+    transform: rotate(180deg);
+}

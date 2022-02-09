@@ -74,7 +74,7 @@ function Paper(props) {
     const [activeCellView, setActiveCellView] = useState(null);
     const [activeCellViewsArray, setActiveCellViewsArray] = useState([]);
     const [recentlyUsedProtocols, setRecentlyUsedProtocols] = useState([]);
-    
+
 
     const [graph, setGraph] = useState(new joint.dia.Graph({}, { cellNamespace: customNameSpace }));
     const [graphHistory, setGraphHistory] = useState([])
@@ -578,6 +578,14 @@ function Paper(props) {
             },
             perpendicularLinks: true,
             cellViewNamespace: customNameSpace,
+            highlighting: {
+                connecting: {
+                    name: "stroke",
+                    options: {
+                        padding: 30
+                    }
+                }
+            },
             interactive: (cellView, a) => {
                 // if (cellView.model.attributes.typeOfCell === "frame") {
                 //     return false;
@@ -844,6 +852,97 @@ function Paper(props) {
             setActiveLinkViewRef(linkView);
             setActiveLinkView(linkView);
         });
+
+        paper.on("link:pointerup", (linkView, e, x, y) => {
+            console.log(linkView, e, linkView.model.isLink(), e.target.getAttribute("joint-selector"))
+
+            let sourceCell = graph.getCell(linkView.model.attributes.source.id);
+            let jointSelector = e.target.getAttribute("joint-selector");
+            if (!jointSelector || jointSelector === "body" || jointSelector === "polygon" || jointSelector === "image") {
+                let theElements = graph.getElements();
+                // let thePosition = linkView.model.attributes.target;
+                let thePosition = { x, y };
+                let closestElement = theElements[0];
+
+                let closestElementPosition = {...closestElement.attributes.position};
+                closestElementPosition.x += closestElement.attributes.size.width / 2;
+                closestElementPosition.y += closestElement.attributes.size.height / 2;
+
+                let closestDistance = Math.sqrt(Math.pow(closestElementPosition.x - thePosition.x, 2) + Math.pow(closestElementPosition.y - thePosition.y, 2));
+                theElements.forEach((el, i) => {
+
+                    let elPosition = {...el.attributes.position};
+                    elPosition.x += el.attributes.size.width / 2;
+                    elPosition.y += el.attributes.size.height / 2;
+
+                    let distanceToElement = Math.sqrt(Math.pow(elPosition.x - thePosition.x, 2) + Math.pow(elPosition.y - thePosition.y, 2));
+                    if (distanceToElement < closestDistance) {
+                        closestElement = theElements[i];
+                        closestDistance = distanceToElement;
+                        closestElementPosition = {...closestElement.attributes.position};
+                        closestElementPosition.x += closestElement.attributes.size.width / 2;
+                        closestElementPosition.y += closestElement.attributes.size.height / 2;
+                    }
+                })
+
+                closestElementPosition.x -= closestElement.attributes.size.width / 2;
+                closestElementPosition.y -= closestElement.attributes.size.height / 2;
+
+                if (sourceCell.id !== closestElement.id) {
+
+                    let cellPorts = closestElement.getPorts();
+                    let closestPort = cellPorts[0];
+
+                    let closestPortPosition = closestElement.getPortsPositions(closestPort.group);
+                    closestPortPosition = closestPortPosition[Object.keys(closestPortPosition)[0]];
+                    closestPortPosition.x += closestElementPosition.x;
+                    closestPortPosition.y += closestElementPosition.y;
+
+                    closestDistance = Math.sqrt(Math.pow(closestPortPosition.x - thePosition.x, 2) + Math.pow(closestPortPosition.y - thePosition.y, 2));
+
+                    cellPorts.forEach((port, i) => {
+
+                        let currentPortPosition = closestElement.getPortsPositions(port.group);
+                        currentPortPosition = currentPortPosition[Object.keys(currentPortPosition)[0]];
+                        currentPortPosition.x += closestElementPosition.x;
+                        currentPortPosition.y += closestElementPosition.y;
+
+                        let distanceToPort = Math.sqrt(Math.pow(currentPortPosition.x - thePosition.x, 2) + Math.pow(currentPortPosition.y - thePosition.y, 2));
+
+                        if (distanceToPort < closestDistance) {
+
+                            closestPort = cellPorts[i];
+                            closestDistance = distanceToPort;
+                        }
+
+                    })
+
+
+                    let sourcePort = sourceCell.getPort(linkView.model.attributes.source.port);
+
+
+                    let sourceCellsNeighbors = graph.getNeighbors(sourceCell)
+                    // if (targetPortPosition === "bottom") {
+                    let isNewCell = sourceCellsNeighbors.length < 1;
+
+                    console.log(sourceCell, isNewCell, sourceCellsNeighbors)
+                    if (isNewCell) {
+                        linkView.model.target({ id: sourceCell.id, port: sourcePort.id })
+                        linkView.model.source({ id: closestElement.id, port: closestPort.id })
+                    } else {
+                        linkView.model.target({ id: closestElement.id, port: closestPort.id })
+                        linkView.model.source({ id: sourceCell.id, port: sourcePort.id })
+                    }
+
+                    
+
+                    linkView.model.addTo(graph)
+                    setActiveLink(linkView.model);
+                    stackGraph(graph);
+                    setOpenModalWindow(true);
+                }
+            }
+        })
 
         paper.on('blank:mouseover', () => {
             paper.removeTools();
