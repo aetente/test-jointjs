@@ -186,3 +186,8 @@ option {
     cursor: pointer;
     text-decoration: underline;
 }
+
+.chrome-picker {
+    width: 100% !important;
+    box-shadow: none;
+}

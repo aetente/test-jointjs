@@ -69,11 +69,12 @@ function Paper(props) {
 
     const [openModalWindow, setOpenModalWindow] = useState(false);
     const [activeLink, setActiveLink] = useState(null);
+    const [activeProtocol, setActiveProtocol] = useState(null);
     const [activeLinkView, setActiveLinkView] = useState(null);
     const [baseTokenCellView, setBaseTokenCellView] = useState(null);
-    const [activeCellView, setActiveCellView] = useState(null);
     const [activeCellViewsArray, setActiveCellViewsArray] = useState([]);
     const [recentlyUsedProtocols, setRecentlyUsedProtocols] = useState([]);
+    const [recentlyUsedActions, setRecentlyUsedActions] = useState([]);
 
 
     const [graph, setGraph] = useState(new joint.dia.Graph({}, { cellNamespace: customNameSpace }));
@@ -81,8 +82,6 @@ function Paper(props) {
     const [paper, setPaper] = useState(null);
 
     const [rootCell, setRootCell] = useState(null);
-
-    const [imageToDownload, setImageToDownload] = useState(null);
 
     const [isFrameAdded, setIsFrameAdded] = useState(false);
 
@@ -126,16 +125,6 @@ function Paper(props) {
 
     const setActiveLinkViewRef = (val) => {
         activeLinkViewRef.current = val;
-    }
-
-    const activeCellViewRef = useRef(activeCellView);
-
-    const getActiveCellViewRef = () => {
-        return activeCellViewRef.current;
-    }
-
-    const setActiveCellViewRef = (val) => {
-        activeCellViewRef.current = val;
     }
 
     const activeCellViewsArrayRef = useRef(activeCellViewsArray);
@@ -223,23 +212,35 @@ function Paper(props) {
 
         let isProtocolAdded = false;
         getRecentlyUsedProtocolsRef().forEach((protocol) => {
-            console.log(protocol.name, event.dataTransfer.getData("text"))
             if (protocol.name === event.dataTransfer.getData("text")) {
                 isProtocolAdded = true;
             }
         })
         if (!isProtocolAdded) {
             let newRecentlyUsedProtocol = {
-                name: event.dataTransfer.getData("text"),
-                backgroundColor: event.dataTransfer.getData("color"),
-                borderColor: event.dataTransfer.getData("borderColor"),
-                image: event.dataTransfer.getData("image")
+                name: event.dataTransfer.getData("text")
             };
             setRecentlyUsedProtocols(protocols => [...protocols, newRecentlyUsedProtocol]);
             setRecentlyUsedProtocolsRef([...getRecentlyUsedProtocolsRef(), newRecentlyUsedProtocol]);
             localStorage.setItem("recentlyUsedProtocols", JSON.stringify([...getRecentlyUsedProtocolsRef()]))
         }
     }, []);
+
+    const addRecentlyUsedAction = (actionName) => {
+        let isActionAdded = false;
+        recentlyUsedActions.forEach((action) => {
+            if (action.name === actionName) {
+                isActionAdded = true;
+            }
+        })
+        if (!isActionAdded) {
+            let newRecentlyUsedAction = {
+                name: actionName
+            };
+            setRecentlyUsedActions(action => [...action, newRecentlyUsedAction]);
+            localStorage.setItem("recentlyUsedActions", JSON.stringify([...recentlyUsedActions, newRecentlyUsedAction]))
+        }
+    }
 
     const layout = (activeLink) => {
 
@@ -248,7 +249,6 @@ function Paper(props) {
         let theElements = graph.getElements();
         let newElements = [...theElements];
         let swapIndexes = [];
-        console.log("elements before", [...theElements]);
 
         let theLinks = graph.getLinks()
 
@@ -636,6 +636,7 @@ function Paper(props) {
                 }
                 // linkView.model.vertices([])
                 setActiveLink(linkView.model);
+                setActiveProtocol(null);
                 stackGraph(graph);
                 let targetCell = linkView.model.getTargetCell()
                 let sourceCell = linkView.model.getSourceCell()
@@ -780,6 +781,7 @@ function Paper(props) {
             if (!e.ctrlKey && linkView.model.isLink()) {
                 let currentLink = linkView.model;
                 setActiveLink(currentLink);
+                setActiveProtocol(null);
                 let targetCell = linkView.model.getTargetCell()
                 let sourceCell = linkView.model.getSourceCell()
                 if (sourceCell.attributes.typeOfCell !== "root" && targetCell.attributes.typeOfCell !== "root") {
@@ -817,9 +819,6 @@ function Paper(props) {
         }))
 
         graph.on('add', (eventElement) => {
-            // if (eventElement.isLink()) {
-            //     setActiveLink(eventElement);
-            // }
             paper.off("link:connect")
             paper.on("link:connect", ((linkView, event, elementViewConnected, magnet, arrowhead) => {
                 // layout(eventElement);
@@ -837,6 +836,7 @@ function Paper(props) {
                     }
                     // linkView.model.vertices([])
                     setActiveLink(linkView.model);
+                    setActiveProtocol(null);
                     stackGraph(graph);
                     let targetCell = linkView.model.getTargetCell()
                     let sourceCell = linkView.model.getSourceCell()
@@ -854,13 +854,11 @@ function Paper(props) {
         });
 
         paper.on("link:pointerup", (linkView, e, x, y) => {
-            console.log(linkView, e, linkView.model.isLink(), e.target.getAttribute("joint-selector"))
-
+            
             let sourceCell = graph.getCell(linkView.model.attributes.source.id);
             let jointSelector = e.target.getAttribute("joint-selector");
             if (!jointSelector || jointSelector === "body" || jointSelector === "polygon" || jointSelector === "image") {
                 let theElements = graph.getElements();
-                // let thePosition = linkView.model.attributes.target;
                 let thePosition = { x, y };
                 let closestElement = theElements[0];
 
@@ -925,7 +923,6 @@ function Paper(props) {
                     // if (targetPortPosition === "bottom") {
                     let isNewCell = sourceCellsNeighbors.length < 1;
 
-                    console.log(sourceCell, isNewCell, sourceCellsNeighbors)
                     if (isNewCell) {
                         linkView.model.target({ id: sourceCell.id, port: sourcePort.id })
                         linkView.model.source({ id: closestElement.id, port: closestPort.id })
@@ -938,6 +935,7 @@ function Paper(props) {
 
                     linkView.model.addTo(graph)
                     setActiveLink(linkView.model);
+                    setActiveProtocol(null);
                     stackGraph(graph);
                     setOpenModalWindow(true);
                 }
@@ -962,10 +960,6 @@ function Paper(props) {
             }
         });
 
-        // paper.setInteractivity(function(elementView) {
-        //     return elementView.attributes.typeOfCell === "frame";
-        // });
-
         paper.unfreeze();
 
 
@@ -974,28 +968,6 @@ function Paper(props) {
             allLinks.forEach(link => { // TODO probably don't update all links, but only the ones near the cell
                 link.findView(paper).requestConnectionUpdate();
             })
-
-
-
-            // var parentId = cell.get('parent');
-            // if (!parentId) return;
-
-            // var parent = graph.getCell(parentId);
-            // var parentBbox = parent.getBBox();
-            // var cellBbox = cell.getBBox();
-
-            // if (parentBbox.containsPoint(cellBbox.origin()) &&
-            //     parentBbox.containsPoint(cellBbox.topRight()) &&
-            //     parentBbox.containsPoint(cellBbox.corner()) &&
-            //     parentBbox.containsPoint(cellBbox.bottomLeft())) {
-
-            //     // All the four corners of the child are inside
-            //     // the parent area.
-            //     return;
-            // }
-
-            // // Revert the child position.
-            // cell.set('position', cell.previous('position'));
         });
         stackGraph(graph)
         setPaperRef(paper);
@@ -1012,6 +984,11 @@ function Paper(props) {
         if (localStorageProtocols) {
             setRecentlyUsedProtocols(JSON.parse(localStorageProtocols));
             setRecentlyUsedProtocolsRef(JSON.parse(localStorageProtocols));
+        }
+
+        let localStorageActions = localStorage.getItem("recentlyUsedActions");
+        if (localStorageActions) {
+            setRecentlyUsedActions(JSON.parse(localStorageActions));
         }
 
         window.addEventListener("dragstart", dragStart);
@@ -1034,6 +1011,7 @@ function Paper(props) {
 
     }, []);
 
+
     return (
         <div className='hold-paper'>
             <SelectCells
@@ -1041,35 +1019,44 @@ function Paper(props) {
                 reverseGraph={reverseGraph}
                 protocols={props.protocols}
                 layout={layout}
-                setImageToDownload={setImageToDownload}
                 paper={getPaperRef()}
                 graph={graph}
                 drawFrame={drawFrame}
                 isFrameAdded={isFrameAdded}
                 recentlyUsedProtocols={recentlyUsedProtocols}
+                recentlyUsedActions={recentlyUsedActions}
+                addRecentlyUsedAction={addRecentlyUsedAction}
+                setActiveProtocol={setActiveProtocol}
+                setOpenModalWindow={setOpenModalWindow}
             />
             <div
                 id='canvas'
                 onWheel={handleScroll}
                 ref={canvas}
             />
-            {openModalWindow && activeLink && <ModalWindow
+            {openModalWindow &&
+            // ((activeLink && !activeProtocol) ||
+            // (activeProtocol && !activeLink))
+            (activeProtocol || activeLink) 
+            &&
+            <ModalWindow
                 joint={joint}
                 portCellOptions={portCellOptions}
                 setOpenModalWindow={setOpenModalWindow}
                 activeLink={activeLink}
+                activeProtocol={activeProtocol}
                 graph={graph}
                 stackGraph={stackGraph}
                 cellData={earnCell}
                 layout={layout}
                 subLayout={subLayout}
+                setActiveProtocol={setActiveProtocol}
             />}
             <InitButtons
                 addBaseToken={addBaseToken}
                 baseTokenCellView={baseTokenCellView}
                 editBaseToken={editBaseToken}
             />
-            {imageToDownload && <img src={imageToDownload} />}
         </div>
     );
 }

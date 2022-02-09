@@ -3,12 +3,16 @@ import "./styles.css";
 
 export default function ShowFrameButton(props) {
 
+    let {addRecentlyUsedAction} = props;
 
     const handleShowFrame = () => {
         props.drawFrame();
+        addRecentlyUsedAction(props.actionName);
     }
 
     return (
-        <button className="select-action-button" onClick={handleShowFrame}>Show the frame</button>
+        <div className="select-action-button" onClick={handleShowFrame}>
+            
+        </div>
     )
 }

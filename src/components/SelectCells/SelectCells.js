@@ -15,13 +15,21 @@ import caretDown from "./caret-down.svg"
 
 function SelectCells(props) {
 
-  let { recentlyUsedProtocols } = props;
+  let {
+    recentlyUsedProtocols,
+    recentlyUsedActions,
+    addRecentlyUsedAction,
+    setActiveProtocol,
+    setOpenModalWindow
+  } = props;
 
 
   const [filterString, setFilterString] = useState("");
   const [category, setCategory] = useState("Protocols");
-  const [isOpenRecentlyUsed, setIsOpenRecentlyUsed] = useState(true);
+  const [isOpenRecentlyUsedProtocols, setIsOpenRecentlyUsedProtocols] = useState(true);
   const [isOpenAllProtocols, setIsOpenAllProtocols] = useState(true);
+  const [isOpenRecentlyUsedActions, setIsOpenRecentlyUsedActions] = useState(true);
+  const [isOpenAllActions, setIsOpenAllActions] = useState(true);
 
   const [isSelectOpen, setIsSelectOpen] = useState(true);
 
@@ -29,47 +37,66 @@ function SelectCells(props) {
 
   const actionsList = [
     {
-      name: "Auto layout",
+      name: "Auto deploy",
       component:
         <AutoLayoutButton
+          actionName={"Auto deploy"}
           layout={props.layout}
+          addRecentlyUsedAction={addRecentlyUsedAction}
         />
     },
     {
       name: "Save as image",
       component:
         <ImageDownloadButton
+          actionName={"Save as image"}
           paper={props.paper}
           graph={props.graph}
           svgElement={props.svgElement}
           isFrameAdded={props.isFrameAdded}
           contextValues={contextValues}
+          addRecentlyUsedAction={addRecentlyUsedAction}
         />
     },
     {
       name: "Show the frame",
       component:
         <ShowFrameButton
+          actionName={"Show the frame"}
           drawFrame={props.drawFrame}
+          addRecentlyUsedAction={addRecentlyUsedAction}
         />
     }
   ]
 
-  const mapActions = (actions, isVisible) => {
+  const mapActions = (actions, isVisible, isRecentlyUsed) => {
+    if (isRecentlyUsed) {
+      let originalActions = actionsList;
+      actions = actions.map((action) => {
+        let foundAction = null;
+        for (let i = 0; i < originalActions.length; i++) {
+          if (action.name === originalActions[i].name) {
+            foundAction = originalActions[i];
+            break;
+          }
+        }
+        return foundAction
+      })
+    }
     actions = actions.filter((action) => {
-      return action.name.toLowerCase().includes(filterString.toLowerCase());
+      return action && action.name.toLowerCase().includes(filterString.toLowerCase());
     });
     actions = listToMatrix(actions, 2);
-    return (<div className={`mapped-protocols ${!isVisible && "hidden-protocols"}`}>
+    return (<div className={`mapped-menu-options ${!isVisible && "hidden-menu-options"}`}>
 
       {actions.map((aRow, i) => {
         return (
           <div key={`list-row-${i}`} className={`list-row`}>
             {aRow.map(action => (
-              <div key={action.name} className="hold-protocol">
+              <div key={action.name} className="hold-menu-option hold-action-option">
                 {action.component}
                 <div
-                  className="protocol-title"
+                  className="menu-option-title"
                 >
                   {action.name}
                 </div>
@@ -80,18 +107,31 @@ function SelectCells(props) {
     </div>);
   }
 
-  const mapProtocols = (protocols, isVisible) => {
+  const mapProtocols = (protocols, isVisible, isRecentlyUsed) => {
+    if (isRecentlyUsed) {
+      let originalProtocols = props.protocols;
+      protocols = protocols.map((protocol) => {
+        let foundProtocol = null;
+        for (let i = 0; i < originalProtocols.length; i++) {
+          if (protocol.name === originalProtocols[i].name) {
+            foundProtocol = originalProtocols[i];
+            break;
+          }
+        }
+        return foundProtocol
+      })
+    }
     protocols = protocols.filter((protocol) => {
-      return protocol.name.toLowerCase().includes(filterString.toLowerCase());
+      return protocol && protocol.name.toLowerCase().includes(filterString.toLowerCase());
     });
     protocols = listToMatrix(protocols, 2);
-    return (<div className={`mapped-protocols ${!isVisible && "hidden-protocols"}`}>
+    return (<div className={`mapped-menu-options ${!isVisible && "hidden-menu-options"}`}>
 
       {protocols.map((pRow, i) => {
         return (
           <div key={`list-row-${i}`} className={`list-row`}>
             {pRow.map(p => (
-              <div key={p.name} className="hold-protocol">
+              <div key={p.name} className="hold-menu-option">
                 <div
                   className="draggable protocol"
                   color={p.backgroundColor}
@@ -104,12 +144,12 @@ function SelectCells(props) {
                   }}
                   draggable
                 >
-                  {p.image && p.image !== "null" && <div className="protocol-content">
+                  {p.image && p.image !== "null" && <div className="menu-option-content">
                     <img draggable={false} src={p.image} alt={p.name} />
                   </div>}
                 </div>
                 <div
-                  className="protocol-title"
+                  className="menu-option-title"
                 >
                   {p.name}
                 </div>
@@ -120,10 +160,6 @@ function SelectCells(props) {
     </div>);
   }
 
-  const handleShowFrame = () => {
-    props.drawFrame();
-  }
-
 
   useEffect(() => {
 
@@ -131,14 +167,9 @@ function SelectCells(props) {
     };
   })
 
-  // render() {
-
   let { protocols } = props;
 
   return (
-    // <div className="hold-select-cells" >
-
-    // <SelectCellButtons />
     <div className={`hold-cells ${!isSelectOpen && "hide-cells"}`} >
       <div className={`list-cells`}>
         <div className="list-row">
@@ -157,14 +188,14 @@ function SelectCells(props) {
             (
               <div>
                 <div className="list-row list-section">
-                  <div onClick={() => { setIsOpenRecentlyUsed(!isOpenRecentlyUsed) }} className="list-selection-title">
+                  <div onClick={() => { setIsOpenRecentlyUsedProtocols(!isOpenRecentlyUsedProtocols) }} className="list-selection-title">
                     <img src={caretDown} alt="" />
                     <div>
                       Recently used
                     </div>
                   </div>
                 </div>
-                {mapProtocols(recentlyUsedProtocols, isOpenRecentlyUsed)}
+                {mapProtocols(recentlyUsedProtocols, isOpenRecentlyUsedProtocols, true)}
                 <div className="list-row list-section">
                   <div onClick={() => { setIsOpenAllProtocols(!isOpenAllProtocols) }} className="list-selection-title">
                     <img src={caretDown} alt="" />
@@ -172,7 +203,10 @@ function SelectCells(props) {
                       All Protocols
                     </div>
                   </div>
-                  <div onClick={() => { }} className="list-selection-title add-new">
+                  <div onClick={() => {
+                    setActiveProtocol({ name: "New protocol" });
+                    setOpenModalWindow(true);
+                  }} className="list-selection-title add-new">
                     <div>
                       + Add New
                     </div>
@@ -184,27 +218,28 @@ function SelectCells(props) {
 
           ) ||
           (category === "Actions" &&
-          mapActions(actionsList, true)
-            // (<>
-            //   <div className="list-row">
-            //     <AutoLayoutButton
-            //       layout={props.layout}
-            //     />
 
-            //     <ImageDownloadButton
-            //       paper={props.paper}
-            //       graph={props.graph}
-            //       svgElement={props.svgElement}
-            //       isFrameAdded={props.isFrameAdded}
-            //       contextValues={contextValues}
-            //     />
-            //   </div>
-            //   <div className="list-row">
-            //     <ShowFrameButton
-            //       drawFrame={props.drawFrame}
-            //     />
-            //   </div>
-            // </>)
+            <div>
+              <div className="list-row list-section">
+                <div onClick={() => { setIsOpenRecentlyUsedActions(!isOpenRecentlyUsedActions) }} className="list-selection-title">
+                  <img src={caretDown} alt="" />
+                  <div>
+                    Recently used
+                  </div>
+                </div>
+              </div>
+              {mapActions(recentlyUsedActions, isOpenRecentlyUsedActions, true)}
+              <div className="list-row list-section">
+                <div onClick={() => { setIsOpenAllActions(!isOpenAllActions) }} className="list-selection-title">
+                  <img src={caretDown} alt="" />
+                  <div>
+                    All Actions
+                  </div>
+                </div>
+              </div>
+              {mapActions(actionsList, isOpenAllActions)}
+            </div>
+            // mapActions(actionsList, true)
           )
         }
       </div>

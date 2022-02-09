@@ -5,7 +5,7 @@ import { unicodeUnEscape } from '../../utils/utils';
 
 export default function ImageDownloadButton(props) {
 
-
+    let {addRecentlyUsedAction} = props;
 
     const cropImageFromCanvas = (ctx, w, h) => {
         var canvas = ctx.canvas,
@@ -43,6 +43,7 @@ export default function ImageDownloadButton(props) {
 
     const handleImageDownload = () => {
 
+        addRecentlyUsedAction(props.actionName);
         let { paper, graph, svgElement, isFrameAdded, contextValues } = props;
 
         paper.translate(0, 0);
@@ -210,8 +211,7 @@ export default function ImageDownloadButton(props) {
     }
 
     return (
-        <button className="select-action-button" onClick={handleImageDownload}>
-            Save as image
-        </button>
+        <div className="select-action-button" onClick={handleImageDownload}>
+        </div>
     )
 }

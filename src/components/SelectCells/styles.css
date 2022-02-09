@@ -15,7 +15,7 @@
     display: flex;
     justify-content: space-between;
     border: 2px solid #F3F6F9;
-    min-width: 236px !important;
+    max-width: 236px !important;
     /* box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.08); */
 
     -moz-animation-name: openList;
@@ -80,13 +80,13 @@
     transition: height 2s;
 }
 
-.mapped-protocols {
+.mapped-menu-options {
     /* border: 1px solid black; */
     height: 100%;
     /* transition: height 1s; */
 }
 
-.hidden-protocols {
+.hidden-menu-options {
     -moz-animation-name: closeProtocols;
     -webkit-animation-name: closeProtocols;
     -ms-animation-name: closeProtocols;
@@ -161,23 +161,32 @@
 
     color: #777E90;
 
-    min-width: 0px;
+    min-width: 87px;
+
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .select-action-button:hover {
     background: #F4E41C;
-    border: 1px solid rgba(185, 185, 185, 0.2);
+    outline: 1px solid rgba(185, 185, 185, 0.2);
     color: black;
 }
 
 
 
-.hold-protocol {
+.hold-menu-option {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     margin: 0 20px;
+}
+
+.hold-action-option {
+    margin: 0
 }
 
 .protocol {
@@ -197,7 +206,7 @@
     align-items: center;
 }
 
-.protocol-title {
+.menu-option-title {
     margin-top: 12px;
     font-family: "Poppins";
     font-style: normal;
@@ -211,11 +220,11 @@
     color: #777E90;
 }
 
-.protocol-content {
+.menu-option-content {
     transform: rotate(-45deg);
 }
 
-.protocol-content img {
+.menu-option-content img {
     width: 40px;
     height: 40px;
     object-fit: scale-down;
