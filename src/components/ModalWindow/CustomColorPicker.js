@@ -1,9 +1,10 @@
 import React from 'react'
 
 import { CustomPicker } from 'react-color'
-import { Saturation, Hue } from 'react-color/lib/components/common'
+import { Saturation, Hue, Alpha } from 'react-color/lib/components/common'
 
-export const MyPicker = ({ color, hex, hsl, hsv, onChange }) => {
+export const MyPicker = ({ color, hex, hsl, hsv, onChange, customPointer }) => {
+    
     const styles = {
         hue: {
             height: 10,
@@ -24,11 +25,11 @@ export const MyPicker = ({ color, hex, hsl, hsv, onChange }) => {
             background: hex,
         },
     }
-    console.log(hsl, hsv)
     return (
         <div>
-            <div style={{ borderRadius: "8px", width: "100%", height: "147px", position: "relative", display: 'flex' }}>
+            <div className='saturation-color' style={{ borderRadius: "8px", width: "100%", height: "147px", position: "relative", display: 'flex' }}>
                 <Saturation
+                    pointer={customPointer}
                     color={color}
                     hsl={hsl}
                     hsv={hsv}
@@ -37,9 +38,21 @@ export const MyPicker = ({ color, hex, hsl, hsv, onChange }) => {
             </div>
             <div style={styles.hue}>
                 <Hue
+                    pointer={customPointer}
                     color={color}
                     hsl={hsl}
                     hsv={hsv}
+                    onChange={onChange}
+                />
+            </div>
+            <div className='alpha-color' style={styles.hue}>
+                <Alpha
+                    pointer={customPointer}
+                    // color={color}
+                    hsl={hsl}
+                    // hsv={hsv}
+                    color={color}
+                    rgb={color}
                     onChange={onChange}
                 />
             </div>

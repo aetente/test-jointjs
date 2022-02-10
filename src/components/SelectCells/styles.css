@@ -65,10 +65,7 @@
     height: 100%;
     margin-right: 2px;
     background-color: white;
-    padding: 10px;
-    padding-top: 0px;
-
-    
+    padding: 0 10px;
 }
 
 
@@ -109,8 +106,8 @@
 
 .list-section {
     justify-content: space-between;
-    font-family: "Poppins";
-    font-style: normal;
+    
+    
     font-weight: 600;
     font-size: 12px;
     line-height: 18px;
@@ -126,8 +123,8 @@
 }
 
 .add-new {
-    font-family: "Poppins";
-    font-style: normal;
+    
+    
     font-weight: 600 !important;
     font-size: 12px;
     line-height: 18px;
@@ -145,15 +142,15 @@
 }
 
 .select-action-button {
-    margin: 0;
+    margin: 0 10px;
     min-height: 62px;
     
     background: #F7F7F7;
     border-radius: 6.25806px;
 
     
-    font-family: "Poppins";
-    font-style: normal;
+    
+    
     font-weight: 500;
     /* font-size: 8px; */
     line-height: 12px;
@@ -208,8 +205,8 @@
 
 .menu-option-title {
     margin-top: 12px;
-    font-family: "Poppins";
-    font-style: normal;
+    
+    
     font-weight: 500;
     font-size: 10px;
     line-height: 12px;
@@ -246,8 +243,8 @@
     width: 70px;
     min-width: 70px !important;
     height: 31px;
-    font-family: "Poppins";
-    font-style: normal;
+    
+    
     font-weight: 600;
     font-size: 11px;
     line-height: 14px;
@@ -262,6 +259,9 @@
 button.unselected-category {
     background: #F9FAFB;
     color: #A2A2A2;
+    font-weight: 500;
+    font-size: 11px;
+    line-height: 16px;
 }
 
 .protocol-search {

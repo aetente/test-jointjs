@@ -82,11 +82,8 @@ export const diamondShape = joint.dia.Element.extend({
         ...joint.dia.Element.prototype.defaults,
         type: 'custom.Diamond',
         attrs: diamondAttrs
-
     }
 }).define('custom.Diamond', {
-    // markup: '<g class="rotatable"><g class="scalable"><polygon class="polygon"/><image class="image"/></g><text/></g>',
-
     markup: [{
         tagName: "polygon",
         selector: "polygon",
@@ -105,11 +102,6 @@ export const diamondShape = joint.dia.Element.extend({
     attrs: diamondAttrs
 
 }, {
-    // initialize: () => {
-    // //   this.on("change:header", () => {console.log('header change')}, this), joint.dia.Element.prototype.initialize.apply(this, arguments)
-    //     console.log("initialize")
-    //     return true;
-    // },
     markup: [{
         tagName: "polygon",
         selector: "polygon",
@@ -124,6 +116,103 @@ export const diamondShape = joint.dia.Element.extend({
         tagName: "text",
         selector: "text",
         className: "joint-cell"
+    }]
+});
+
+export const rectDiamondAttrs = {
+    ".rect-body": {
+        fill: '#FFFFFF',
+        stroke: 'black',
+        width: 70,
+        height: 70,
+        x: 21.5,
+        y: 0,
+        rx: 5.25,
+        strokeLinejoin: "round",
+        transform: 'rotate(45, 35, 35)',
+    },
+    image: {
+        refX: .5,
+        refY: .35,
+        yAlignment: 'middle',
+        xAlignment: 'middle',
+        ref: ".rect-body",
+        height: 25,
+        width: 25
+    },
+    text: {
+        fontSize: 14,
+        refX: .5,
+        refY: .6,
+        ref: ".rect-body",
+        yAlignment: 'middle',
+        xAlignment: 'middle',
+        fill: 'black',
+        fontFamily: 'Poppins, sans-serif'
+    },
+    // ".pool-body": {
+    //     fill: '#FFFFFF',
+    //     stroke: 'black',
+    //     width: 35,
+    //     height: 35,
+    //     x: 33.5,
+    //     y: 80,
+    //     rx: 5.25,
+    //     strokeLinejoin: "round",
+    //     transform: 'rotate(45, 51, 97.5)',
+    // },
+};
+
+export const rectDiamondShape = joint.dia.Element.extend({
+
+    markup: '<g class="rotatable"><g class="scalable"><rect className="rect-body"/><image class="image"/></g><text/><rect className="pool-body"/></g>',
+
+    defaults: {
+        ...joint.dia.Element.prototype.defaults,
+        type: 'custom.RectDiamond',
+        attrs: rectDiamondAttrs
+    }
+}).define('custom.RectDiamond', {
+    markup: [{
+        tagName: "rect",
+        selector: ".rect-body",
+        className: "joint-cell rect-body"
+    },
+    {
+        tagName: "image",
+        selector: "image",
+        className: "joint-cell"
+    },
+    {
+        tagName: "text",
+        selector: "text",
+        className: "joint-cell"
+    },{
+        tagName: "rect",
+        selector: ".pool-body",
+        className: "joint-cell pool-body"
+    }],
+    attrs: rectDiamondAttrs
+
+}, {
+    markup: [{
+        tagName: "rect",
+        selector: ".rect-body",
+        className: "joint-cell rect-body"
+    },
+    {
+        tagName: "image",
+        selector: "image",
+        className: "joint-cell"
+    },
+    {
+        tagName: "text",
+        selector: "text",
+        className: "joint-cell"
+    },{
+        tagName: "rect",
+        selector: ".pool-body",
+        className: "joint-cell pool-body"
     }]
 });
 

@@ -8,7 +8,8 @@ import ProtocolColorPicker from './ProtocolColorPicker';
 import { convertObjToStr } from '../../utils/utils';
 import "./styles.css";
 
-import close from "./close.svg";
+import close from "../../assets/drawings/close.svg";
+import iconPlus from "../../assets/drawings/icon-plus.svg";
 
 export default function ModalWindow(props) {
 
@@ -23,7 +24,11 @@ export default function ModalWindow(props) {
         subLayout,
         stackGraph,
         activeProtocol,
-        setActiveProtocol
+        setActiveProtocol,
+        protocolCells,
+        setProtocolCells,
+        protocols,
+        setProtocols
     } = props;
 
     const [action, setAction] = useState(["Stake"]);
@@ -252,8 +257,87 @@ export default function ModalWindow(props) {
         setOpenModalWindow(false);
     }
 
-    const handleProtocolDone = () => {
+    const updateProtocols = (forcedActiveProtocol) => {
+        // forcedActiveProtocol is the object we want to set
+        // not the one from the props
+        let currentActiveProtocol = activeProtocol;
+        if (forcedActiveProtocol) {
+            currentActiveProtocol = forcedActiveProtocol
+        }
 
+        // update every cell on the paper for the according protocol
+        protocolCells.forEach(pCell => {
+            pCell.attributes = {
+                ...pCell.attributes,
+                protocolId: currentActiveProtocol.id,
+                protocolUrl: currentActiveProtocol.url,
+                protocolBackgroundColor: currentActiveProtocol.backgroundColor,
+                protocolBorderColor: currentActiveProtocol.borderColor
+            }
+            pCell.attr('label/text', currentActiveProtocol.name);
+            pCell.attr('text/text', currentActiveProtocol.name);
+            pCell.attr('.rect-body/fill', currentActiveProtocol.backgroundColor);
+            pCell.attr('.rect-body/stroke', currentActiveProtocol.borderColor);
+            if (currentActiveProtocol.image) {
+                pCell.attr('image/xlink:href', currentActiveProtocol.image);
+            }
+        })
+    }
+
+    const handleProtocolDone = () => {
+        // allow creating new protocol only if entered a name
+        if (activeProtocol.name) {
+            // check if it is new protocol or already existing
+            let protocolIndex = protocols.findIndex((protocol) => {
+                return protocol.id === activeProtocol.id;
+            });
+            // set default colors if none were selected
+            if (!activeProtocol.backgroundColor) {
+                activeProtocol.backgroundColor = "#19384d";
+            }
+            if (!activeProtocol.borderColor) {
+                activeProtocol.borderColor = "#19384d";
+            }
+            // if it is a new protocol
+            if (protocolIndex < 0) {
+                // give it a new id
+                // (it should alredy have a new id, but I suppose in the future the real new id would be created from backend)
+                activeProtocol.id = String(protocols.length);
+                // add it to the list of already existion protocols
+                setProtocols(protocols => [...protocols, activeProtocol])
+                // close the window
+                setActiveProtocol(null);
+                setOpenModalWindow(false);
+
+            } else {
+                // if the protocol already exists
+                // replace the protocol and replace
+                setProtocols(protocols => {
+                    protocols.splice(protocolIndex, 1, activeProtocol);
+                    return [...protocols];
+                });
+                // update how all cells of the protocol look on the paper
+                updateProtocols();
+                // close the window
+                setActiveProtocol(null);
+                setProtocolCells([]);
+                setOpenModalWindow(false);
+            }
+        }
+
+    }
+
+    const handleImageChange = (e) => {
+        let file = e.target.files[0];
+        let reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+            setActiveProtocol({ ...activeProtocol, image: reader.result });
+            updateProtocols({ ...activeProtocol, image: reader.result });
+        };
+        reader.onerror = (error) => {
+            console.log('Error: ', error);
+        };
     }
 
     useEffect(() => {
@@ -363,17 +447,36 @@ export default function ModalWindow(props) {
                                 <img src={close} alt="close" />
                             </div>
                         </div>
-                        <AllocationInput key={actionLink} setAllocation={setAllocation} activeLink={actionLink} />
-                        <SelectAction actionIndex={0} setAction={setAction} activeLink={actionLink} />
+                        <AllocationInput
+                            key={actionLink}
+                            setAllocation={setAllocation}
+                            activeLink={actionLink}
+                        />
+                        <SelectAction
+                            actionIndex={0}
+                            setAction={setAction}
+                            activeLink={actionLink}
+                        />
                         {mapEarnOptions(earnLinks, action)}
                     </div>
                 ) || (
                     <div className='modal-options'>
                         <div className="modal-title">
-                            <div>{activeProtocol.name}</div>
+                            <div>{(activeProtocol.id && "Edit the protocol") || "Add a new protocol"}</div>
                             <div
                                 className='title-close-button'
                                 onClick={() => {
+                                    // check if the protocol which is being edited already exists
+                                    let protocolIndex = protocols.findIndex((protocol) => {
+                                        return protocol.id === activeProtocol.id;
+                                    });
+                                    // if not, it means that we should delete the cell from the paper
+                                    // when we press close button, but not "done" button
+                                    if (protocolIndex < 0) {
+                                        protocolCells.forEach(pCell => {
+                                            pCell.remove();
+                                        });
+                                    }
                                     setOpenModalWindow(false);
                                 }}
                             >
@@ -383,27 +486,47 @@ export default function ModalWindow(props) {
                         <ProtocolNameInput
                             activeProtocol={activeProtocol}
                             setActiveProtocol={setActiveProtocol}
+                            updateProtocols={updateProtocols}
                         />
                         <ProtocolUrlInput
                             activeProtocol={activeProtocol}
                             setActiveProtocol={setActiveProtocol}
+                            updateProtocols={updateProtocols}
                         />
                         <ProtocolColorPicker
                             activeProtocol={activeProtocol}
                             setActiveProtocol={setActiveProtocol}
+                            updateProtocols={updateProtocols}
                         />
                     </div>
                 )}
             <div className="modal-actions">
                 {action[0] === "Stake" &&
-                    <button
-                        className="action-button"
-                        onClick={() => {
-                            if (!activeProtocol) {
+                    (!activeProtocol &&
+                        (<button
+                            className="action-button"
+                            onClick={() => {
                                 addStakeEarn(actionLink);
-                            }
-                        }}
-                    >+ {activeProtocol && "Upload protocol picture" || ""}</button>
+                            }}
+                        >
+                            <img src={iconPlus} alt="+" />
+                        </button>) ||
+                        (
+                            <label className="custom-file-upload">
+                                <input
+                                    type="file"
+                                    onChange={handleImageChange}
+                                />
+                                <div
+                                    className="action-button"
+                                >
+                                    <img src={iconPlus} alt="+" />
+                                    <div>
+                                        Upload protocol picture
+                                    </div>
+                                </div>
+                            </label>
+                        ))
                 }
                 <button
                     className="finish-button"

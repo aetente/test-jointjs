@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import "./styles.css";
 
 
-import iconArrow from "./icon-arrow.svg";
+import iconArrow from "../../assets/drawings/icon-arrow.svg";
 
 export default function HideSelect(props) {
 

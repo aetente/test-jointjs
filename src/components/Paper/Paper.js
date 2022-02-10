@@ -7,9 +7,9 @@ import { DiagramContext } from '../Content/context';
 import * as joint from 'jointjs';
 import dagre from 'dagre';
 import graphlib from 'graphlib';
-import { cells, earnCell, frameCell, frameHorizantalLine, frameVerticalLine } from './cells';
+import { cells, earnCell, frameCell } from './cells';
 import { ports, portCellOptions, rootPortCellOptions } from './ports';
-import { diamondShape, frameShape, toolsView, toolsViewVertices } from './options';
+import { diamondShape, frameShape, rectDiamondShape, toolsView, toolsViewVertices } from './options';
 import "./styles.css";
 import { convertObjToStr, swapItems } from '../../utils/utils';
 
@@ -19,12 +19,11 @@ import donkeylogo from "./Group 3722.png";
 // in here we added custom node, so that now jointjs nows what to build when it finds that the type of a node is custom.Diamond
 const customNameSpace = Object.assign(joint.shapes, {
     custom: {
+        RectDiamond: rectDiamondShape,
         Diamond: diamondShape,
         Frame: frameShape
     }
 });
-
-// joint.shapes.basic.Rhombus = diamondShape;
 
 const globalOffsetX = 350;
 const globalOffsetY = 40;
@@ -75,6 +74,9 @@ function Paper(props) {
     const [activeCellViewsArray, setActiveCellViewsArray] = useState([]);
     const [recentlyUsedProtocols, setRecentlyUsedProtocols] = useState([]);
     const [recentlyUsedActions, setRecentlyUsedActions] = useState([]);
+
+    const [protocols, setProtocols] = useState([])
+    const [protocolCells, setProtocolCells] = useState([])
 
 
     const [graph, setGraph] = useState(new joint.dia.Graph({}, { cellNamespace: customNameSpace }));
@@ -148,7 +150,17 @@ function Paper(props) {
     }
 
     const dragStart = useCallback(event => {
-        if (!event.target.className.includes("draggable")) return;
+        if (!event.target ||
+            !event.target.getAttribute ||
+            !event.target.getAttribute("class") ||
+            !event.target.getAttribute("class").includes("draggable")
+        ) {
+            event.preventDefault();
+            event.stopPropagation();
+            return
+        };
+        event.dataTransfer.setData("id", event.target.getAttribute("protocolid"));
+        event.dataTransfer.setData("url", event.target.getAttribute("protocolurl"));
         event.dataTransfer.setData("text", event.target.getAttribute("protocolname"));
         event.dataTransfer.setData("color", event.target.getAttribute("color") || "#FFFFFF");
         event.dataTransfer.setData("borderColor", event.target.getAttribute("bordercolor") || "#222222");
@@ -179,7 +191,7 @@ function Paper(props) {
         }
         cellCoords.x = cellCoords.x - (cellCoords.x % 10);
         cellCoords.y = cellCoords.y - (cellCoords.y % 10);
-        let newCell = new diamondShape({
+        let newCell = new rectDiamondShape({
             attrs: {
                 label: {
                     text: event.dataTransfer.getData('text')
@@ -196,11 +208,18 @@ function Paper(props) {
             size: { width: 100, height: 100 },
             inPorts: ['in'],
             outPorts: ['out'],
-            ports: portCellOptions
+            ports: portCellOptions,
+            protocolId: event.dataTransfer.getData('id'),
+            protocolUrl: event.dataTransfer.getData('url'),
+            protocolBackgroundColor: event.dataTransfer.getData('color'),
+            protocolBorderColor: event.dataTransfer.getData('borderColor')
         });
 
-        newCell.attr('polygon/fill', event.dataTransfer.getData('color'))
-        newCell.attr('polygon/stroke', event.dataTransfer.getData('borderColor'))
+        // newCell.attr('polygon/fill', event.dataTransfer.getData('color'))
+        // newCell.attr('polygon/stroke', event.dataTransfer.getData('borderColor'))
+        newCell.attr('.rect-body/fill', event.dataTransfer.getData('color'))
+        newCell.attr('.rect-body/stroke', event.dataTransfer.getData('borderColor'))
+        
         if (event.dataTransfer.getData('image') !== "null") {
             newCell.attr('image/xlink:href', event.dataTransfer.getData('image'))
         }
@@ -212,19 +231,58 @@ function Paper(props) {
 
         let isProtocolAdded = false;
         getRecentlyUsedProtocolsRef().forEach((protocol) => {
-            if (protocol.name === event.dataTransfer.getData("text")) {
+            if (protocol.id === event.dataTransfer.getData("id")) {
                 isProtocolAdded = true;
             }
         })
         if (!isProtocolAdded) {
             let newRecentlyUsedProtocol = {
-                name: event.dataTransfer.getData("text")
+                id: event.dataTransfer.getData("id")
             };
             setRecentlyUsedProtocols(protocols => [...protocols, newRecentlyUsedProtocol]);
             setRecentlyUsedProtocolsRef([...getRecentlyUsedProtocolsRef(), newRecentlyUsedProtocol]);
             localStorage.setItem("recentlyUsedProtocols", JSON.stringify([...getRecentlyUsedProtocolsRef()]))
         }
     }, []);
+
+    const addEmptyNode = () => {
+        let paperCoords = getPaperRef().translate();
+        let paperScale = getPaperRef().scale().sx;
+        paperCoords.tx = paperCoords.tx / paperScale;
+        paperCoords.ty = paperCoords.ty / paperScale;
+        let cellCoords = {
+            x: -paperCoords.tx + (window.innerWidth / 2) / paperScale,
+            y: -paperCoords.ty + (window.innerHeight / 2) / paperScale
+        }
+        cellCoords.x = cellCoords.x - (cellCoords.x % 10);
+        cellCoords.y = cellCoords.y - (cellCoords.y % 10);
+        let newCell = new rectDiamondShape({
+            position: {
+                x: cellCoords.x,
+                y: cellCoords.y
+            },
+            size: { width: 100, height: 100 },
+            inPorts: ['in'],
+            outPorts: ['out'],
+            ports: portCellOptions,
+            protocolId: String(protocols.length)
+        });
+        // newCell.attr('polygon/fill', "#19384d");
+        // newCell.attr('polygon/stroke', "#19384d");
+        
+        newCell.attr('.rect-body/fill', "#DBD9D2")
+        newCell.attr('.rect-body/stroke', "#19384d");
+        
+        
+        setProtocolCells([newCell]);
+        setActiveProtocol({
+            id: String(protocols.length),
+            backgroundColor: "#19384d",
+            borderColor: "#19384d",
+            name: ""
+        })
+        graph.addCell(newCell)
+    }
 
     const addRecentlyUsedAction = (actionName) => {
         let isActionAdded = false;
@@ -609,9 +667,12 @@ function Paper(props) {
         cells.cells = cells.cells.map((cellData, i) => {
             let cell = new joint.shapes.standard.Rectangle({ ...cellData, ports: portCellOptions });
             if (cellData.typeOfCell === "root") {
-                cell = new diamondShape({ ...cellData, ports: rootPortCellOptions });
+                // cell = new diamondShape({ ...cellData, ports: rootPortCellOptions });
+                
+                cell = new rectDiamondShape({ ...cellData, ports: rootPortCellOptions });
                 cell.attr('image/xlinkHref', donkeylogo)
-                cell.attr('polygon/fill', "#DBD9D2")
+                // cell.attr('polygon/fill', "#DBD9D2")
+                cell.attr('.rect-body/fill', "#DBD9D2")
                 setRootCell(cell)
             }
             if (i == 0) {
@@ -702,7 +763,6 @@ function Paper(props) {
         }))
 
         paper.on("cell:pointermove", (cellView, e, x, y) => {
-            // console.log(e.target)
             let activeCells = getActiveCellViewsArrayRef();
             let isHighlighted = false;
             activeCells.forEach(activeCell => {
@@ -774,6 +834,25 @@ function Paper(props) {
         paper.on("cell:pointerdblclick", ((cellView, e, x, y) => {
             if (!cellView.model.isLink() && cellView.model.attributes.typeOfCell === "base_token") {
                 setBaseTokenCellView(cellView);
+            } else {
+                let theCellProtocol = {}
+                let cellModel = cellView.model;
+                theCellProtocol.id = cellModel.attributes.protocolId;
+                theCellProtocol.name = cellModel.attributes.attrs.label.text;
+                theCellProtocol.url = cellModel.attributes.protocolUrl;
+                theCellProtocol.backgroundColor = cellModel.attributes.protocolBackgroundColor;
+                theCellProtocol.borderColor = cellModel.attributes.protocolBorderColor;
+                theCellProtocol.image = cellModel.attributes.attrs.image["xlink:href"];
+
+                let theElements = graph.getElements();
+                let elementsToChange = [...theElements];
+                elementsToChange = elementsToChange.filter((el) => {
+                    return el.attributes.protocolId === theCellProtocol.id;
+                })
+
+                setProtocolCells(elementsToChange);
+                setActiveProtocol(theCellProtocol);
+                setOpenModalWindow(true);
             }
         }))
 
@@ -854,22 +933,22 @@ function Paper(props) {
         });
 
         paper.on("link:pointerup", (linkView, e, x, y) => {
-            
+
             let sourceCell = graph.getCell(linkView.model.attributes.source.id);
             let jointSelector = e.target.getAttribute("joint-selector");
-            if (!jointSelector || jointSelector === "body" || jointSelector === "polygon" || jointSelector === "image") {
+            if (!jointSelector || jointSelector === "body" || jointSelector === ".rect-body" || jointSelector === "polygon" || jointSelector === "image") {
                 let theElements = graph.getElements();
                 let thePosition = { x, y };
                 let closestElement = theElements[0];
 
-                let closestElementPosition = {...closestElement.attributes.position};
+                let closestElementPosition = { ...closestElement.attributes.position };
                 closestElementPosition.x += closestElement.attributes.size.width / 2;
                 closestElementPosition.y += closestElement.attributes.size.height / 2;
 
                 let closestDistance = Math.sqrt(Math.pow(closestElementPosition.x - thePosition.x, 2) + Math.pow(closestElementPosition.y - thePosition.y, 2));
                 theElements.forEach((el, i) => {
 
-                    let elPosition = {...el.attributes.position};
+                    let elPosition = { ...el.attributes.position };
                     elPosition.x += el.attributes.size.width / 2;
                     elPosition.y += el.attributes.size.height / 2;
 
@@ -877,7 +956,7 @@ function Paper(props) {
                     if (distanceToElement < closestDistance) {
                         closestElement = theElements[i];
                         closestDistance = distanceToElement;
-                        closestElementPosition = {...closestElement.attributes.position};
+                        closestElementPosition = { ...closestElement.attributes.position };
                         closestElementPosition.x += closestElement.attributes.size.width / 2;
                         closestElementPosition.y += closestElement.attributes.size.height / 2;
                     }
@@ -931,7 +1010,7 @@ function Paper(props) {
                         linkView.model.source({ id: sourceCell.id, port: sourcePort.id })
                     }
 
-                    
+
 
                     linkView.model.addTo(graph)
                     setActiveLink(linkView.model);
@@ -991,6 +1070,8 @@ function Paper(props) {
             setRecentlyUsedActions(JSON.parse(localStorageActions));
         }
 
+        setProtocols(props.protocols);
+
         window.addEventListener("dragstart", dragStart);
         window.addEventListener("dragenter", dragEnter);
         window.addEventListener("dragover", dragOver);
@@ -1017,7 +1098,7 @@ function Paper(props) {
             <SelectCells
                 svgElement={getCanvas()}
                 reverseGraph={reverseGraph}
-                protocols={props.protocols}
+                protocols={protocols}
                 layout={layout}
                 paper={getPaperRef()}
                 graph={graph}
@@ -1028,6 +1109,7 @@ function Paper(props) {
                 addRecentlyUsedAction={addRecentlyUsedAction}
                 setActiveProtocol={setActiveProtocol}
                 setOpenModalWindow={setOpenModalWindow}
+                addEmptyNode={addEmptyNode}
             />
             <div
                 id='canvas'
@@ -1035,23 +1117,27 @@ function Paper(props) {
                 ref={canvas}
             />
             {openModalWindow &&
-            // ((activeLink && !activeProtocol) ||
-            // (activeProtocol && !activeLink))
-            (activeProtocol || activeLink) 
-            &&
-            <ModalWindow
-                joint={joint}
-                portCellOptions={portCellOptions}
-                setOpenModalWindow={setOpenModalWindow}
-                activeLink={activeLink}
-                activeProtocol={activeProtocol}
-                graph={graph}
-                stackGraph={stackGraph}
-                cellData={earnCell}
-                layout={layout}
-                subLayout={subLayout}
-                setActiveProtocol={setActiveProtocol}
-            />}
+                // ((activeLink && !activeProtocol) ||
+                // (activeProtocol && !activeLink))
+                (activeProtocol || activeLink)
+                &&
+                <ModalWindow
+                    joint={joint}
+                    portCellOptions={portCellOptions}
+                    setOpenModalWindow={setOpenModalWindow}
+                    activeLink={activeLink}
+                    activeProtocol={activeProtocol}
+                    graph={graph}
+                    stackGraph={stackGraph}
+                    cellData={earnCell}
+                    layout={layout}
+                    subLayout={subLayout}
+                    setActiveProtocol={setActiveProtocol}
+                    protocols={protocols}
+                    setProtocols={setProtocols}
+                    protocolCells={protocolCells}
+                    setProtocolCells={setProtocolCells}
+                />}
             <InitButtons
                 addBaseToken={addBaseToken}
                 baseTokenCellView={baseTokenCellView}

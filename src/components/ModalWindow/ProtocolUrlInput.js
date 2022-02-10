@@ -3,7 +3,7 @@ import "./styles.css";
 
 export default function ProtocolUrlInput(props) {
 
-    let { activeProtocol, setActiveProtocol } = props;
+    let { activeProtocol, setActiveProtocol, updateProtocols } = props;
 
     return (
 
@@ -14,14 +14,13 @@ export default function ProtocolUrlInput(props) {
             >
                 <input
                     name="protocol-url"
-                    // key={defaultInputValue}
                     className='token-name-input'
                     onChange={e => {
-                        // props.setTokenName(e.target.value);
                         setActiveProtocol({ ...activeProtocol, url: e.target.value });
+                        updateProtocols({ ...activeProtocol, url: e.target.value })
                     }}
                     placeholder={"Enter URL"}
-                // defaultValue={defaultInputValue}
+                    defaultValue={activeProtocol.url}
                 />
             </div>
         </div>

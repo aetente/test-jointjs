@@ -35,8 +35,8 @@ button, .network-select, .custom-select {
     border: none;
     border-radius: 10px;
     color: white;
-    font-family: "Poppins";
-    font-style: normal;
+    
+    
     font-weight: 600;
     font-size: 14px;
     line-height: 21px;
@@ -89,7 +89,7 @@ button {
 }
 
 option, .custom-option {
-    font-family: "Poppins";
+    
     font-style: normal;
     font-weight: 400;
     font-size: 12px;

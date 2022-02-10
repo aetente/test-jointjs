@@ -3,7 +3,7 @@ import "./styles.css";
 
 export default function ProtocolNameInput(props) {
 
-    let { activeProtocol, setActiveProtocol } = props;
+    let { activeProtocol, setActiveProtocol, updateProtocols } = props;
 
     return (
 
@@ -14,14 +14,14 @@ export default function ProtocolNameInput(props) {
             >
                 <input
                     name="protocol-name"
-                    // key={defaultInputValue}
                     className='token-name-input'
                     onChange={e => {
                         // props.setTokenName(e.target.value);
                         setActiveProtocol({ ...activeProtocol, name: e.target.value });
+                        updateProtocols({ ...activeProtocol, name: e.target.value });
                     }}
                     placeholder={"Protocol Name"}
-                // defaultValue={defaultInputValue}
+                    defaultValue={activeProtocol.name}
                 />
             </div>
         </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import "./styles.css";
 
-import undo from "./undo.svg";
+import undo from "../../assets/drawings/undo.svg";
 
 
 

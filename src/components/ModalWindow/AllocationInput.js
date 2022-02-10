@@ -21,7 +21,7 @@ function mapPercentagesButtons(p, allocation, handleChange, props, setAllocation
                     handleChange(p, props, setAllocationValue);
                 }
             }
-            className={(p == allocation && "matched-percentage") || ""}
+            className={(p == allocation && "matched-modal-option-button") || ""}
         >
             {p}%
         </div>
@@ -59,7 +59,7 @@ export default function AllocationInput(props) {
                     value={allocationValue}
                 />
             </div>
-            <div className='hold-percentages'>
+            <div className='hold-modal-option-button'>
                 {percentagesValues.map((p) => mapPercentagesButtons(p, allocationValue, handleChange, props, setAllocationValue))}
             </div>
         </div>

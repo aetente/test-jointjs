@@ -11,7 +11,7 @@ import "./styles.css";
 
 import { listToMatrix } from "../../utils/utils";
 
-import caretDown from "./caret-down.svg"
+import caretDown from "../../assets/drawings/caret-down.svg";
 
 function SelectCells(props) {
 
@@ -20,7 +20,8 @@ function SelectCells(props) {
     recentlyUsedActions,
     addRecentlyUsedAction,
     setActiveProtocol,
-    setOpenModalWindow
+    setOpenModalWindow,
+    addEmptyNode
   } = props;
 
 
@@ -113,7 +114,7 @@ function SelectCells(props) {
       protocols = protocols.map((protocol) => {
         let foundProtocol = null;
         for (let i = 0; i < originalProtocols.length; i++) {
-          if (protocol.name === originalProtocols[i].name) {
+          if (protocol.id === originalProtocols[i].id) {
             foundProtocol = originalProtocols[i];
             break;
           }
@@ -131,12 +132,14 @@ function SelectCells(props) {
         return (
           <div key={`list-row-${i}`} className={`list-row`}>
             {pRow.map(p => (
-              <div key={p.name} className="hold-menu-option">
+              <div key={p.id} className="hold-menu-option">
                 <div
                   className="draggable protocol"
                   color={p.backgroundColor}
                   bordercolor={p.borderColor}
                   protocolname={p.name}
+                  protocolid={p.id}
+                  protocolurl={p.url}
                   image={p.image}
                   style={{
                     backgroundColor: p.backgroundColor,
@@ -165,7 +168,7 @@ function SelectCells(props) {
 
     return () => {
     };
-  })
+  }, [])
 
   let { protocols } = props;
 
@@ -204,7 +207,8 @@ function SelectCells(props) {
                     </div>
                   </div>
                   <div onClick={() => {
-                    setActiveProtocol({ name: "New protocol" });
+                    addEmptyNode();
+                    // setActiveProtocol({ name: "" });
                     setOpenModalWindow(true);
                   }} className="list-selection-title add-new">
                     <div>

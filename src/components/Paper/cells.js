@@ -13,7 +13,8 @@ export const cells = {
         size: { width: 100, height: 100 },
         inPorts: ['in'],
         outPorts: ['out'],
-        typeOfCell: "root"
+        typeOfCell: "root",
+        protocolId: "-1"
       },
       {
         attrs: {

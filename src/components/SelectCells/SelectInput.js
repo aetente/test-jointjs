@@ -1,9 +1,9 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import "./styles.css";
 
-import iconSearch from "./icon-search.svg";
-import iconBurger from "./icon-burger.svg";
-import iconGrid from "./icon-grid.svg";
+import iconSearch from "../../assets/drawings/icon-search.svg";
+import iconBurger from "../../assets/drawings/icon-burger.svg";
+import iconGrid from "../../assets/drawings/icon-grid.svg";
 
 export default function SelectInput(props) {
 

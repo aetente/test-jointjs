@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import "./styles.css";
 
-import close from "./close.svg";
+import close from "../../assets/drawings/close.svg";
 
 export default function BaseToken(props) {
 
