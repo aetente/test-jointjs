@@ -258,3 +258,20 @@ input[type="file"] {
     border: 1px solid rgba(0, 0, 0, 0.1);
     margin: auto
 }
+
+.cells-info-wrapper {
+    padding: 2px 16px;
+    background: #FAFAFA;
+    border: 1px solid #F5F5F5;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 22px;
+}
+
+.cells-info-row {
+    padding: 5px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}

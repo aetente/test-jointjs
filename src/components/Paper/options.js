@@ -150,22 +150,32 @@ export const rectDiamondAttrs = {
         fill: 'black',
         fontFamily: 'Poppins, sans-serif'
     },
-    // ".pool-body": {
-    //     fill: '#FFFFFF',
-    //     stroke: 'black',
-    //     width: 35,
-    //     height: 35,
-    //     x: 33.5,
-    //     y: 80,
-    //     rx: 5.25,
-    //     strokeLinejoin: "round",
-    //     transform: 'rotate(45, 51, 97.5)',
-    // },
+    ".pool-body": {
+        fill: 'rgba(0,0,0,0)',
+        stroke: 'rgba(0,0,0,0)',
+        width: 45,
+        height: 45,
+        x: 5.5,
+        y: 35,
+        rx: 5.25,
+        strokeLinejoin: "round",
+        transform: 'rotate(45, 51, 97.5)',
+    },
+    ".pool-text": {
+        fontSize: 14,
+        refX: .5,
+        refY: .5,
+        ref: ".pool-body",
+        yAlignment: 'middle',
+        xAlignment: 'middle',
+        fill: 'black',
+        fontFamily: 'Poppins, sans-serif'
+    }
 };
 
 export const rectDiamondShape = joint.dia.Element.extend({
 
-    markup: '<g class="rotatable"><g class="scalable"><rect className="rect-body"/><image class="image"/></g><text/><rect className="pool-body"/></g>',
+    markup: '<g class="rotatable"><g class="scalable"><rect className="rect-body"/><image class="image"/></g><text/><text className="pool-text"/><rect className="pool-body"/></g>',
 
     defaults: {
         ...joint.dia.Element.prototype.defaults,
@@ -191,6 +201,11 @@ export const rectDiamondShape = joint.dia.Element.extend({
         tagName: "rect",
         selector: ".pool-body",
         className: "joint-cell pool-body"
+    },
+    {
+        tagName: "text",
+        selector: ".pool-text",
+        className: "joint-cell pool-text"
     }],
     attrs: rectDiamondAttrs
 
@@ -213,6 +228,11 @@ export const rectDiamondShape = joint.dia.Element.extend({
         tagName: "rect",
         selector: ".pool-body",
         className: "joint-cell pool-body"
+    },
+    {
+        tagName: "text",
+        selector: ".pool-text",
+        className: "joint-cell pool-text"
     }]
 });
 

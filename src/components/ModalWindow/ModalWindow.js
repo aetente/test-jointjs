@@ -1,9 +1,11 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import ConnectionInfo from './ConnectionInfo';
 import SelectAction from './SelectAction';
 import AllocationInput from './AllocationInput';
 import EarnInputsHolder from './EarnInputsHolder';
 import ProtocolNameInput from './ProtocolNameInput';
 import ProtocolUrlInput from './ProtocolUrlInput';
+import ProtocolPoolInput from './ProtocolPoolInput';
 import ProtocolColorPicker from './ProtocolColorPicker';
 import { convertObjToStr } from '../../utils/utils';
 import "./styles.css";
@@ -32,20 +34,21 @@ export default function ModalWindow(props) {
     } = props;
 
     const [action, setAction] = useState(["Stake"]);
-    const [earn, setEarn] = useState("None");
     const [allocation, setAllocation] = useState(50);
     const [tokenName, setTokenName] = useState("COIN");
     const [typeOfLink, setTypeOfLink] = useState("action");
     const [actionLink, setActionLink] = useState(null);
-    const [earnLink, setEarnLink] = useState(null);
     const [linksAndCellsToAdd, setLinksAndCellsToAdd] = useState([]);
+
+    const [sourceCellsInfo, setSourceCellsInfo] = useState([]);
+    const [targetCellsInfo, setTargetCellsInfo] = useState([]);
+    const [tokenNamesInfo, setTokenNamesInfo] = useState([]);
 
     const [earnLinks, setEarnLinks] = useState([]);
 
     const addStakeEarn = (activeLink) => {
         // here we add new cells representing the earn and according links
         let newEarnLink = new joint.shapes.standard.Link();
-
         // set how the link looks and behaves
         newEarnLink.router('manhattan', { excludeTypes: ['custom.Frame'] });
         newEarnLink.attr({
@@ -79,7 +82,17 @@ export default function ModalWindow(props) {
         // connect the link with the cells
         // here we get the target of the previous connection, representing the action (stake)
         // now we will refer to it as the source cell
-        let sourceCell = activeLink.getTargetCell();
+        let sourceCell = null;
+        // if the link we double clicked on was action link
+        // then the source cell for new link should be the target cell of action link
+        // otherwise if it was earn cell, then the source cell for new link should be the actual source cell
+        
+        let typeOfLink = activeLink.attributes.attrs.typeOfLink
+        if (!typeOfLink || typeOfLink === 'action') {
+            sourceCell = activeLink.getTargetCell();
+        } else {
+            sourceCell = activeLink.getSourceCell();
+        }
         // by default we connect from bottom port to top port
         if (sourceCell && sourceCell.attributes.ports.items[3]) {
             let sourcePort = sourceCell.attributes.ports.items[3].id;
@@ -92,7 +105,7 @@ export default function ModalWindow(props) {
             newEarnLink.attr({
                 actionLinkId: activeLink.id,
                 earnCellId: newEarnCell.id
-            })
+            });
             // save it to state to add them later to graph by iteration
             setLinksAndCellsToAdd(linksAndCellsToAdd => [...linksAndCellsToAdd, [newEarnLink, newEarnCell]])
             // set earns to state, to be able to edit it
@@ -273,13 +286,34 @@ export default function ModalWindow(props) {
                 protocolUrl: currentActiveProtocol.url,
                 protocolBackgroundColor: currentActiveProtocol.backgroundColor,
                 protocolBorderColor: currentActiveProtocol.borderColor
-            }
+            };
             pCell.attr('label/text', currentActiveProtocol.name);
             pCell.attr('text/text', currentActiveProtocol.name);
             pCell.attr('.rect-body/fill', currentActiveProtocol.backgroundColor);
             pCell.attr('.rect-body/stroke', currentActiveProtocol.borderColor);
+            // update image
             if (currentActiveProtocol.image) {
                 pCell.attr('image/xlink:href', currentActiveProtocol.image);
+            }
+            // if added pool, need to change bottom port position to be lower
+            // and need to set the pool attributes
+            if (currentActiveProtocol.pool) {
+                if (pCell.attributes.ports.items[3]) {
+                    let bottomPortId = pCell.attributes.ports.items[3].id;
+
+                    pCell.portProp(bottomPortId, "attrs/portBody/refDy", 25)
+                    pCell.attr('text/refY', .5);
+                    pCell.attr('image/refY', .3);
+                    pCell.attr('.pool-text/text', currentActiveProtocol.pool);
+                    pCell.attr('.pool-body/fill', currentActiveProtocol.backgroundColor);
+                    pCell.attr('.pool-body/stroke', currentActiveProtocol.borderColor);
+                    pCell.attr('.pool-body/width', 45);
+                    pCell.attr('.pool-body/width', 45);
+                    pCell.attr('.pool-body/x', 27);
+                    pCell.attr('.pool-body/y', 75);
+                    pCell.attr('.pool-body/rx', 5.25);
+                    pCell.attr('.pool-body/transform', 'rotate(45, 51, 97.5)');
+                }
             }
         })
     }
@@ -349,34 +383,66 @@ export default function ModalWindow(props) {
         // if user modifies earn link than there for sure would be action link 
         let { activeProtocol } = props;
         if (!activeProtocol) {
+            // convertObjToStr converts Object like {0: "a", 1: "b", 2: "c"} to string "abc"
+            // if it is the type of object, otherwise it just returns what you passed
+            // it is like this, because the history stack stores graph converted to json
+            // and while it converts to json, it changes some strings to this kind of object
             let typeOfLink = convertObjToStr(activeLink.attributes.attrs.typeOfLink);
+            let actionLinkVal = null;
+            let parentElements = [];
+            let childElements = [];
+            let tokenElements = [];
+            let actionValue = ["Stake"];
             setTypeOfLink(typeOfLink);
+            // if the link was of the type action, or it is a new link, or it is the cell which is being focused on
             if (!typeOfLink || typeOfLink === "action") {
-                let targetCell = activeLink.getTargetCell();
-                let sourceCell = activeLink.getSourceCell();
+                actionLinkVal = activeLink;
+                let targetCell = actionLinkVal.getTargetCell();
+                let sourceCell = actionLinkVal.getSourceCell();
                 let targetCellType = convertObjToStr(targetCell.attributes.typeOfCell);
                 let sourceCellType = convertObjToStr(sourceCell.attributes.typeOfCell);
+                // the default action for link between tokens should be reinvest
                 let defaultAction = ((
                     (sourceCellType === "earn_cell" && targetCellType === "earn_cell") ||
                     (sourceCellType === "earn_cell" && targetCellType === "base_token") ||
                     (targetCellType === "earn_cell" && sourceCellType === "base_token")) && "Re-invest") || "Stake";
-                let actionValue = [(activeLink.label(0) && convertObjToStr(activeLink.label(0).attrs.text.action)) || defaultAction];
-                setActionLink(activeLink);
-                setAction(actionValue)
-                setAllocation((activeLink.label(0) && activeLink.label(0).attrs.text.allocation) || 50)
+                actionValue = [(actionLinkVal.label(0) && convertObjToStr(actionLinkVal.label(0).attrs.text.action)) || defaultAction];
 
-                let earnLinkIdVal = convertObjToStr(activeLink.attributes.attrs.earnLinkId);
-                if (earnLinkIdVal) {
-                    let earnLinkById = graph.getCell(earnLinkIdVal);
-                    if (earnLinkById) {
-                        setEarnLink(earnLinkById);
-                        setEarn((earnLinkById.label(0) && earnLinkById.label(0).attrs.text.earn) || "None")
-                        setTokenName((earnLinkById.label(0) && earnLinkById.label(0).attrs.text.tokenName) || "COIN")
-                    }
+                if (sourceCellType === "base_token" || sourceCellType === "earn_cell") {
+                    tokenElements = [sourceCell];
+                    parentElements = graph.getNeighbors(sourceCell, {inbound: true});
+                    childElements = graph.getNeighbors(sourceCell, {outbound: true});
+                } else {
+                    tokenElements = [targetCell];
+                    parentElements = graph.getNeighbors(targetCell, {inbound: true});
+                    childElements = graph.getNeighbors(targetCell, {outbound: true});
                 }
+            } else if (typeOfLink === "earn") {
+                // the same goes for double clicking the earn link
+                // but first we get the action link, and receive earn links from it 
+                let actionLinkIdVal = convertObjToStr(activeLink.attributes.attrs.actionLinkId);
+                if (actionLinkIdVal) {
+                    let actionLinkById = graph.getCell(actionLinkIdVal);
+                    actionLinkVal = actionLinkById;
+                    actionValue = [(actionLinkVal.label(0) && convertObjToStr(actionLinkVal.label(0).attrs.text.action)) || "Stake"]
 
-                if (activeLink.attributes.attrs.earnLinkIds) {
-                    let earnLinksArray = activeLink.attributes.attrs.earnLinkIds;
+                }
+                let targetCell = activeLink.getTargetCell();
+                let sourceCell = activeLink.getSourceCell();
+                tokenElements = [targetCell];
+                parentElements = graph.getNeighbors(targetCell, {inbound: true});
+                childElements = graph.getNeighbors(targetCell, {outbound: true});
+            }
+
+            if (actionLinkVal) {
+                setTokenNamesInfo(tokenElements);
+                setSourceCellsInfo(parentElements);
+                setTargetCellsInfo(childElements);
+                setActionLink(actionLinkVal);
+                setAction(actionValue)
+                setAllocation((actionLinkVal.label(0) && actionLinkVal.label(0).attrs.text.allocation) || 50);
+                let earnLinksArray = actionLinkVal.attributes.attrs.earnLinkIds;
+                if (earnLinksArray) {
                     if (!earnLinksArray.map) {
                         earnLinksArray = Object.values(earnLinksArray);
                     }
@@ -391,39 +457,9 @@ export default function ModalWindow(props) {
                 if (actionValue[0] === "Stake") {
                     addStakeEarn(activeLink);
                 }
-            } else if (typeOfLink === "earn") {
-
-                setEarnLink(activeLink);
-                setEarn((activeLink.label(0) && convertObjToStr(activeLink.label(0).attrs.text.earn)) || "None")
-                setTokenName((activeLink.label(0) && convertObjToStr(activeLink.label(0).attrs.text.tokenName)) || "COIN")
-
-                let actionLinkIdVal = convertObjToStr(activeLink.attributes.attrs.actionLinkId);
-                if (actionLinkIdVal) {
-                    let actionLinkById = graph.getCell(actionLinkIdVal);
-                    let actionValue = [(actionLinkById.label(0) && convertObjToStr(actionLinkById.label(0).attrs.text.action)) || "Stake"]
-                    setActionLink(actionLinkById);
-                    setAction(actionValue)
-                    setAllocation((actionLinkById.label(0) && actionLinkById.label(0).attrs.text.allocation) || 50)
-
-                    if (actionLinkById.attributes.attrs.earnLinkIds) {
-                        let earnLinksArray = actionLinkById.attributes.attrs.earnLinkIds;
-                        if (!earnLinksArray.map) {
-                            earnLinksArray = Object.values(earnLinksArray);
-                        }
-                        let earnLinksToSet = earnLinksArray.map(earnLinkId => {
-                            let earnLinkById = graph.getCell(earnLinkId);
-                            let earnCellById = graph.getCell(convertObjToStr(earnLinkById.attributes.attrs.earnCellId));
-                            return [earnLinkById, earnCellById];
-                        });
-                        setEarnLinks(earnLinksToSet);
-                    }
-
-                }
-
             }
             return () => {
                 setActionLink(null);
-                setEarnLink(null);
                 setEarnLinks([])
             }
         }
@@ -447,6 +483,11 @@ export default function ModalWindow(props) {
                                 <img src={close} alt="close" />
                             </div>
                         </div>
+                        <ConnectionInfo
+                            sourceCellsInfo={sourceCellsInfo}
+                            targetCellsInfo={targetCellsInfo}
+                            tokenNamesInfo={tokenNamesInfo}
+                        />
                         <AllocationInput
                             key={actionLink}
                             setAllocation={setAllocation}
@@ -489,6 +530,11 @@ export default function ModalWindow(props) {
                             updateProtocols={updateProtocols}
                         />
                         <ProtocolUrlInput
+                            activeProtocol={activeProtocol}
+                            setActiveProtocol={setActiveProtocol}
+                            updateProtocols={updateProtocols}
+                        />
+                        <ProtocolPoolInput
                             activeProtocol={activeProtocol}
                             setActiveProtocol={setActiveProtocol}
                             updateProtocols={updateProtocols}

@@ -23,7 +23,6 @@ export default function SelectAction(props) {
                 (sourceCellType === "earn_cell" && targetCellType === "earn_cell") ||
                 (sourceCellType === "earn_cell" && targetCellType === "base_token") ||
                 (targetCellType === "earn_cell" && sourceCellType === "base_token")) && "Re-invest") || null;
-                console.log(theTypeOfConnection)
             setTypeOfConnection(theTypeOfConnection);
 
         }

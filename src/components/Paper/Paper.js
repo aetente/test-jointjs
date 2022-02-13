@@ -833,8 +833,10 @@ function Paper(props) {
 
         paper.on("cell:pointerdblclick", ((cellView, e, x, y) => {
             if (!cellView.model.isLink() && cellView.model.attributes.typeOfCell === "base_token") {
+                // edit base token
                 setBaseTokenCellView(cellView);
-            } else {
+            } else if (!cellView.model.isLink()) {
+                // edit protocol
                 let theCellProtocol = {}
                 let cellModel = cellView.model;
                 theCellProtocol.id = cellModel.attributes.protocolId;
@@ -933,10 +935,15 @@ function Paper(props) {
         });
 
         paper.on("link:pointerup", (linkView, e, x, y) => {
-
+            // here we try to find closest port on the cell when we release the link
             let sourceCell = graph.getCell(linkView.model.attributes.source.id);
             let jointSelector = e.target.getAttribute("joint-selector");
-            if (!jointSelector || jointSelector === "body" || jointSelector === ".rect-body" || jointSelector === "polygon" || jointSelector === "image") {
+            // make sure that the link was released on a cell and not something else, for example other link
+            if (!jointSelector || jointSelector === "body" || jointSelector === ".rect-body" || jointSelector === ".pool-body" || jointSelector === "polygon" || jointSelector === "image") {
+                // there is no specific way to get which cell was the link released on
+                // get the id of the cell
+                // so we need to iterate through each cell and check the distance to
+                // the closest one would be the cell we put the link on
                 let theElements = graph.getElements();
                 let thePosition = { x, y };
                 let closestElement = theElements[0];
@@ -965,6 +972,9 @@ function Paper(props) {
                 closestElementPosition.x -= closestElement.attributes.size.width / 2;
                 closestElementPosition.y -= closestElement.attributes.size.height / 2;
 
+                // after we found our cell we need to check the closest port of the cell the same way
+                // but we iterate only through ports of this cell
+                // check if the target cell is not the source cell
                 if (sourceCell.id !== closestElement.id) {
 
                     let cellPorts = closestElement.getPorts();

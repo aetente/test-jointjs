@@ -38,6 +38,17 @@ const portAttrs = {
     }
 }
 
+
+const pooledPortAttrs = {
+    portBody: {
+        magnet: true,
+        r: 6,
+        fill: 'red',
+        stroke: '#023047',
+        ...portSizes
+    }
+}
+
 const rootPortAttrs = {
     portBody: {
         magnet: true,
@@ -100,6 +111,14 @@ export const ports = {
         attrs:portAttrs,
         markup: portMarkup
     },
+    pooledPortBottom: {
+        group: "bottom",
+        position: {
+            name: 'bottom',
+        },
+        attrs:pooledPortAttrs,
+        markup: portMarkup
+    },
     rootPortBottom: {
         group: "bottom",
         position: {
@@ -129,6 +148,27 @@ export const portCellOptions = {
         ports.portLeft, ports.portRight, ports.portTop, ports.portBottom
     ]
 };
+
+export const pooledPortCellOptions = {
+    groups: {
+        'top': {
+            position: "top"
+        },
+        "bottom": {
+            position: "bottom"
+        },
+        "right": {
+            position: "right"
+        },
+        "left": {
+            position: "left"
+        },
+    },
+    items: [
+        ports.portLeft, ports.portRight, ports.portTop, ports.pooledPortBottom
+    ]
+};
+
 export const rootPortCellOptions = {
     groups: {
         'top': {
