@@ -1,10 +1,12 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import SelectEarn from './SelectEarn';
 import TokenInput from './TokenInput';
+import SelectToken from './SelectToken'
 import "./styles.css";
 
 export default function EarnInputsHolder(props) {
 
+    let { action, tokensToSelect, setOpenAddTokenToSelect } = props;
 
     let linkLabel = props.activeLink && props.activeLink.label(0);
     let tokenName = linkLabel ? linkLabel.attrs.text.tokenName : "COIN";
@@ -38,8 +40,20 @@ export default function EarnInputsHolder(props) {
                 </div>
                 ||
                 <>
-                    <SelectEarn setEarn={props.setEarn} activeLink={props.activeLink} />
-                    <TokenInput setTokenName={props.setTokenName} activeLink={props.activeLink} />
+                    {(action[0] === "Stake" &&
+                        (<>
+                            <SelectEarn setEarn={props.setEarn} activeLink={props.activeLink} />
+                            <TokenInput action={action} setTokenName={props.setTokenName} activeLink={props.activeLink} />
+                        </>)) || (
+                            <SelectToken
+                                action={action}
+                                setTokenName={props.setTokenName}
+                                activeLink={props.activeLink}
+                                tokensToSelect={tokensToSelect}
+                                setOpenAddTokenToSelect={setOpenAddTokenToSelect}
+                            />
+                        )
+                    }
                 </>
             }
         </div>

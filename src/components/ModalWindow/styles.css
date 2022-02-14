@@ -58,6 +58,7 @@
     height: 18px;   
 }
 
+
 .modal-option-title {
     
     
@@ -66,6 +67,16 @@
     line-height: 21px;
     padding-bottom: 8px;
 }
+
+
+.header-title {
+    
+    font-weight: bold;
+    font-size: 16px;
+    line-height: 24px;
+    padding-bottom: 16px;
+}
+
 
 .modal-actions {
     display: flex;
@@ -274,4 +285,23 @@ input[type="file"] {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.token-select {
+    margin: 0 !important;
+    background: #F5F5F5 !important;
+    background-color: #FAFAFA !important;
+    /* background-image: none !important; */
+    color: black
+}
+
+.token-select .selected-option {
+    margin: auto 16px !important;
+    color: black
+}
+
+.token-select .custom-option {
+    opacity: 1 !important;
+    width: 200px !important;
+    color: black
 }

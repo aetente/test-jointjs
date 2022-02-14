@@ -5,7 +5,16 @@ import close from "../../assets/drawings/close.svg";
 
 export default function BaseToken(props) {
 
-    let { addBaseToken, setOpenModalWindow, editBaseToken, baseTokenCellView } = props;
+    let {
+        addBaseToken,
+        setOpenModalWindow,
+        editBaseToken,
+        baseTokenCellView,
+        setTokensToSelect,
+        openMainModalWindow,
+        openAddTokenToSelect,
+        setOpenAddTokenToSelect
+    } = props;
 
     let [tokenName, setTokenName] = useState("");
     let [tokenURL, setTokenURL] = useState("");
@@ -19,11 +28,11 @@ export default function BaseToken(props) {
 
     return (
         <div
-            className="hold-modal base-token"
+            className={`hold-modal base-token ${(openMainModalWindow && "move-left-window") || ""}`}
         >
             <div className='modal-options add-token-options'>
                 <div className="modal-title">
-                    <div>Base Token</div>
+                    <div>{(openAddTokenToSelect && "New Token") || "Base Token"}</div>
                     <div
                         className='title-close-button'
                         onClick={() => {
@@ -32,6 +41,9 @@ export default function BaseToken(props) {
                                     baseTokenCellView.model.attributes.attrs.label.tokenName,
                                     baseTokenCellView.model.attributes.attrs.label.tokenUrl
                                 );
+                            }
+                            if (openAddTokenToSelect) {
+                                setOpenAddTokenToSelect(false);
                             }
                             setOpenModalWindow(false);
                         }}
@@ -56,7 +68,7 @@ export default function BaseToken(props) {
                     </div>
                 </div>
 
-                
+
                 <div className="modal-option">
                     <div className="modal-option-title">URL</div>
                     <div
@@ -78,9 +90,14 @@ export default function BaseToken(props) {
                         className='add-base-token'
                         onClick={() => {
                             if (tokenName) {
-                                
+
+                                console.log(tokenName)
                                 if (baseTokenCellView) {
                                     editBaseToken(tokenName, tokenURL);
+                                } else if (openAddTokenToSelect) {
+                                    setTokensToSelect(tokensToSelect =>
+                                        [{ value: tokenName, url: tokenURL }, ...tokensToSelect]);
+                                    setOpenAddTokenToSelect(false);
                                 } else {
                                     addBaseToken(tokenName, tokenURL);
                                 }

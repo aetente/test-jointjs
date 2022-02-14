@@ -21,6 +21,7 @@ export default function ModalWindow(props) {
         portCellOptions,
         setOpenModalWindow,
         activeLink,
+        setActiveLink,
         cellData,
         layout,
         subLayout,
@@ -30,7 +31,9 @@ export default function ModalWindow(props) {
         protocolCells,
         setProtocolCells,
         protocols,
-        setProtocols
+        setProtocols,
+        tokensToSelect,
+        setOpenAddTokenToSelect
     } = props;
 
     const [action, setAction] = useState(["Stake"]);
@@ -39,6 +42,7 @@ export default function ModalWindow(props) {
     const [typeOfLink, setTypeOfLink] = useState("action");
     const [actionLink, setActionLink] = useState(null);
     const [linksAndCellsToAdd, setLinksAndCellsToAdd] = useState([]);
+    const [updateCounter, setUpdateCounter] = useState(0);
 
     const [sourceCellsInfo, setSourceCellsInfo] = useState([]);
     const [targetCellsInfo, setTargetCellsInfo] = useState([]);
@@ -86,7 +90,7 @@ export default function ModalWindow(props) {
         // if the link we double clicked on was action link
         // then the source cell for new link should be the target cell of action link
         // otherwise if it was earn cell, then the source cell for new link should be the actual source cell
-        
+
         let typeOfLink = activeLink.attributes.attrs.typeOfLink
         if (!typeOfLink || typeOfLink === 'action') {
             sourceCell = activeLink.getTargetCell();
@@ -117,7 +121,7 @@ export default function ModalWindow(props) {
     const mapEarnOptions = (earnArray, action) => {
         // we can have multiple earns in the model window
         // so this function maps the earns
-        if (action[0] === "Stake") {
+        if (action[0] === "Stake" || action[0] === "Swap") {
             return earnArray.map((earnData, i) => {
                 let earnLink = earnData[0];
                 let earnCell = earnData[1];
@@ -158,7 +162,7 @@ export default function ModalWindow(props) {
                     earnLink.label(0, {
                         attrs: {
                             text: {
-                                text: `[\u00a0Earn\u00a0${earnLinkEarnValue}\u00a0]`,
+                                text: earnLinkEarnValue !== "None" && `[\u00a0Earn\u00a0${earnLinkEarnValue}\u00a0]` || "",
                                 earn: earnLinkEarnValue,
                                 tokenName: tokenName,
                                 fontFamily: 'Roboto, sans-serif',
@@ -179,10 +183,13 @@ export default function ModalWindow(props) {
                 return (
                     <EarnInputsHolder
                         key={`earn-${i}`}
+                        action={action}
                         arrayLength={earnArray.length}
                         setTokenName={setTokenName}
                         setEarn={setEarn}
                         activeLink={earnLink}
+                        tokensToSelect={tokensToSelect}
+                        setOpenAddTokenToSelect={setOpenAddTokenToSelect}
                         i={i}
                     />
                 );
@@ -246,12 +253,12 @@ export default function ModalWindow(props) {
 
         // add the new earn links and cells
         // earn are only for stake action
-        if (action[0] === "Stake") {
+        if (action[0] === "Stake" || action[0] === "Swap") {
             linksAndCellsToAdd.forEach(la => {
                 let newLink = la[0];
                 let newCell = la[1]
                 let earnValue = (newLink.label(0) && newLink.label(0).attrs.text.earn) || "None";
-                if (earnValue !== "None") {
+                if (earnValue !== "None" || action[0] === "Swap") {
                     let prevEarnIdsArray = actionLink.attributes.attrs.earnLinkIds || [];
                     actionLink.attr({
                         earnLinkIds: [...prevEarnIdsArray, newLink.id]
@@ -375,6 +382,7 @@ export default function ModalWindow(props) {
     }
 
     useEffect(() => {
+        console.log("useEffect", actionLink)
         // the idea is to define different kind of scenarios for modal window
         // for now it is to set if user modifies the action link or earn link
         // if user modifies the action link than it is the one that the parent sent in props
@@ -402,21 +410,32 @@ export default function ModalWindow(props) {
                 let targetCellType = convertObjToStr(targetCell.attributes.typeOfCell);
                 let sourceCellType = convertObjToStr(sourceCell.attributes.typeOfCell);
                 // the default action for link between tokens should be reinvest
+                // let defaultAction = ((
+                //     (sourceCellType === "earn_cell" && targetCellType === "earn_cell") ||
+                //     (sourceCellType === "earn_cell" && targetCellType === "base_token") ||
+                //     (targetCellType === "earn_cell" && sourceCellType === "base_token")) && "Re-invest") || "Stake";
                 let defaultAction = ((
-                    (sourceCellType === "earn_cell" && targetCellType === "earn_cell") ||
-                    (sourceCellType === "earn_cell" && targetCellType === "base_token") ||
-                    (targetCellType === "earn_cell" && sourceCellType === "base_token")) && "Re-invest") || "Stake";
+                    (targetCellType === "earn_cell") ||
+                    (targetCellType === "base_token")) && "Re-invest") || "Stake";
                 actionValue = [(actionLinkVal.label(0) && convertObjToStr(actionLinkVal.label(0).attrs.text.action)) || defaultAction];
 
                 if (sourceCellType === "base_token" || sourceCellType === "earn_cell") {
                     tokenElements = [sourceCell];
-                    parentElements = graph.getNeighbors(sourceCell, {inbound: true});
-                    childElements = graph.getNeighbors(sourceCell, {outbound: true});
+                    parentElements = graph.getNeighbors(sourceCell, { inbound: true });
+                    // parentElements = [sourceCell];
+                    // childElements = graph.getNeighbors(sourceCell, { outbound: true });
+                    childElements = [targetCell]
                 } else {
                     tokenElements = [targetCell];
-                    parentElements = graph.getNeighbors(targetCell, {inbound: true});
-                    childElements = graph.getNeighbors(targetCell, {outbound: true});
+                    parentElements = graph.getNeighbors(targetCell, { inbound: true });
+                    childElements = graph.getNeighbors(targetCell, { outbound: true });
+                    // childElements = [targetCell]
                 }
+                if (targetCellType === "base_token" || targetCellType === "earn_cell") {
+                    parentElements = [sourceCell];
+                    console.log(childElements)
+                }
+
             } else if (typeOfLink === "earn") {
                 // the same goes for double clicking the earn link
                 // but first we get the action link, and receive earn links from it 
@@ -430,8 +449,9 @@ export default function ModalWindow(props) {
                 let targetCell = activeLink.getTargetCell();
                 let sourceCell = activeLink.getSourceCell();
                 tokenElements = [targetCell];
-                parentElements = graph.getNeighbors(targetCell, {inbound: true});
-                childElements = graph.getNeighbors(targetCell, {outbound: true});
+                parentElements = graph.getNeighbors(targetCell, { inbound: true });
+                // parentElements = [sourceCell];
+                childElements = graph.getNeighbors(targetCell, { outbound: true });
             }
 
             if (actionLinkVal) {
@@ -463,7 +483,7 @@ export default function ModalWindow(props) {
                 setEarnLinks([])
             }
         }
-    }, [activeLink]);
+    }, [activeLink, updateCounter]);
 
     return (
         <div
@@ -487,6 +507,12 @@ export default function ModalWindow(props) {
                             sourceCellsInfo={sourceCellsInfo}
                             targetCellsInfo={targetCellsInfo}
                             tokenNamesInfo={tokenNamesInfo}
+                            setSourceCellsInfo={setSourceCellsInfo}
+                            setTargetCellsInfo={setTargetCellsInfo}
+                            graph={graph}
+                            updateCounter={updateCounter}
+                            setUpdateCounter={setUpdateCounter}
+                            activeLink={activeLink}
                         />
                         <AllocationInput
                             key={actionLink}
@@ -494,6 +520,7 @@ export default function ModalWindow(props) {
                             activeLink={actionLink}
                         />
                         <SelectAction
+                            key={`select-action-${updateCounter}`}
                             actionIndex={0}
                             setAction={setAction}
                             activeLink={actionLink}
@@ -547,7 +574,7 @@ export default function ModalWindow(props) {
                     </div>
                 )}
             <div className="modal-actions">
-                {action[0] === "Stake" &&
+                {(action[0] === "Stake" || action[0] === "Swap") &&
                     (!activeProtocol &&
                         (<button
                             className="action-button"
@@ -577,7 +604,9 @@ export default function ModalWindow(props) {
                 <button
                     className="finish-button"
                     onClick={(activeProtocol && handleProtocolDone) || handleLinkDone}
-                >Done</button>
+                >
+                    Done
+                </button>
             </div>
         </div>
     )

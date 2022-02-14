@@ -20,6 +20,10 @@
     justify-content: space-between;
 }
 
+.move-left-window {
+    margin-right: 400px !important;
+}
+
 .add-base-token {
     margin: 0;
     height: 55px !important
@@ -59,7 +63,7 @@ button {
     /* background: linear-gradient(146.14deg, #35424B 0%, #0B0E12 100%) !important; */
     background: #0B0E12;
     background-image: url(ArrowDown.svg);
-    background-image: url(ArrowDown.svg), linear-gradient(146.14deg, #35424B 0%, #0B0E12 100%) !important;
+    background-image: url(ArrowDown.svg), linear-gradient(146.14deg, #35424B 0%, #0B0E12 100%);
     background-repeat: no-repeat;
     background-position: calc(100% - 10px);
   }
@@ -67,7 +71,7 @@ button {
 .custom-select {
     display: flex;
     align-items: center;
-    position: relative;
+    /* position: relative; */
     min-width: 122px;
 }
 

@@ -19,10 +19,14 @@ export default function SelectAction(props) {
             let targetCellType = convertObjToStr(targetCell.attributes.typeOfCell);
             let sourceCellType = convertObjToStr(sourceCell.attributes.typeOfCell);
     
+            // let theTypeOfConnection = ((
+            //     (sourceCellType === "earn_cell" && targetCellType === "earn_cell") ||
+            //     (sourceCellType === "earn_cell" && targetCellType === "base_token") ||
+            //     (targetCellType === "earn_cell" && sourceCellType === "base_token")) && "Re-invest") || null;
+            
             let theTypeOfConnection = ((
-                (sourceCellType === "earn_cell" && targetCellType === "earn_cell") ||
-                (sourceCellType === "earn_cell" && targetCellType === "base_token") ||
-                (targetCellType === "earn_cell" && sourceCellType === "base_token")) && "Re-invest") || null;
+                (targetCellType === "earn_cell") ||
+                (targetCellType === "base_token")) && "Re-invest") || null;
             setTypeOfConnection(theTypeOfConnection);
 
         }
@@ -56,6 +60,7 @@ export default function SelectAction(props) {
                             <option value="Re-invest">Re-invest</option>
                         ) || (<>
                             <option value="Stake">Stake</option>
+                            <option value="Swap">Swap</option>
                             <option value="Claim">Claim</option>
                             <option value="Supply">Supply</option>
                             <option value="Borrow">Borrow</option>

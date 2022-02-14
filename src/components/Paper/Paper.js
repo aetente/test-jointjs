@@ -67,6 +67,7 @@ function Paper(props) {
 
 
     const [openModalWindow, setOpenModalWindow] = useState(false);
+    const [openAddTokenToSelect, setOpenAddTokenToSelect] = useState(false);
     const [activeLink, setActiveLink] = useState(null);
     const [activeProtocol, setActiveProtocol] = useState(null);
     const [activeLinkView, setActiveLinkView] = useState(null);
@@ -74,6 +75,18 @@ function Paper(props) {
     const [activeCellViewsArray, setActiveCellViewsArray] = useState([]);
     const [recentlyUsedProtocols, setRecentlyUsedProtocols] = useState([]);
     const [recentlyUsedActions, setRecentlyUsedActions] = useState([]);
+
+    const [tokensToSelect, setTokensToSelect] = useState([
+        {value: "BTC"},
+        {value: "ETH"},
+        {value: "BUSD"},
+        {value: "USDT"},
+        {value: "BNB"},
+        {
+            value: "Add new...",
+            callback: () => {setOpenAddTokenToSelect(true)}
+        }
+    ]);
 
     const [protocols, setProtocols] = useState([])
     const [protocolCells, setProtocolCells] = useState([])
@@ -1136,6 +1149,8 @@ function Paper(props) {
                     portCellOptions={portCellOptions}
                     setOpenModalWindow={setOpenModalWindow}
                     activeLink={activeLink}
+                    key={(activeLink && `link-window-${activeLink.id}`) || "protocol-window"}
+                    setActiveLink={setActiveLink}
                     activeProtocol={activeProtocol}
                     graph={graph}
                     stackGraph={stackGraph}
@@ -1147,11 +1162,18 @@ function Paper(props) {
                     setProtocols={setProtocols}
                     protocolCells={protocolCells}
                     setProtocolCells={setProtocolCells}
+                    tokensToSelect={tokensToSelect}
+                    setOpenAddTokenToSelect={setOpenAddTokenToSelect}
                 />}
             <InitButtons
                 addBaseToken={addBaseToken}
                 baseTokenCellView={baseTokenCellView}
                 editBaseToken={editBaseToken}
+                tokensToSelect={tokensToSelect}
+                setTokensToSelect={setTokensToSelect}
+                openAddTokenToSelect={openAddTokenToSelect}
+                setOpenAddTokenToSelect={setOpenAddTokenToSelect}
+                openModalWindow={openModalWindow}
             />
         </div>
     );

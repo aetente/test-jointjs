@@ -7,7 +7,15 @@ import BaseToken from './BaseToken';
 
 export default function InitButtons(props) {
 
-    let { addBaseToken, editBaseToken, baseTokenCellView } = props;
+    let {
+        addBaseToken,
+        editBaseToken,
+        baseTokenCellView,
+        tokensToSelect,
+        setTokensToSelect,
+        openAddTokenToSelect,
+        setOpenAddTokenToSelect
+    } = props;
 
     let [openModalWindow, setOpenModalWindow] = useState(false);
 
@@ -42,11 +50,17 @@ export default function InitButtons(props) {
                 />
                 <button onClick={() => { setOpenModalWindow(!openModalWindow) }}>Base Token</button>
             </div>
-            {(openModalWindow || baseTokenCellView) && <BaseToken
+            {(openModalWindow || baseTokenCellView || openAddTokenToSelect) &&
+            <BaseToken
+                setTokensToSelect={setTokensToSelect}
+                tokensToSelect={tokensToSelect}
                 addBaseToken={addBaseToken}
                 editBaseToken={editBaseToken}
                 baseTokenCellView={baseTokenCellView}
                 setOpenModalWindow={setOpenModalWindow}
+                openAddTokenToSelect={openAddTokenToSelect}
+                setOpenAddTokenToSelect={setOpenAddTokenToSelect}
+                openMainModalWindow={props.openModalWindow}
             />}
         </div>
     )
