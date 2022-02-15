@@ -16,21 +16,22 @@ export default function CustomSelect(props) {
             return <div key={`select-hidden-${option.value}`} style={{ display: "none" }}></div>
         }
         return <div
-            className="custom-option"
+            className={`custom-option ${(option.img && "option-image") || ""}`}
             key={`select-${option.value}`}
             onClick={() => {
                 if (option.callback) {
                     option.callback();
                 } else {
                     setSelectedOption(option.value);
-                }
-                if (onChange) {
-                    onChange(option);
+                    if (onChange) {
+                        onChange(option);
+                    }
                 }
                 setOpenSelect(false);
             }}
         >
-            {option.value}
+            {option.img && <img src={option.img} alt="" />}
+            <div>{option.value}</div>
         </div>
     }
 

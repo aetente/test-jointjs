@@ -1,4 +1,8 @@
-import ethereum from "./ethereum.png";
+import ethereum from "../../assets/images/ethereum.png";
+import compound from "../../assets/images/compound.png";
+import yearnfin from "../../assets/images/yearnfin.png";
+import uniswap from "../../assets/images/uniswap.png";
+
 
 export const protocols = [
         {
@@ -10,20 +14,23 @@ export const protocols = [
         },
         {
             id: "1",
-            name: "Coffee",
-            backgroundColor: "#a2a2a2",
-            borderColor: "#626262"
+            name: "Compound",
+            backgroundColor: "#F2FBF8",
+            borderColor: "#00D395",
+            image: compound
         },
         {
             id: "2",
-            name: "Water",
-            backgroundColor: "#a2a2f2",
-            borderColor: "#2222a2"
+            name: "Yearn.finance",
+            backgroundColor: "#EEF1F4",
+            borderColor: "#307FD2",
+            image: yearnfin
         },
         {
             id: "3",
-            name: "Tea",
-            backgroundColor: "#a2f2a2",
-            borderColor: "#22a222"
+            name: "Uniswap",
+            backgroundColor: "#FFEFF7",
+            borderColor: "#FF5DAC",
+            image: uniswap
         }
     ];

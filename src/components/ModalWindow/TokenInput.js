@@ -11,7 +11,7 @@ export default function TokenInput(props) {
     return (
 
         <div className="modal-option">
-            <div className="modal-option-title">{(action[0] === "Stake" && "In What Token") || "To"}</div>
+            <div className="modal-option-title">{(action[0].name === "Stake" && "In What Token") || "To"}</div>
             <div
                 className="hold-select-action"
             >

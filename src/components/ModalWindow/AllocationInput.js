@@ -1,43 +1,52 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import "./styles.css";
 
-function handleChange(theValue, props, setAllocationValue) {
-    const re = /^[0-9\b]+$/;
-    if ((theValue === '' || re.test(theValue)) && theValue >= 0 && theValue <= 100) {
-        props.setAllocation(theValue);
-        setAllocationValue(theValue);
-    }
-
-}
-
-const percentagesValues = [20, 50, 75, 100];
-
-function mapPercentagesButtons(p, allocation, handleChange, props, setAllocationValue) {
-    return (
-        <div
-            key={`percentage-button-${p}-${allocation}`}
-            onClick={
-                () => {
-                    handleChange(p, props, setAllocationValue);
-                }
-            }
-            className={(p == allocation && "matched-modal-option-button") || ""}
-        >
-            {p}%
-        </div>
-    );
-}
-
 export default function AllocationInput(props) {
 
+    let {actionIndex, activeLink, setAllocation} = props;
 
-    let linkLabel = props.activeLink && props.activeLink.label(0);
+    let linkLabel = activeLink && activeLink.label(0);
     let defaultInputValue = linkLabel ? linkLabel.attrs.text.allocation : 50;
     let [allocationValue, setAllocationValue] = useState(defaultInputValue);
 
-    
+    const handleChange = (theValue) => {
+        const re = /^[0-9\b]+$/;
+        if ((theValue === '' || re.test(theValue)) && theValue >= 0 && theValue <= 100) {
+            // setAllocation(theValue);
+            props.setAction(actionValue => {
+                if (!actionValue[actionIndex]) {
+                    actionValue.push({ allocation: theValue });
+                } else {
+                    actionValue.splice(actionIndex, 1, { ...actionValue[actionIndex], allocation: theValue });
+                }
+                return [...actionValue];
+            });
+            setAllocationValue(theValue);
+        }
+
+    }
+
+    const percentagesValues = [20, 50, 75, 100];
+
+    const mapPercentagesButtons = (p) => {
+        return (
+            <div
+                key={`percentage-button-${p}-${allocationValue}`}
+                onClick={
+                    () => {
+                        handleChange(p);
+                    }
+                }
+                className={(p == allocationValue && "matched-modal-option-button") || ""}
+            >
+                {p}%
+            </div>
+        );
+    }
+
+
     useEffect(() => {
-        let linkLabel = props.activeLink && props.activeLink.label(0);
+        let linkLabel = activeLink && activeLink.label(0);
         let defaultInputValue = linkLabel ? linkLabel.attrs.text.allocation : 50;
         setAllocationValue(defaultInputValue)
     }, [])
@@ -54,13 +63,13 @@ export default function AllocationInput(props) {
                     key={defaultInputValue}
                     className='allocation-input'
                     onChange={e => {
-                        handleChange(e.target.value, props, setAllocationValue);
+                        handleChange(e.target.value);
                     }}
                     value={allocationValue}
                 />
             </div>
             <div className='hold-modal-option-button'>
-                {percentagesValues.map((p) => mapPercentagesButtons(p, allocationValue, handleChange, props, setAllocationValue))}
+                {percentagesValues.map((p) => mapPercentagesButtons(p))}
             </div>
         </div>
     )

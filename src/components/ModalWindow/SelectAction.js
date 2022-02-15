@@ -6,6 +6,8 @@ import "./styles.css";
 
 export default function SelectAction(props) {
 
+    let { isSupply } = props;
+
     let actionIndex = props.actionIndex;
     let linkLabel = props.activeLink && props.activeLink.label(actionIndex);
     let defaultSelectValue = linkLabel ? linkLabel.attrs.text.action : "Stake";
@@ -18,15 +20,18 @@ export default function SelectAction(props) {
             let sourceCell = props.activeLink.getSourceCell();
             let targetCellType = convertObjToStr(targetCell.attributes.typeOfCell);
             let sourceCellType = convertObjToStr(sourceCell.attributes.typeOfCell);
-    
+
             // let theTypeOfConnection = ((
             //     (sourceCellType === "earn_cell" && targetCellType === "earn_cell") ||
             //     (sourceCellType === "earn_cell" && targetCellType === "base_token") ||
             //     (targetCellType === "earn_cell" && sourceCellType === "base_token")) && "Re-invest") || null;
-            
+
             let theTypeOfConnection = ((
                 (targetCellType === "earn_cell") ||
                 (targetCellType === "base_token")) && "Re-invest") || null;
+            if (isSupply) {
+                theTypeOfConnection = "Supply";
+            }
             setTypeOfConnection(theTypeOfConnection);
 
         }
@@ -34,7 +39,7 @@ export default function SelectAction(props) {
 
     return (
         <div className="modal-option">
-            <div className="modal-option-title">Choose action</div>
+            <div className="modal-option-title">Choose action {(isSupply && "2") || ""}</div>
             <div
                 className="hold-select-action"
             >
@@ -45,9 +50,11 @@ export default function SelectAction(props) {
                     onChange={e => {
                         props.setAction(actionValue => {
                             if (!actionValue[actionIndex]) {
-                                actionValue.push(e.target.value);
+                                actionValue.push({ name: e.target.value });
                             } else {
-                                actionValue.splice(actionIndex, 1, e.target.value);
+                                if (e.target.value !== "No borrow") {
+                                    actionValue.splice(actionIndex, 1, { ...actionValue[actionIndex], name: e.target.value });
+                                }
                             }
                             return [...actionValue];
                         });
@@ -55,10 +62,14 @@ export default function SelectAction(props) {
                     }}
                     defaultValue={defaultSelectValue}
                 >
-                    {typeOfConnection === "Re-invest" &&
+                    {(typeOfConnection === "Re-invest" &&
                         (
                             <option value="Re-invest">Re-invest</option>
-                        ) || (<>
+                        ))
+                        || (typeOfConnection === "Supply" && (<>
+                            <option value="No borrow">No borrow</option>
+                            <option value="Borrow">Borrow</option>
+                        </>)) || (<>
                             <option value="Stake">Stake</option>
                             <option value="Swap">Swap</option>
                             <option value="Claim">Claim</option>

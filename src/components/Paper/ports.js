@@ -38,6 +38,16 @@ const portAttrs = {
     }
 }
 
+const hiddenPortAttrs = {
+    portBody: {
+        magnet: true,
+        r: 1,
+        fill: 'rgba(0,0,0,0)',
+        stroke: 'rgba(0,0,0,0)',
+        ...portSizes
+    },
+}
+
 
 const pooledPortAttrs = {
     portBody: {
@@ -126,6 +136,14 @@ export const ports = {
         },
         attrs: rootPortAttrs,
         markup: portMarkup
+    },
+    portTopTradingFee: {
+        group: "top",
+        position: {
+            name: 'top',
+        },
+        attrs: hiddenPortAttrs,
+        markup: portMarkup
     }
 }
 
@@ -193,3 +211,15 @@ export const rootPortCellOptions = {
         // ports.rootPortBottom
     ]
 }
+
+
+export const tradingFeePortCellOptions = {
+    groups: {
+        'top': {
+            position: "top"
+        },
+    },
+    items: [
+        ports.portTopTradingFee
+    ]
+};

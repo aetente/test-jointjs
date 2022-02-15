@@ -6,3 +6,6 @@ export function doTest(payload) {
     payload,
   };
 }
+
+export * from "./test";
+export * from "./ui";

@@ -1,17 +1,22 @@
 import React, { useState, useEffect, useRef, useCallback, useContext } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import * as joint from 'jointjs';
+import dagre from 'dagre';
+import graphlib from 'graphlib';
+
+
 import ModalWindow from '../ModalWindow/ModalWindow';
 import InitButtons from '../InitButtons/InitButtons';
 import SelectCells from '../SelectCells/SelectCells';
 
 import { DiagramContext } from '../Content/context';
-import * as joint from 'jointjs';
-import dagre from 'dagre';
-import graphlib from 'graphlib';
-import { cells, earnCell, frameCell } from './cells';
-import { ports, portCellOptions, rootPortCellOptions } from './ports';
+import { cells, earnCell, frameCell, tradingFeeCell } from './cells';
+import { ports, portCellOptions, rootPortCellOptions, tradingFeePortCellOptions } from './ports';
 import { diamondShape, frameShape, rectDiamondShape, toolsView, toolsViewVertices } from './options';
 import "./styles.css";
 import { convertObjToStr, swapItems } from '../../utils/utils';
+
+import { uiActions } from '../../actions';
 
 import donkeylogo from "./Group 3722.png";
 
@@ -75,18 +80,6 @@ function Paper(props) {
     const [activeCellViewsArray, setActiveCellViewsArray] = useState([]);
     const [recentlyUsedProtocols, setRecentlyUsedProtocols] = useState([]);
     const [recentlyUsedActions, setRecentlyUsedActions] = useState([]);
-
-    const [tokensToSelect, setTokensToSelect] = useState([
-        {value: "BTC"},
-        {value: "ETH"},
-        {value: "BUSD"},
-        {value: "USDT"},
-        {value: "BNB"},
-        {
-            value: "Add new...",
-            callback: () => {setOpenAddTokenToSelect(true)}
-        }
-    ]);
 
     const [protocols, setProtocols] = useState([])
     const [protocolCells, setProtocolCells] = useState([])
@@ -162,6 +155,9 @@ function Paper(props) {
         recentlyUsedProtocolsRef.current = val;
     }
 
+
+    const dispatch = useDispatch();
+
     const dragStart = useCallback(event => {
         if (!event.target ||
             !event.target.getAttribute ||
@@ -232,7 +228,7 @@ function Paper(props) {
         // newCell.attr('polygon/stroke', event.dataTransfer.getData('borderColor'))
         newCell.attr('.rect-body/fill', event.dataTransfer.getData('color'))
         newCell.attr('.rect-body/stroke', event.dataTransfer.getData('borderColor'))
-        
+
         if (event.dataTransfer.getData('image') !== "null") {
             newCell.attr('image/xlink:href', event.dataTransfer.getData('image'))
         }
@@ -282,11 +278,11 @@ function Paper(props) {
         });
         // newCell.attr('polygon/fill', "#19384d");
         // newCell.attr('polygon/stroke', "#19384d");
-        
+
         newCell.attr('.rect-body/fill', "#DBD9D2")
         newCell.attr('.rect-body/stroke', "#19384d");
-        
-        
+
+
         setProtocolCells([newCell]);
         setActiveProtocol({
             id: String(protocols.length),
@@ -322,6 +318,8 @@ function Paper(props) {
         let swapIndexes = [];
 
         let theLinks = graph.getLinks()
+
+        console.log("layout", theLinks)
 
         // here we reorder elements according to what port they are connected (left, top, bottom, right)
         theLinks.forEach((alink, i) => {
@@ -437,12 +435,32 @@ function Paper(props) {
 
     const addBaseToken = (tokenName, tokenUrl) => {
 
-        let newLink = new joint.shapes.standard.Link();
+        let newLink = new joint.shapes.standard.Link({
+            markup: [
+                {
+                    tagName: 'path',
+                    selector: 'line',
+                }, {
+                    tagName: 'path',
+                    selector: 'offsetLabelPositiveConnector'
+                }, {
+                    tagName: 'path',
+                    selector: 'offsetLabelNegativeConnector'
+                }, {
+                    tagName: 'path',
+                    selector: 'offsetLabelAbsoluteConnector'
+                }, {
+                    tagName: 'text',
+                    selector: 'offsetLabelMarker'
+                }
+            ]
+        });
         newLink.router('manhattan', { excludeTypes: ['custom.Frame'] });
 
         newLink.attr({
             line: {
                 strokeDasharray: '8 4',
+                fill: "rgba(0,0,0,0)",
                 targetMarker: {
                     type: "none"
                 }
@@ -613,12 +631,38 @@ function Paper(props) {
     }
 
     useEffect(() => {
-        let link = new joint.shapes.standard.Link();
+        dispatch(uiActions.pushTokenOption(
+            {
+                value: "Add new...",
+                callback: () => { setOpenAddTokenToSelect(true) }
+            }
+        ));
+        let link = new joint.shapes.standard.Link({
+            markup: [
+                {
+                    tagName: 'path',
+                    selector: 'line',
+                }, {
+                    tagName: 'path',
+                    selector: 'offsetLabelPositiveConnector'
+                }, {
+                    tagName: 'path',
+                    selector: 'offsetLabelNegativeConnector'
+                }, {
+                    tagName: 'path',
+                    selector: 'offsetLabelAbsoluteConnector'
+                }, {
+                    tagName: 'text',
+                    selector: 'offsetLabelMarker'
+                }
+            ]
+        });
 
         link.router('manhattan', { excludeTypes: ['custom.Frame'] });
         link.attr({
             line: {
                 strokeDasharray: '8 4',
+                fill: "rgba(0,0,0,0)",
                 targetMarker: {
                     type: "none"
                 }
@@ -681,7 +725,7 @@ function Paper(props) {
             let cell = new joint.shapes.standard.Rectangle({ ...cellData, ports: portCellOptions });
             if (cellData.typeOfCell === "root") {
                 // cell = new diamondShape({ ...cellData, ports: rootPortCellOptions });
-                
+
                 cell = new rectDiamondShape({ ...cellData, ports: rootPortCellOptions });
                 cell.attr('image/xlinkHref', donkeylogo)
                 // cell.attr('polygon/fill', "#DBD9D2")
@@ -783,9 +827,9 @@ function Paper(props) {
                     isHighlighted = true;
                 }
             })
+            let { originalEvent } = e;
+            let paperScale = getPaperRef().scale().sx;
             if (isHighlighted) {
-                let { originalEvent } = e;
-                let paperScale = getPaperRef().scale().sx;
                 activeCells.forEach(activeCell => {
                     let activeCellModel = activeCell.model;
                     if (activeCellModel.id !== cellView.model.id) {
@@ -798,18 +842,40 @@ function Paper(props) {
             }
 
             if (cellView.model.isElement()) {
-                let theLinks = getGraphRef().getLinks();
+                // let theLinks = getGraphRef().getLinks();
+                let cellsToUpdateLink = getActiveCellViewsArrayRef();
+                if (cellsToUpdateLink.length < 1 || !isHighlighted) {
+                    cellsToUpdateLink = [cellView];
+                }
+                cellsToUpdateLink.forEach(cellV => {
+                    let theLinks = getGraphRef().getConnectedLinks(cellV.model);
 
-                theLinks.forEach(link => {
-                    let linkView = link.findView(getPaperRef());
-                    let verticeX = (linkView.sourceAnchor.x + linkView.targetAnchor.x) / 2;
-                    let verticeY = (linkView.sourceAnchor.y + linkView.targetAnchor.y) / 2;
-                    verticeX -= (verticeX % 10);
-                    verticeY -= (verticeY % 10);
-                    link.vertices([{
-                        x: verticeX,
-                        y: verticeY
-                    }]);
+                    theLinks.forEach(link => {
+                        if (link.get("vertices")) {
+                            let currentVertices = [...link.get("vertices")];
+                            currentVertices = currentVertices.map(currentVertex => {
+
+                                let dx = originalEvent.movementX / paperScale;
+                                let dy = originalEvent.movementY / paperScale;
+                                let newVertex = {
+                                    x: Math.round(currentVertex.x + dx),
+                                    y: Math.round(currentVertex.y + dy)
+                                };
+                                return newVertex;
+                            })
+                            link.vertices(currentVertices);
+                        } else {
+                            let linkView = link.findView(getPaperRef());
+                            let verticeX = (linkView.sourceAnchor.x + linkView.targetAnchor.x) / 2;
+                            let verticeY = (linkView.sourceAnchor.y + linkView.targetAnchor.y) / 2;
+                            verticeX -= (verticeX % 10);
+                            verticeY -= (verticeY % 10);
+                            link.vertices([{
+                                x: verticeX,
+                                y: verticeY
+                            }]);
+                        }
+                    })
                 })
             }
         })
@@ -839,6 +905,32 @@ function Paper(props) {
                             -(thePos.y % 10),
                         );
                     }
+                })
+            }
+
+
+
+            if (cellView.model.isElement()) {
+                // let theLinks = getGraphRef().getLinks();
+                let cellsToUpdateLink = getActiveCellViewsArrayRef();
+                if (cellsToUpdateLink.length < 1) {
+                    cellsToUpdateLink = [cellView];
+                }
+                cellsToUpdateLink.forEach(cellV => {
+                    let theLinks = getGraphRef().getConnectedLinks(cellV.model);
+
+                    theLinks.forEach(link => {
+                        if (link.get("vertices")) {
+                            let currentVertices = [...link.get("vertices")];
+                            currentVertices = currentVertices.map(currentVertex => {
+                                let newVertex = { ...link.get("vertices")[0] };
+                                newVertex.x -= (currentVertex.x % 10);
+                                newVertex.y -= (currentVertex.y % 10);
+                                return newVertex;
+                            })
+                            link.vertices(currentVertices);
+                        }
+                    })
                 })
             }
 
@@ -1147,6 +1239,7 @@ function Paper(props) {
                 <ModalWindow
                     joint={joint}
                     portCellOptions={portCellOptions}
+                    tradingFeePortCellOptions={tradingFeePortCellOptions}
                     setOpenModalWindow={setOpenModalWindow}
                     activeLink={activeLink}
                     key={(activeLink && `link-window-${activeLink.id}`) || "protocol-window"}
@@ -1155,6 +1248,7 @@ function Paper(props) {
                     graph={graph}
                     stackGraph={stackGraph}
                     cellData={earnCell}
+                    tradingFeeCell={tradingFeeCell}
                     layout={layout}
                     subLayout={subLayout}
                     setActiveProtocol={setActiveProtocol}
@@ -1162,15 +1256,12 @@ function Paper(props) {
                     setProtocols={setProtocols}
                     protocolCells={protocolCells}
                     setProtocolCells={setProtocolCells}
-                    tokensToSelect={tokensToSelect}
                     setOpenAddTokenToSelect={setOpenAddTokenToSelect}
                 />}
             <InitButtons
                 addBaseToken={addBaseToken}
                 baseTokenCellView={baseTokenCellView}
                 editBaseToken={editBaseToken}
-                tokensToSelect={tokensToSelect}
-                setTokensToSelect={setTokensToSelect}
                 openAddTokenToSelect={openAddTokenToSelect}
                 setOpenAddTokenToSelect={setOpenAddTokenToSelect}
                 openModalWindow={openModalWindow}

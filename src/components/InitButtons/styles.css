@@ -103,7 +103,21 @@ option, .custom-option {
     min-width: 78px;
     padding: 6px;
     padding-left: 30px;
-    padding-right: 0px
+    padding-right: 0px;
+    display: flex
+}
+
+.custom-option img {
+    width: 16px;
+    height: 16px
+}
+
+.option-image {
+    padding-left: 16px
+}
+
+.option-image div {
+    margin-left: 16px
 }
 
 .custom-option:hover {

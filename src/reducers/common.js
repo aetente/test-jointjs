@@ -1,11 +1,11 @@
-import { TEST } from "../types";
+import { testTypes } from "../types";
 
 const INITIAL_STATE = { testData: null };
 
 const common = (state = INITIAL_STATE, action) => {
   let { testData } = state;
   switch (action.type) {
-    case TEST:
+    case testTypes.TEST:
       return { ...state, testData: action.payload };
     default:
       return state;

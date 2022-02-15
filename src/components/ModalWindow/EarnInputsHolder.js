@@ -13,39 +13,59 @@ export default function EarnInputsHolder(props) {
     let earn = linkLabel ? linkLabel.attrs.text.earn : "None";
 
     let [isMinimized, setIsMinimized] = useState(true)
+    let [earnValue, setEarnValue] = useState("None");
+
+    useEffect(() => {
+        setEarnValue(earn);
+    }, [])
+
+    const updateEarn = (val) => {
+        setEarnValue(val);
+        props.setEarn(val);
+    }
 
     return (
 
         <div>
             {
-                isMinimized && earn !== "None" && props.arrayLength > 1 &&
-                <div className='hold-minimized'>
-                    <div className='minimized-title'>
-                        <div className='minimized-title-counter'>
-                            {props.i + 1} Selection
+                (isMinimized && earn !== "None" && props.arrayLength > 1 &&
+                    <div className='hold-minimized'>
+                        <div className='minimized-title'>
+                            <div className='minimized-title-counter'>
+                                {props.i + 1} Selection
+                            </div>
+                            <div
+                                className='unminimize'
+                                onClick={() => {
+                                    setIsMinimized(!isMinimized)
+                                }}
+                            >
+                                Edit
+                            </div>
                         </div>
-                        <div
-                            className='unminimize'
-                            onClick={() => {
-                                setIsMinimized(!isMinimized)
-                            }}
-                        >
-                            Edit
-                        </div>
-                    </div>
 
-                    <div className='minimized-description'>
-                        Earn <span>{earn}</span> with <span>{tokenName}</span>
-                    </div>
-                </div>
+                        <div className='minimized-description'>
+                            {(earn === "Trading fee" && (
+                                <>
+                                    Earn <span>{earn}</span>
+                                </>
+                            )) || (<>
+                                Earn <span>{earn}</span> with <span>{tokenName}</span>
+                            </>)}
+                        </div>
+                    </div>)
                 ||
                 <>
-                    {(action[0] === "Stake" &&
+                    {(action[0].name === "Stake" &&
                         (<>
-                            <SelectEarn setEarn={props.setEarn} activeLink={props.activeLink} />
-                            <TokenInput action={action} setTokenName={props.setTokenName} activeLink={props.activeLink} />
+                            <SelectEarn setEarn={updateEarn} activeLink={props.activeLink} />
+                            {earnValue !== "Trading fee" &&
+                                <TokenInput action={action} setTokenName={props.setTokenName} activeLink={props.activeLink} />
+                            }
+
                         </>)) || (
                             <SelectToken
+                                key={`select-token-${tokensToSelect.length}`}
                                 action={action}
                                 setTokenName={props.setTokenName}
                                 activeLink={props.activeLink}

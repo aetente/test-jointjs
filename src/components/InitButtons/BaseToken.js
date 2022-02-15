@@ -10,7 +10,7 @@ export default function BaseToken(props) {
         setOpenModalWindow,
         editBaseToken,
         baseTokenCellView,
-        setTokensToSelect,
+        addNewTokenOption,
         openMainModalWindow,
         openAddTokenToSelect,
         setOpenAddTokenToSelect
@@ -95,8 +95,7 @@ export default function BaseToken(props) {
                                 if (baseTokenCellView) {
                                     editBaseToken(tokenName, tokenURL);
                                 } else if (openAddTokenToSelect) {
-                                    setTokensToSelect(tokensToSelect =>
-                                        [{ value: tokenName, url: tokenURL }, ...tokensToSelect]);
+                                    addNewTokenOption({ value: tokenName, url: tokenURL });
                                     setOpenAddTokenToSelect(false);
                                 } else {
                                     addBaseToken(tokenName, tokenURL);

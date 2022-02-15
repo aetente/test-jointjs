@@ -59,6 +59,29 @@ export const earnCell = {
     outPorts: ['out']
   }
 
+  export const tradingFeeCell = {
+    attrs: {
+      label: {
+        text: "Earn trading fee",
+        fill: "#777E90",
+        fontFamily: 'Poppins, sans-serif'
+      },
+      body: {
+        rx: 8,
+        ry: 8,
+        fill: "#F6F6F6",
+        stroke: "#F6F6F6"
+      },
+      text: {
+        fontFamily: 'Poppins, sans-serif'
+      },
+      '.': { magnet: false }
+    },
+    size: { width: 120, height: 39 },
+    inPorts: ['in'],
+    outPorts: ['out']
+  }
+
   export const frameCell = {
     attrs: {
       body: {
