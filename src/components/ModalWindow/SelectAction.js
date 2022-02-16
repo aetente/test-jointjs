@@ -28,7 +28,8 @@ export default function SelectAction(props) {
 
             let theTypeOfConnection = ((
                 (targetCellType === "earn_cell") ||
-                (targetCellType === "base_token")) && "Re-invest") || null;
+                (targetCellType === "base_token")||
+                (targetCellType === "root")) && "Re-invest") || null;
             if (isSupply) {
                 theTypeOfConnection = "Supply";
             }
@@ -49,6 +50,9 @@ export default function SelectAction(props) {
                     className='select-actions'
                     onChange={e => {
                         props.setAction(actionValue => {
+                            if (actionIndex === 0 && e.target.value !== "Supply" && actionValue.length > 1) {
+                                actionValue.pop();
+                            }
                             if (!actionValue[actionIndex]) {
                                 actionValue.push({ name: e.target.value });
                             } else {

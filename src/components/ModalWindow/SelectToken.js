@@ -13,16 +13,19 @@ export default function SelectToken(props) {
     }
 
     // let linkLabel = props.activeLink && props.activeLink.label(0);
-    let defaultSelectValue = tokensToSelect[0];
+    let linkLabel = props.activeLink && props.activeLink.label(0);
+    let defaultSelectValue = linkLabel ? linkLabel.attrs.text.tokenName : tokensToSelect[0].value;
 
     useEffect(() => {
-        props.setTokenName(defaultSelectValue.value);
+        props.setTokenName(defaultSelectValue);
     })
 
     return (
         <div className="modal-option">
-            <div className="modal-option-title header-title">To</div>
-            <div className="modal-option-title">Token</div>
+            {(action[0].name === "Swap" && <>
+                <div className="modal-option-title header-title">To</div>
+                <div className="modal-option-title">Token</div>
+            </>) || ( <div className="modal-option-title">In what Token</div>)}
             <div
                 className="hold-select-action"
             >
@@ -32,7 +35,6 @@ export default function SelectToken(props) {
                     key={defaultSelectValue}
                     className='select-actions'
                     onChange={e => {
-                        console.log(e)
                         props.setTokenName(e.value);
                     }}
                     defaultValue={defaultSelectValue}

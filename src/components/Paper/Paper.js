@@ -20,6 +20,25 @@ import { uiActions } from '../../actions';
 
 import donkeylogo from "./Group 3722.png";
 
+const linkMarkup = [
+    {
+        tagName: 'path',
+        selector: 'line',
+    }, {
+        tagName: 'path',
+        selector: 'offsetLabelPositiveConnector'
+    }, {
+        tagName: 'path',
+        selector: 'offsetLabelNegativeConnector'
+    }, {
+        tagName: 'path',
+        selector: 'positiveArrow'
+    }, {
+        tagName: 'path',
+        selector: 'negativeArrow'
+    },
+]
+
 // the name space needed for importing graph from json, which is what we do when press undo button
 // in here we added custom node, so that now jointjs nows what to build when it finds that the type of a node is custom.Diamond
 const customNameSpace = Object.assign(joint.shapes, {
@@ -319,8 +338,6 @@ function Paper(props) {
 
         let theLinks = graph.getLinks()
 
-        console.log("layout", theLinks)
-
         // here we reorder elements according to what port they are connected (left, top, bottom, right)
         theLinks.forEach((alink, i) => {
             // disable all vertices
@@ -436,31 +453,14 @@ function Paper(props) {
     const addBaseToken = (tokenName, tokenUrl) => {
 
         let newLink = new joint.shapes.standard.Link({
-            markup: [
-                {
-                    tagName: 'path',
-                    selector: 'line',
-                }, {
-                    tagName: 'path',
-                    selector: 'offsetLabelPositiveConnector'
-                }, {
-                    tagName: 'path',
-                    selector: 'offsetLabelNegativeConnector'
-                }, {
-                    tagName: 'path',
-                    selector: 'offsetLabelAbsoluteConnector'
-                }, {
-                    tagName: 'text',
-                    selector: 'offsetLabelMarker'
-                }
-            ]
+            markup: linkMarkup
         });
         newLink.router('manhattan', { excludeTypes: ['custom.Frame'] });
 
         newLink.attr({
             line: {
                 strokeDasharray: '8 4',
-                fill: "rgba(0,0,0,0)",
+                fill: "none",
                 targetMarker: {
                     type: "none"
                 }
@@ -638,31 +638,14 @@ function Paper(props) {
             }
         ));
         let link = new joint.shapes.standard.Link({
-            markup: [
-                {
-                    tagName: 'path',
-                    selector: 'line',
-                }, {
-                    tagName: 'path',
-                    selector: 'offsetLabelPositiveConnector'
-                }, {
-                    tagName: 'path',
-                    selector: 'offsetLabelNegativeConnector'
-                }, {
-                    tagName: 'path',
-                    selector: 'offsetLabelAbsoluteConnector'
-                }, {
-                    tagName: 'text',
-                    selector: 'offsetLabelMarker'
-                }
-            ]
+            markup: linkMarkup
         });
 
         link.router('manhattan', { excludeTypes: ['custom.Frame'] });
         link.attr({
             line: {
                 strokeDasharray: '8 4',
-                fill: "rgba(0,0,0,0)",
+                fill: "none",
                 targetMarker: {
                     type: "none"
                 }
@@ -702,9 +685,6 @@ function Paper(props) {
                 }
             },
             interactive: (cellView, a) => {
-                // if (cellView.model.attributes.typeOfCell === "frame") {
-                //     return false;
-                // }
                 return true;
             },
             // restrictTranslate: true,
@@ -712,12 +692,7 @@ function Paper(props) {
                 let sourceTypeOfCell = cellViewS.model.attributes.typeOfCell;
                 let targetTypeOfCell = cellViewT.model.attributes.typeOfCell;
                 return cellViewS.id !== cellViewT.id &&
-                    !cellViewT.model.isLink()
-                // &&
-                // ((sourceTypeOfCell !== "root" &&
-                //     targetTypeOfCell !== "root") ||
-                //     (sourceTypeOfCell === "root" && targetTypeOfCell === "base_token") ||
-                //     (sourceTypeOfCell === "base_token" && targetTypeOfCell === "root"));
+                    !cellViewS.model.isLink() && !cellViewT.model.isLink()
             }
         });
 
@@ -758,9 +733,9 @@ function Paper(props) {
                 stackGraph(graph);
                 let targetCell = linkView.model.getTargetCell()
                 let sourceCell = linkView.model.getSourceCell()
-                if (sourceCell.attributes.typeOfCell !== "root" && targetCell.attributes.typeOfCell !== "root") {
+                // if (sourceCell.attributes.typeOfCell !== "root" && targetCell.attributes.typeOfCell !== "root") {
                     setOpenModalWindow(true);
-                }
+                // }
             }
         }));
 
@@ -847,8 +822,17 @@ function Paper(props) {
                 if (cellsToUpdateLink.length < 1 || !isHighlighted) {
                     cellsToUpdateLink = [cellView];
                 }
+                let theLinks = [];
+                
                 cellsToUpdateLink.forEach(cellV => {
-                    let theLinks = getGraphRef().getConnectedLinks(cellV.model);
+                    theLinks = [...theLinks, ...getGraphRef().getConnectedLinks(cellV.model)];
+                });
+                theLinks = theLinks.filter((l, i) => {
+                    let posInLinks = theLinks.findIndex(link => link.id === l.id);
+                    return posInLinks === i;
+                });
+                // cellsToUpdateLink.forEach(cellV => {
+                //     let theLinks = getGraphRef().getConnectedLinks(cellV.model);
 
                     theLinks.forEach(link => {
                         if (link.get("vertices")) {
@@ -876,7 +860,7 @@ function Paper(props) {
                             }]);
                         }
                     })
-                })
+                // })
             }
         })
 
@@ -970,9 +954,9 @@ function Paper(props) {
                 setActiveProtocol(null);
                 let targetCell = linkView.model.getTargetCell()
                 let sourceCell = linkView.model.getSourceCell()
-                if (sourceCell.attributes.typeOfCell !== "root" && targetCell.attributes.typeOfCell !== "root") {
+                // if (sourceCell.attributes.typeOfCell !== "root" && targetCell.attributes.typeOfCell !== "root") {
                     setOpenModalWindow(true);
-                }
+                // }
             }
         }))
 
@@ -1026,9 +1010,9 @@ function Paper(props) {
                     stackGraph(graph);
                     let targetCell = linkView.model.getTargetCell()
                     let sourceCell = linkView.model.getSourceCell()
-                    if (sourceCell.attributes.typeOfCell !== "root" && targetCell.attributes.typeOfCell !== "root") {
+                    // if (sourceCell.attributes.typeOfCell !== "root" && targetCell.attributes.typeOfCell !== "root") {
                         setOpenModalWindow(true);
-                    }
+                    // }
                 }
             }))
         });
@@ -1213,7 +1197,7 @@ function Paper(props) {
             <SelectCells
                 svgElement={getCanvas()}
                 reverseGraph={reverseGraph}
-                protocols={protocols}
+                protocols={props.protocols}
                 layout={layout}
                 paper={getPaperRef()}
                 graph={graph}
@@ -1239,6 +1223,7 @@ function Paper(props) {
                 <ModalWindow
                     joint={joint}
                     portCellOptions={portCellOptions}
+                    linkMarkup={linkMarkup}
                     tradingFeePortCellOptions={tradingFeePortCellOptions}
                     setOpenModalWindow={setOpenModalWindow}
                     activeLink={activeLink}
@@ -1252,7 +1237,7 @@ function Paper(props) {
                     layout={layout}
                     subLayout={subLayout}
                     setActiveProtocol={setActiveProtocol}
-                    protocols={protocols}
+                    protocols={props.protocols}
                     setProtocols={setProtocols}
                     protocolCells={protocolCells}
                     setProtocolCells={setProtocolCells}

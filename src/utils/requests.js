@@ -11,4 +11,10 @@ const users = {
     }),
 };
 
-export default { users };
+const protocols = {
+  getProtocols: () => {
+
+  }
+}
+
+export default { users, protocols };

@@ -5,12 +5,14 @@ import "./styles.css";
 
 export default function SelectEarn(props) {
 
+    let {action} = props;
+
     let linkLabel = props.activeLink && props.activeLink.label(0);
     let defaultSelectValue = linkLabel ? linkLabel.attrs.text.earn : "None";
 
     return (
         <div className="modal-option">
-            <div className="modal-option-title">Earn</div>
+            <div className="modal-option-title">{(action[0].name === "Harvest" && "What to harvest") || "Earn"}</div>
             <div
                 className="hold-select-action"
             >

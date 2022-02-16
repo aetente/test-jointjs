@@ -58,12 +58,13 @@ export default function EarnInputsHolder(props) {
                 <>
                     {(action[0].name === "Stake" &&
                         (<>
-                            <SelectEarn setEarn={updateEarn} activeLink={props.activeLink} />
+                            <SelectEarn action={action} setEarn={updateEarn} activeLink={props.activeLink} />
                             {earnValue !== "Trading fee" &&
                                 <TokenInput action={action} setTokenName={props.setTokenName} activeLink={props.activeLink} />
                             }
 
-                        </>)) || (
+                        </>)) || ((action[0].name === "Swap" ||
+                                (action[0].name === "Supply" && (action[1] && action[1].name === "Borrow"))) &&
                             <SelectToken
                                 key={`select-token-${tokensToSelect.length}`}
                                 action={action}
@@ -72,6 +73,18 @@ export default function EarnInputsHolder(props) {
                                 tokensToSelect={tokensToSelect}
                                 setOpenAddTokenToSelect={setOpenAddTokenToSelect}
                             />
+                        ) || (action[0].name === "Harvest" &&
+                            <>
+                                <SelectEarn action={action} setEarn={updateEarn} activeLink={props.activeLink} />
+                                <SelectToken
+                                    key={`select-token-${tokensToSelect.length}`}
+                                    action={action}
+                                    setTokenName={props.setTokenName}
+                                    activeLink={props.activeLink}
+                                    tokensToSelect={tokensToSelect}
+                                    setOpenAddTokenToSelect={setOpenAddTokenToSelect}
+                                />
+                            </>
                         )
                     }
                 </>

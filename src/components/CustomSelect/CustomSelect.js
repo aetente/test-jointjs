@@ -5,10 +5,10 @@ export default function CustomSelect(props) {
     let [openSelect, setOpenSelect] = useState(false);
     let [selectedOption, setSelectedOption] = useState("");
     let [listPosition, setListPosition] = useState({ x: 0, y: 0 });
-    let { options, additionalClass, onChange } = props;
+    let { options, additionalClass, onChange, defaultValue } = props;
 
     useEffect(() => {
-        setSelectedOption(options[0].value);
+        setSelectedOption(defaultValue || options[0].value);
     }, []);
 
     const mapOptions = (option) => {

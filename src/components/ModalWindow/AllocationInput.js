@@ -5,7 +5,7 @@ export default function AllocationInput(props) {
 
     let {actionIndex, activeLink, setAllocation} = props;
 
-    let linkLabel = activeLink && activeLink.label(0);
+    let linkLabel = activeLink && activeLink.label(actionIndex);
     let defaultInputValue = linkLabel ? linkLabel.attrs.text.allocation : 50;
     let [allocationValue, setAllocationValue] = useState(defaultInputValue);
 
@@ -46,7 +46,7 @@ export default function AllocationInput(props) {
 
 
     useEffect(() => {
-        let linkLabel = activeLink && activeLink.label(0);
+        let linkLabel = activeLink && activeLink.label(actionIndex);
         let defaultInputValue = linkLabel ? linkLabel.attrs.text.allocation : 50;
         setAllocationValue(defaultInputValue)
     }, [])
