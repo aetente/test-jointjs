@@ -73,7 +73,7 @@ export default function EarnInputsHolder(props) {
                                 tokensToSelect={tokensToSelect}
                                 setOpenAddTokenToSelect={setOpenAddTokenToSelect}
                             />
-                        ) || (action[0].name === "Harvest" &&
+                        ) || (action[0].name === "Harvest" || action[0].name === "Borrow" &&
                             <>
                                 <SelectEarn action={action} setEarn={updateEarn} activeLink={props.activeLink} />
                                 <SelectToken

@@ -6,11 +6,13 @@ import "./styles.css";
 
 export default function SelectAction(props) {
 
-    let { isSupply } = props;
+    let { isSupply, updateEarnLinks } = props;
 
     let actionIndex = props.actionIndex;
     let linkLabel = props.activeLink && props.activeLink.label(actionIndex);
     let defaultSelectValue = linkLabel ? linkLabel.attrs.text.action : "Stake";
+
+    let [initActionValue, setInitActionValue] = useState(defaultSelectValue)
 
     let [typeOfConnection, setTypeOfConnection] = useState(null);
 
@@ -28,12 +30,15 @@ export default function SelectAction(props) {
 
             let theTypeOfConnection = ((
                 (targetCellType === "earn_cell") ||
-                (targetCellType === "base_token")||
+                (targetCellType === "base_token") ||
                 (targetCellType === "root")) && "Re-invest") || null;
             if (isSupply) {
                 theTypeOfConnection = "Supply";
             }
             setTypeOfConnection(theTypeOfConnection);
+            let linkLabel = props.activeLink && props.activeLink.label(actionIndex);
+            let defaultSelectValue = linkLabel ? linkLabel.attrs.text.action : "Stake";
+            setInitActionValue(defaultSelectValue)
 
         }
     }, [props.activeLink])
@@ -46,7 +51,7 @@ export default function SelectAction(props) {
             >
                 <select
                     name="actions"
-                    key={defaultSelectValue}
+                    key={`select-action-${actionIndex}-${initActionValue}`}
                     className='select-actions'
                     onChange={e => {
                         props.setAction(actionValue => {
@@ -56,15 +61,19 @@ export default function SelectAction(props) {
                             if (!actionValue[actionIndex]) {
                                 actionValue.push({ name: e.target.value });
                             } else {
-                                if (e.target.value !== "No borrow") {
+                                if ((e.target.value !== "No borrow" && actionValue.length <= 1) || actionValue.length > 1) {
                                     actionValue.splice(actionIndex, 1, { ...actionValue[actionIndex], name: e.target.value });
                                 }
                             }
                             return [...actionValue];
                         });
+                        setInitActionValue(e.target.value);
+                        if (updateEarnLinks) {
+                            updateEarnLinks(e.target.value);
+                        }
                         // props.setAction(actionValue => [...actionValue.splice(actionIndex, 1, e.target.value)]);
                     }}
-                    defaultValue={defaultSelectValue}
+                    value={initActionValue}
                 >
                     {(typeOfConnection === "Re-invest" &&
                         (

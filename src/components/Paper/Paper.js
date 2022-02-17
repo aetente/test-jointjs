@@ -30,13 +30,7 @@ const linkMarkup = [
     }, {
         tagName: 'path',
         selector: 'offsetLabelNegativeConnector'
-    }, {
-        tagName: 'path',
-        selector: 'positiveArrow'
-    }, {
-        tagName: 'path',
-        selector: 'negativeArrow'
-    },
+    }
 ]
 
 // the name space needed for importing graph from json, which is what we do when press undo button
@@ -219,13 +213,17 @@ function Paper(props) {
         }
         cellCoords.x = cellCoords.x - (cellCoords.x % 10);
         cellCoords.y = cellCoords.y - (cellCoords.y % 10);
+        let protocolText = event.dataTransfer.getData('text');
+        let scaleText = (protocolText.length > 5 && Math.pow(5 / protocolText.length, 1/2)) || 1;
+        let scaleValue = `scale(${scaleText},${scaleText})`;
         let newCell = new rectDiamondShape({
             attrs: {
                 label: {
-                    text: event.dataTransfer.getData('text')
+                    text: protocolText
                 },
                 text: {
-                    text: event.dataTransfer.getData('text')
+                    text: protocolText,
+                    transform: scaleValue
                 },
                 '.': { magnet: false }
             },
@@ -293,7 +291,7 @@ function Paper(props) {
             inPorts: ['in'],
             outPorts: ['out'],
             ports: portCellOptions,
-            protocolId: String(protocols.length)
+            protocolId: String(props.protocols.length)
         });
         // newCell.attr('polygon/fill', "#19384d");
         // newCell.attr('polygon/stroke', "#19384d");
@@ -304,7 +302,7 @@ function Paper(props) {
 
         setProtocolCells([newCell]);
         setActiveProtocol({
-            id: String(protocols.length),
+            id: String(props.protocols.length),
             backgroundColor: "#19384d",
             borderColor: "#19384d",
             name: ""
@@ -676,6 +674,7 @@ function Paper(props) {
             },
             perpendicularLinks: true,
             cellViewNamespace: customNameSpace,
+            snapLabels: true,
             highlighting: {
                 connecting: {
                     name: "stroke",

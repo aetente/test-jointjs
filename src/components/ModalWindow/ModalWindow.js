@@ -136,7 +136,11 @@ export default function ModalWindow(props) {
     const mapEarnOptions = (earnArray, action) => {
         // we can have multiple earns in the model window
         // so this function maps the earns
-        if (action[0].name === "Stake" || action[0].name === "Swap" || action[0].name === "Harvest" || (action[1] && action[1].name === "Borrow")) {
+        if (action[0].name === "Stake" ||
+            action[0].name === "Swap" ||
+            action[0].name === "Borrow" ||
+            action[0].name === "Harvest" ||
+            (action[1] && action[1].name === "Borrow")) {
             return earnArray.map((earnData, i) => {
                 let earnLink = earnData[0];
                 let earnCell = earnData[1];
@@ -223,42 +227,85 @@ export default function ModalWindow(props) {
             action.forEach((a, i) => {
                 let allocationValue = a.allocation || "50";
                 let offsetValue = 0;
-                if (isMoreActions) {
-                    if (i === 0) {
-                        offsetValue = -60;
-                    } else {
-                        offsetValue = 60;
-                    }
+                let distanceValue = 0.6;
+                let arrowDistanceAttr = {
+                    atConnectionRatio: distanceValue,
+                    connection: true
                 }
-                if (isMoreActions) {
+                if (isMoreActions && action[1].name !== "No borrow") {
+                    if (i === 0) {
+                        offsetValue = -70;
+                    } else {
+                        offsetValue = 70;
+                    }
+                    // distanceValue = -50;
+                    distanceValue = 0.5;
+                    // arrowDistanceAttr = {
+                    //     atConnectionLength: distanceValue,
+                    // }
+                    arrowDistanceAttr = {
+                        // atConnectionLength: 10,
+                        // atConnectionRatio: -10,
+                        connection: true
+                        // connection: { stubs: 200 }
+                    }
+
+                    // actionLink.attr({
+                    //     offsetLabelPositiveConnector: {
+                    //         ...arrowDistanceAttr,
+                    //         // refD: 'M 20 10 -10 10',
+                    //         refDx: 10,
+                    //         refDy: -10,
+                    //         // refHeight: 0.2,
+                    //         // refWidth: 0.2,
+                    //         stroke: 'black',
+                    //         fill: "none",
+                    //         elementMove: true,
+                    //         targetMarker: {
+                    //             type: "path",
+                    //             d: 'M 0 -3 -10 0.5 0 4'
+                    //         },
+                    //         // ref: "offsetLabelNegativeConnector"
+                    //         // strokeDasharray: '5 5'
+                    //     },
+                    //     offsetLabelNegativeConnector: {
+                    //         ...arrowDistanceAttr,
+                    //         // refD: 'M -10 -10 20 -10',
+                    //         // refDx: -1,
+                    //         refDx: -10,
+                    //         refDy: 10,
+                    //         // refHeight: 0.2,
+                    //         // refWidth: 0.2,
+                    //         stroke: 'black',
+                    //         fill: "none",
+                    //         elementMove: true,
+                    //         sourceMarker: {
+                    //             type: "path",
+                    //             d: 'M 0 -3 -10 0.5 0 4',
+                    //         },
+                    //         // ref: "offsetLabelPositiveConnector"
+                    //         // strokeDasharray: '5 5'
+                    //     },
+                    // });
+
+                } else if (isMoreActions && action[1].name === "No borrow") {
+                    actionLink.removeLabel(1);
+                    actionLink.removeLabel(2);
                     actionLink.attr({
                         offsetLabelPositiveConnector: {
-                            atConnectionRatio: 0.6,
-                            d: 'M -30 10 40 10',
-                            stroke: 'black',
-                            // strokeDasharray: '5 5'
+                            d: 'M 0 0',
+                            stroke: 'rgba(0,0,0,0)',
+                            targetMarker: "none"
                         },
                         offsetLabelNegativeConnector: {
-                            atConnectionRatio: 0.6,
-                            d: 'M -30 -10 40 -10',
-                            stroke: 'black',
-                            // strokeDasharray: '5 5'
+                            d: 'M 0 0',
+                            stroke: 'rgba(0,0,0,0)',
+                            targetMarker: "none"
                         },
-                        positiveArrow: {
-                            atConnectionRatio: 0.6,
-                            d: 'M -30 7 -37 10.5 -30 14',
-                            // d: 'M 0 7 10 10.5 0 14',
-                            stroke: 'black',
-                            strokeDasharray: '5 5',
-                        },
-                        negativeArrow: {
-                            atConnectionRatio: 0.6,
-                            // d: 'M -80 -13 -90 -10.5 -80 -6',
-                            d: 'M 30 -13 37 -10.5 30 -6',
-                            stroke: 'black',
-                            strokeDasharray: '5 5',
-                        }
                     });
+                }
+                if (isMoreActions && i > 0 && a.name === "No borrow") {
+                    return;
                 }
                 actionLink.label(i, {
                     attrs: {
@@ -271,17 +318,67 @@ export default function ModalWindow(props) {
                             fontWeight: 600,
                             fontSize: "15px",
                             lineHeight: "18px",
+                            textVerticalAnchor: 'top'
                         },
                         rect: {
-                            fill: "#f6f6f6"
+                            fill: "#f6f6f6",
                         }
                     },
+                    anchor: { name: "right" },
                     position: {
-                        distance: 0.6,
+                        distance: distanceValue,
                         offset: offsetValue
                     }
                 });
             })
+            if (action.length > 1 && action[1].name !== "No borrow") {
+                actionLink.label(2, {
+                    markup: [
+                        {
+                            tagName: 'path',
+                            selector: 'offsetLabelPositiveConnector'
+                        }, {
+                            tagName: 'path',
+                            selector: 'offsetLabelNegativeConnector'
+                        }
+                    ],
+                    attrs: {
+                        offsetLabelPositiveConnector: {
+                            d: 'M 20 10 -10 10',
+                            stroke: 'black',
+                            strokeWidth: 2,
+                            fill: "rgba(0,0,0,0)",
+                            elementMove: true,
+                            targetMarker: {
+                                type: "path",
+                                d: 'M 0 -3 -10 0.5 0 4'
+                            },
+                            // ref: "offsetLabelNegativeConnector"
+                            // strokeDasharray: '5 5'
+                        },
+                        offsetLabelNegativeConnector: {
+                            d: 'M -10 -10 20 -10',
+                            stroke: 'black',
+                            strokeWidth: 2,
+                            fill: "rgba(0,0,0,0)",
+                            elementMove: true,
+                            targetMarker: {
+                                type: "path",
+                                d: 'M 0 -3 -10 0.5 0 4',
+                            },
+                            // ref: "offsetLabelPositiveConnector"
+                            // strokeDasharray: '5 5'
+                        }
+                    },
+                    position: {
+                        distance: 0.5,
+                        args: {
+                            keepGradient: true
+                        }
+                    }
+                });
+            }
+            console.log(actionLink.labels())
             // remember that it was a link representing action
             actionLink.attr({ typeOfLink: "action" });
         } else if (typeOfLink === "earn") {
@@ -317,6 +414,7 @@ export default function ModalWindow(props) {
         // earn are only for stake, swap, harvest action
         if (action[0].name === "Stake" ||
             action[0].name === "Swap" ||
+            action[0].name === "Borrow" ||
             action[0].name === "Harvest" ||
             (action[0].name === "Supply" && (action[1] && action[1].name === "Borrow"))) {
             linksAndCellsToAdd.forEach(la => {
@@ -377,8 +475,11 @@ export default function ModalWindow(props) {
                 protocolBackgroundColor: currentActiveProtocol.backgroundColor,
                 protocolBorderColor: currentActiveProtocol.borderColor
             };
+            //lol
+            let scaleText = (currentActiveProtocol.name.length > 5 && Math.pow(5 / currentActiveProtocol.name.length, 1 / 2)) || 1;
             pCell.attr('label/text', currentActiveProtocol.name);
             pCell.attr('text/text', currentActiveProtocol.name);
+            pCell.attr('text/transform', `scale(${scaleText},${scaleText})`);
             pCell.attr('.rect-body/fill', currentActiveProtocol.backgroundColor);
             pCell.attr('.rect-body/stroke', currentActiveProtocol.borderColor);
             // update image
@@ -428,10 +529,10 @@ export default function ModalWindow(props) {
                 // (it should alredy have a new id, but I suppose in the future the real new id would be created from backend)
                 activeProtocol.id = String(protocols.length);
                 // add it to the list of already existion protocols
-                setProtocols(protocols => {
-                    dispatch(protocolActions.postProtocols(activeProtocol));
-                    return [...protocols, activeProtocol]
-                })
+                // setProtocols(protocols => {
+                dispatch(protocolActions.postProtocols(activeProtocol));
+                //     return [...protocols, activeProtocol]
+                // })
                 // close the window
                 setActiveProtocol(null);
                 setOpenModalWindow(false);
@@ -439,11 +540,11 @@ export default function ModalWindow(props) {
             } else {
                 // if the protocol already exists
                 // replace the protocol and replace
-                setProtocols(protocols => {
-                    protocols.splice(protocolIndex, 1, activeProtocol);
-                    dispatch(protocolActions.putProtocols({ id: activeProtocol.id, content: activeProtocol }));
-                    return [...protocols];
-                });
+                // setProtocols(protocols => {
+                //     protocols.splice(protocolIndex, 1, activeProtocol);
+                dispatch(protocolActions.putProtocols({ id: activeProtocol.id, content: activeProtocol }));
+                //     return [...protocols];
+                // });
                 // update how all cells of the protocol look on the paper
                 updateProtocols();
                 // close the window
@@ -466,6 +567,12 @@ export default function ModalWindow(props) {
         reader.onerror = (error) => {
             console.log('Error: ', error);
         };
+    }
+
+    const updateEarnLinks = (actionValue) => {
+        if (actionValue === "Borrow" && earnLinks.length === 0) {
+            addStakeEarn(activeLink);
+        }
     }
 
     useEffect(() => {
@@ -561,7 +668,7 @@ export default function ModalWindow(props) {
                 setActionLink(actionLinkVal);
                 setAction(actionValue);
                 let earnLinksArray = actionLinkVal.attributes.attrs.earnLinkIds;
-                
+
                 if (earnLinksArray) {
                     if (!earnLinksArray.map) {
                         earnLinksArray = Object.values(earnLinksArray);
@@ -628,7 +735,7 @@ export default function ModalWindow(props) {
                             activeLink={actionLink}
                         />
                         <SelectAction
-                            key={`select-action-${updateCounter}`}
+                            key={`select-action-${updateCounter}-0`}
                             actionIndex={0}
                             setAction={setAction}
                             activeLink={actionLink}
@@ -636,10 +743,11 @@ export default function ModalWindow(props) {
                         {action.length > 0 && action[0].name === "Supply" && (
                             <>
                                 <SelectAction
-                                    key={`select-action-${updateCounter}`}
+                                    key={`select-action-${updateCounter}-1`}
                                     isSupply
                                     actionIndex={1}
                                     setAction={setAction}
+                                    updateEarnLinks={updateEarnLinks}
                                     activeLink={actionLink}
                                 />
                                 {action.length > 1 && action[1].name === "Borrow" &&
@@ -701,7 +809,12 @@ export default function ModalWindow(props) {
                     </div>
                 )}
             <div className="modal-actions">
-                {(action[0].name === "Stake" || action[0].name === "Swap" || action[0].name === "Harvest") &&
+                {(
+                    action[0].name === "Stake" ||
+                    action[0].name === "Swap" ||
+                    action[0].name === "Borrow" ||
+                    action[0].name === "Harvest"
+                ) &&
                     (!activeProtocol &&
                         (<button
                             className="action-button"
