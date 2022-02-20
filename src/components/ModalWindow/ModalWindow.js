@@ -8,6 +8,7 @@ import ProtocolNameInput from './ProtocolNameInput';
 import ProtocolUrlInput from './ProtocolUrlInput';
 import ProtocolPoolInput from './ProtocolPoolInput';
 import ProtocolColorPicker from './ProtocolColorPicker';
+import LeverageInput from './LeverageInput';
 import { convertObjToStr } from '../../utils/utils';
 import "./styles.css";
 
@@ -140,7 +141,7 @@ export default function ModalWindow(props) {
             action[0].name === "Swap" ||
             action[0].name === "Borrow" ||
             action[0].name === "Harvest" ||
-            (action[1] && action[1].name === "Borrow")) {
+            (action[1] && action[1].name === "Borrow other token")) {
             return earnArray.map((earnData, i) => {
                 let earnLink = earnData[0];
                 let earnCell = earnData[1];
@@ -177,10 +178,15 @@ export default function ModalWindow(props) {
                         }
                     })
                     let earnLinkEarnValue = (earnLink.label(0) && earnLink.label(0).attrs.text.earn) || "None";
+                    let earnValueString = earnLinkEarnValue !== "None" && `[\u00a0Earn\u00a0${earnLinkEarnValue}\u00a0]` || "";
+                    // for the case when we picked borrow other token as second action, it should appear in the earn link as label
+                    if (action[1] && action[1].name === "Borrow other token") {
+                        earnValueString = `[ ${action[1].allocation || 50}% Borrow ]`
+                    }
                     earnLink.label(0, {
                         attrs: {
                             text: {
-                                text: earnLinkEarnValue !== "None" && `[\u00a0Earn\u00a0${earnLinkEarnValue}\u00a0]` || "",
+                                text: earnValueString,
                                 earn: earnLinkEarnValue,
                                 tokenName: tokenName,
                                 fontFamily: 'Roboto, sans-serif',
@@ -232,7 +238,7 @@ export default function ModalWindow(props) {
                     atConnectionRatio: distanceValue,
                     connection: true
                 }
-                if (isMoreActions && action[1].name !== "No borrow") {
+                if (isMoreActions && action[1].name === "Borrow the same token") {
                     if (i === 0) {
                         offsetValue = -70;
                     } else {
@@ -288,29 +294,26 @@ export default function ModalWindow(props) {
                     //     },
                     // });
 
-                } else if (isMoreActions && action[1].name === "No borrow") {
+                } else if (isMoreActions && action[1].name !== "Borrow the same token") {
+                    // remove old labels
                     actionLink.removeLabel(1);
                     actionLink.removeLabel(2);
-                    actionLink.attr({
-                        offsetLabelPositiveConnector: {
-                            d: 'M 0 0',
-                            stroke: 'rgba(0,0,0,0)',
-                            targetMarker: "none"
-                        },
-                        offsetLabelNegativeConnector: {
-                            d: 'M 0 0',
-                            stroke: 'rgba(0,0,0,0)',
-                            targetMarker: "none"
-                        },
-                    });
+                    actionLink.removeLabel(3);
                 }
                 if (isMoreActions && i > 0 && a.name === "No borrow") {
                     return;
                 }
+                let actionName = a.name;
+                if (actionName === "Borrow other token") {
+                    return;
+                }
+                if (actionName === "Borrow the same token") {
+                    actionName = "Borrow";
+                }
                 actionLink.label(i, {
                     attrs: {
                         text: {
-                            text: `[\u00a0${allocationValue}%\u00a0${a.name}\u00a0]`,
+                            text: `[\u00a0${allocationValue}%\u00a0${actionName}\u00a0]`,
                             action: a.name,
                             allocation: allocationValue,
                             fontFamily: 'Roboto, sans-serif',
@@ -331,7 +334,7 @@ export default function ModalWindow(props) {
                     }
                 });
             })
-            if (action.length > 1 && action[1].name !== "No borrow") {
+            if (action.length > 1 && (action[1].name === "Borrow the same token")) {
                 actionLink.label(2, {
                     markup: [
                         {
@@ -340,6 +343,12 @@ export default function ModalWindow(props) {
                         }, {
                             tagName: 'path',
                             selector: 'offsetLabelNegativeConnector'
+                        }, {
+                            tagName: 'ellipse',
+                            selector: 'leverageCircle'
+                        }, {
+                            tagName: 'text',
+                            selector: 'leverageText'
                         }
                     ],
                     attrs: {
@@ -368,6 +377,23 @@ export default function ModalWindow(props) {
                             },
                             // ref: "offsetLabelPositiveConnector"
                             // strokeDasharray: '5 5'
+                        },
+                        leverageCircle: {
+                            rx: (action[1].leverage > 0 && 70) || 0,
+                            ry: (action[1].leverage > 0 && 120) || 0,
+                            stroke: 'black',
+                            strokeWidth: 2,
+                            strokeDasharray: '5 5',
+                            fill: 'none'
+                        },
+                        leverageText: {
+                            ref: 'leverageCircle',
+                            text: (action[1].leverage > 0 && `x${action[1].leverage}`) || "",
+                            x: -95,
+                            y: -55,
+                            transform: "rotate(-90)",
+                            // atConnectionLengthIgnoreGradient: 10,
+                            fill: '#ff0000',
                         }
                     },
                     position: {
@@ -378,7 +404,6 @@ export default function ModalWindow(props) {
                     }
                 });
             }
-            console.log(actionLink.labels())
             // remember that it was a link representing action
             actionLink.attr({ typeOfLink: "action" });
         } else if (typeOfLink === "earn") {
@@ -416,7 +441,7 @@ export default function ModalWindow(props) {
             action[0].name === "Swap" ||
             action[0].name === "Borrow" ||
             action[0].name === "Harvest" ||
-            (action[0].name === "Supply" && (action[1] && action[1].name === "Borrow"))) {
+            (action[0].name === "Supply" && (action[1] && action[1].name === "Borrow other token"))) {
             linksAndCellsToAdd.forEach(la => {
                 let newLink = la[0];
                 let newCell = la[1]
@@ -424,7 +449,7 @@ export default function ModalWindow(props) {
 
                 if ((earnValue !== "None") ||
                     action[0].name === "Swap" ||
-                    (action[0].name === "Supply" && (action[1] && action[1].name === "Borrow"))) {
+                    (action[0].name === "Supply" && (action[1] && action[1].name === "Borrow other token"))) {
                     let prevEarnIdsArray = actionLink.attributes.attrs.earnLinkIds || [];
                     actionLink.attr({
                         earnLinkIds: [...prevEarnIdsArray, newLink.id]
@@ -570,7 +595,8 @@ export default function ModalWindow(props) {
     }
 
     const updateEarnLinks = (actionValue) => {
-        if (actionValue === "Borrow" && earnLinks.length === 0) {
+        console.log(actionValue,earnLinks.length)
+        if (actionValue === "Borrow other token" && earnLinks.length === 0) {
             addStakeEarn(activeLink);
         }
     }
@@ -595,12 +621,14 @@ export default function ModalWindow(props) {
             let tokenElements = [];
             let actionValue = [{ name: "Stake", allocation: "50" }];
             setTypeOfLink(typeOfLink);
+            let infoCell;
             // if the link was of the type action, or it is a new link, or it is the cell which is being focused on
             if (!typeOfLink || typeOfLink === "action") {
                 actionLinkVal = activeLink;
                 let targetCell = actionLinkVal.getTargetCell();
                 let sourceCell = actionLinkVal.getSourceCell();
-                setInfoCell(targetCell);
+                infoCell = targetCell;
+                setInfoCell(infoCell);
                 let targetCellType = convertObjToStr(targetCell.attributes.typeOfCell);
                 let sourceCellType = convertObjToStr(sourceCell.attributes.typeOfCell);
                 // the default action for link between tokens should be reinvest
@@ -654,7 +682,8 @@ export default function ModalWindow(props) {
                 }
                 let targetCell = activeLink.getTargetCell();
                 let sourceCell = activeLink.getSourceCell();
-                setInfoCell(targetCell);
+                infoCell = sourceCell;
+                setInfoCell(infoCell);
                 tokenElements = [targetCell];
                 parentElements = graph.getNeighbors(targetCell, { inbound: true });
                 // parentElements = [sourceCell];
@@ -667,7 +696,12 @@ export default function ModalWindow(props) {
                 setTargetCellsInfo(childElements);
                 setActionLink(actionLinkVal);
                 setAction(actionValue);
-                let earnLinksArray = actionLinkVal.attributes.attrs.earnLinkIds;
+                let earnLinksFromCell = graph.getConnectedLinks(infoCell, {outbound: true});
+                earnLinksFromCell = earnLinksFromCell.filter(theEarnLink => {
+                    return convertObjToStr(theEarnLink.attributes.attrs.typeOfLink) === "earn";
+                })
+                // let earnLinksArray = actionLinkVal.attributes.attrs.earnLinkIds;
+                let earnLinksArray = earnLinksFromCell;
 
                 if (earnLinksArray) {
                     if (!earnLinksArray.map) {
@@ -750,9 +784,17 @@ export default function ModalWindow(props) {
                                     updateEarnLinks={updateEarnLinks}
                                     activeLink={actionLink}
                                 />
-                                {action.length > 1 && action[1].name === "Borrow" &&
+                                {action.length > 1 && action[1].name !== "No borrow" &&
                                     <AllocationInput
                                         key={actionLink}
+                                        actionIndex={1}
+                                        setAction={setAction}
+                                        activeLink={actionLink}
+                                    />
+                                }
+                                {action.length > 1 && action[1].name === "Borrow the same token" &&
+                                    <LeverageInput
+                                        key={`leverage-input`}
                                         actionIndex={1}
                                         setAction={setAction}
                                         activeLink={actionLink}

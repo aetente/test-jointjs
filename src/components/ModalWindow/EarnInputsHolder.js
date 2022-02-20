@@ -64,7 +64,7 @@ export default function EarnInputsHolder(props) {
                             }
 
                         </>)) || ((action[0].name === "Swap" ||
-                                (action[0].name === "Supply" && (action[1] && action[1].name === "Borrow"))) &&
+                                (action[0].name === "Supply" && (action[1] && action[1].name === "Borrow other token"))) &&
                             <SelectToken
                                 key={`select-token-${tokensToSelect.length}`}
                                 action={action}

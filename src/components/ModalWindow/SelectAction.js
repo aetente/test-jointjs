@@ -81,7 +81,9 @@ export default function SelectAction(props) {
                         ))
                         || (typeOfConnection === "Supply" && (<>
                             <option value="No borrow">No borrow</option>
-                            <option value="Borrow">Borrow</option>
+                            {/* <option value="Borrow">Borrow</option> */}
+                            <option value="Borrow other token">Borrow other token</option>
+                            <option value="Borrow the same token">Borrow the same token</option>
                         </>)) || (<>
                             <option value="Stake">Stake</option>
                             <option value="Swap">Swap</option>

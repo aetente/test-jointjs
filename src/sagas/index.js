@@ -3,7 +3,7 @@ import { all, call, put, takeLatest, select } from "redux-saga/effects";
 import { protocolTypes } from "../types";
 import { protocolActions } from "../actions";
 
-const baseUrl = "http://" + window.location.hostname + ":8080";
+const baseUrl = "http://" + window.location.hostname + ":8080/api";
 
 function* fetchProtocols() {
     try {

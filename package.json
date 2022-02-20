@@ -1,6 +1,7 @@
 {
   "name": "test-jointjs",
   "version": "0.1.0",
+  "homepage": "./",
   "private": true,
   "dependencies": {
     "@dagrejs/graphlib": "^2.1.4",
