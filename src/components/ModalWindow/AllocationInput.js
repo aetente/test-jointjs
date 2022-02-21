@@ -3,7 +3,7 @@ import "./styles.css";
 
 export default function AllocationInput(props) {
 
-    let {actionIndex, activeLink, setAllocation} = props;
+    let {actionIndex, activeLink, setAllocation, scrollInput} = props;
 
     let linkLabel = activeLink && activeLink.label(actionIndex);
     let defaultInputValue = linkLabel ? linkLabel.attrs.text.allocation : 50;

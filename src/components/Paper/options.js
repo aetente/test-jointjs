@@ -46,6 +46,31 @@ export const toolsViewVertices = new joint.dia.ToolsView({
     ]
 });
 
+export const SizeTool = joint.elementTools.Control.extend({
+    getPosition: function(view) {
+        let model = view.model;
+        let width = model.attr(['loop-ellipse', 'rx']) || 0;
+        let height = model.attr(['loop-ellipse', 'ry']) || 0;
+        return { x: width, y: height };
+    },
+    setPosition: function(view, coordinates) {
+        let model = view.model;
+        let size = model.size();
+        let rx = Math.max(coordinates.x, 0);
+        let ry = Math.max(coordinates.y, 0);
+        model.attr(['loop-ellipse'], { rx: rx, ry: ry });
+    },
+    resetPosition: function(view) {
+        view.model.attr(['loop-ellipse'], { rx: 100, ry: 100 });
+    }
+});
+
+export const LoopActionTools = new joint.dia.ToolsView({
+    tools: [new SizeTool({
+        handleAttributes: { 'fill': 'orange' }
+    })]
+})
+
 export const diamondAttrs = {
     polygon: {
         fill: '#FFFFFF',
@@ -341,6 +366,73 @@ export const frameShape = joint.dia.Element.extend({
         tagName: "path",
         selector: ".b",
         className: "b",
+    }]
+}
+);
+
+
+
+
+export const loopActionAttrs = {
+    "loop-ellipse": {
+        rx: 100,
+        ry: 100,
+        stroke: 'black',
+        strokeWidth: 4,
+        strokeDasharray: '5 5',
+        fill: 'none'
+    },
+    "loop-text": {
+        text: "",
+        fontSize: "26px",
+        ref: "loop-ellipse",
+        refX: -15,
+        refY: -15,
+        fontFamily: 'Roboto, sans-serif',
+        fontStyle: "normal",
+        fontWeight: 600,
+        fill: '#ff0000',
+    }
+};
+
+export const loopActionShape = joint.dia.Element.extend({
+
+    markup: '<g class="rotatable"><g class="scalable"><ellipse class="loop-ellipse"/><text class="loop-text"/></g></g>',
+    defaults: {
+        ...joint.dia.Element.prototype.defaults,
+        type: "custom.LoopAction",
+        size: {
+            width: 100,
+            height: 100
+        },
+        attrs: loopActionAttrs
+    }
+})
+.define("custom.LoopAction", {
+    // markup: '<g class="rotatable"><g class="scalable"><polygon class="polygon"/><image class="image"/></g><text/></g>',
+
+    markup: [{
+        tagName: "ellipse",
+        selector: "loop-ellipse",
+        className: "loop-ellipse"
+    },
+    {
+        tagName: "text",
+        selector: "loop-text",
+        className: "loop-text",
+    }],
+    attrs: loopActionAttrs
+
+}, {
+    markup: [{
+        tagName: "ellipse",
+        selector: "loop-ellipse",
+        className: "loop-ellipse"
+    },
+    {
+        tagName: "text",
+        selector: "loop-text",
+        className: "loop-text",
     }]
 }
 );

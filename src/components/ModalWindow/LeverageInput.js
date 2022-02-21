@@ -5,8 +5,8 @@ export default function LeverageInput(props) {
 
     let {actionIndex, activeLink } = props;
 
-    let linkLabel = activeLink && activeLink.label(actionIndex);
-    let defaultInputValue = linkLabel ? linkLabel.attrs.text.leverage : 0;
+    let linkLabel = activeLink && activeLink.label(3);
+    let defaultInputValue = linkLabel ? linkLabel.attrs.leverageText.leverage : "0";
     let [leverageValue, setLeverageValue] = useState(defaultInputValue);
 
     const handleChange = (theValue) => {
@@ -28,8 +28,8 @@ export default function LeverageInput(props) {
 
 
     useEffect(() => {
-        let linkLabel = activeLink && activeLink.label(actionIndex);
-        let defaultInputValue = linkLabel ? linkLabel.attrs.text.leverage : 0;
+        let linkLabel = activeLink && activeLink.label(3);
+        let defaultInputValue = linkLabel ? linkLabel.attrs.leverageText.leverage : "0";
         setLeverageValue(defaultInputValue)
     }, [])
 

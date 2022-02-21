@@ -27,3 +27,8 @@ export function listToMatrix(list, elementsPerSubArray) {
 
   return matrix;
 }
+
+export function modulusRound(n, base){
+  let x = Math.round(n/base)*base;
+  return  x + !!!(x + 180)*360;
+}

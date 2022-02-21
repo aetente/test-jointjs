@@ -6,6 +6,7 @@ import SelectInput from "./SelectInput";
 import AutoLayoutButton from "./AutoLayoutButton";
 import ImageDownloadButton from "./ImageDownloadButton";
 import ShowFrameButton from "./ShowFrameButton";
+import LoopActionButton from "./LoopActionButton";
 import { DiagramContext } from '../Content/context';
 import "./styles.css";
 
@@ -65,6 +66,15 @@ function SelectCells(props) {
         <ShowFrameButton
           actionName={"Show the frame"}
           drawFrame={props.drawFrame}
+          addRecentlyUsedAction={addRecentlyUsedAction}
+        />
+    },
+    {
+      name: "Loop",
+      component:
+        <LoopActionButton
+          actionName={"Loop"}
+          createCircle={props.createCircle}
           addRecentlyUsedAction={addRecentlyUsedAction}
         />
     }

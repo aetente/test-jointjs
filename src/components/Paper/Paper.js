@@ -12,7 +12,7 @@ import SelectCells from '../SelectCells/SelectCells';
 import { DiagramContext } from '../Content/context';
 import { cells, earnCell, frameCell, tradingFeeCell } from './cells';
 import { ports, portCellOptions, rootPortCellOptions, tradingFeePortCellOptions } from './ports';
-import { diamondShape, frameShape, rectDiamondShape, toolsView, toolsViewVertices } from './options';
+import { diamondShape, frameShape, rectDiamondShape, toolsView, toolsViewVertices, loopActionShape, LoopActionTools } from './options';
 import "./styles.css";
 import { convertObjToStr, swapItems } from '../../utils/utils';
 
@@ -39,7 +39,8 @@ const customNameSpace = Object.assign(joint.shapes, {
     custom: {
         RectDiamond: rectDiamondShape,
         Diamond: diamondShape,
-        Frame: frameShape
+        Frame: frameShape,
+        LoopAction: loopActionShape
     }
 });
 
@@ -106,6 +107,14 @@ function Paper(props) {
 
     const [isFrameAdded, setIsFrameAdded] = useState(false);
 
+    const [activeLabel, setActiveLabel] = useState(null);
+
+    const [labelsToMove, setLabelsToMove] = useState([]);
+
+    const [editingGeometry, setEditingGeometry] = useState(false);
+
+    const [activeLoopAction, setActiveLoopAction] = useState(null);
+
     const contextValues = useContext(DiagramContext);
 
     // we need refs for events
@@ -168,8 +177,66 @@ function Paper(props) {
         recentlyUsedProtocolsRef.current = val;
     }
 
+    const activeLabelRef = useRef(activeLabel);
+
+    const getActiveLabelRef = () => {
+        return activeLabelRef.current;
+    }
+
+    const setActiveLabelRef = (val) => {
+        activeLabelRef.current = val;
+    }
+
+    const labelsToMoveRef = useRef(labelsToMove);
+
+    const getLabelsToMoveRef = () => {
+        return labelsToMoveRef.current;
+    }
+
+    const setLabelsToMoveRef = (val) => {
+        labelsToMoveRef.current = val;
+    }
+
+    const editingGeometryRef = useRef(editingGeometry);
+
+    const getEditingGeometryRef = () => {
+        return editingGeometryRef.current;
+    }
+
+    const setEditingGeometryRef = (val) => {
+        editingGeometryRef.current = val;
+    }
+
 
     const dispatch = useDispatch();
+
+    const createCircle = () => {
+        // setEditingGeometry(true);
+        // setEditingGeometryRef(true);
+        
+        let paperCoords = getPaperRef().translate();
+        let paperScale = getPaperRef().scale().sx;
+        paperCoords.tx = paperCoords.tx / paperScale;
+        paperCoords.ty = paperCoords.ty / paperScale;
+        let cellCoords = {
+            x: -paperCoords.tx + (window.innerWidth / 2) / paperScale,
+            y: -paperCoords.ty + (window.innerHeight / 2) / paperScale
+        }
+        cellCoords.x = cellCoords.x - (cellCoords.x % 10);
+        cellCoords.y = cellCoords.y - (cellCoords.y % 10);
+        let loopCell = new loopActionShape({
+            position: {
+                x: cellCoords.x,
+                y: cellCoords.y
+            }
+        });
+        setActiveLoopAction(loopCell)
+        setActiveProtocol(null);
+        setActiveLink(null);
+        setOpenModalWindow(true);
+        graph.addCell(loopCell)
+        loopCell.findView(getPaperRef()).addTools(LoopActionTools)
+    }
 
     const dragStart = useCallback(event => {
         if (!event.target ||
@@ -214,7 +281,7 @@ function Paper(props) {
         cellCoords.x = cellCoords.x - (cellCoords.x % 10);
         cellCoords.y = cellCoords.y - (cellCoords.y % 10);
         let protocolText = event.dataTransfer.getData('text');
-        let scaleText = (protocolText.length > 5 && Math.pow(5 / protocolText.length, 1/2)) || 1;
+        let scaleText = (protocolText.length > 5 && Math.pow(5 / protocolText.length, 1 / 2)) || 1;
         let scaleValue = `scale(${scaleText},${scaleText})`;
         let newCell = new rectDiamondShape({
             attrs: {
@@ -307,6 +374,7 @@ function Paper(props) {
             borderColor: "#19384d",
             name: ""
         })
+        setActiveLoopAction(null);
         graph.addCell(newCell)
     }
 
@@ -390,7 +458,7 @@ function Paper(props) {
         let elementsToLayout = theElements;
         elementsToLayout = [];
         theElements.forEach(element => {
-            if (element.attributes.typeOfCell !== "frame") {
+            if (element.attributes.typeOfCell !== "frame" && element.attributes.type !== "custom.LoopAction") {
                 elementsToLayout.push(element)
             }
         })
@@ -453,7 +521,7 @@ function Paper(props) {
         let newLink = new joint.shapes.standard.Link({
             markup: linkMarkup
         });
-        newLink.router('manhattan', { excludeTypes: ['custom.Frame'] });
+        newLink.router('manhattan', { excludeTypes: ['custom.Frame', 'custom.LoopAction'] });
 
         newLink.attr({
             line: {
@@ -467,7 +535,7 @@ function Paper(props) {
                 fontFamily: 'Roboto, sans-serif',
                 fontStyle: "normal",
                 fontWeight: 600,
-                fontSize: "15px",
+                // fontSize: "15px",
                 lineHeight: "18px",
             }
         });
@@ -551,6 +619,8 @@ function Paper(props) {
         });
         setOpenModalWindow(false);
         setActiveLink(null);
+        setActiveProtocol(null);
+        setActiveLoopAction(null);
     }
 
     const handleKeyPress = (e) => {
@@ -639,7 +709,7 @@ function Paper(props) {
             markup: linkMarkup
         });
 
-        link.router('manhattan', { excludeTypes: ['custom.Frame'] });
+        link.router('manhattan', { excludeTypes: ['custom.Frame', 'custom.LoopAction'] });
         link.attr({
             line: {
                 strokeDasharray: '8 4',
@@ -652,7 +722,7 @@ function Paper(props) {
                 fontFamily: 'Roboto, sans-serif',
                 fontStyle: "normal",
                 fontWeight: 600,
-                fontSize: "15px",
+                // fontSize: "15px",
                 lineHeight: "18px",
             }
         });
@@ -729,11 +799,12 @@ function Paper(props) {
                 // linkView.model.vertices([])
                 setActiveLink(linkView.model);
                 setActiveProtocol(null);
+                setActiveLoopAction(null);
                 stackGraph(graph);
                 let targetCell = linkView.model.getTargetCell()
                 let sourceCell = linkView.model.getSourceCell()
                 // if (sourceCell.attributes.typeOfCell !== "root" && targetCell.attributes.typeOfCell !== "root") {
-                    setOpenModalWindow(true);
+                setOpenModalWindow(true);
                 // }
             }
         }));
@@ -743,6 +814,33 @@ function Paper(props) {
             // setActiveLink(null);
             // setOpenModalWindow(false);
         }));
+
+        paper.on("link:pointerdown", ((linkView, event, elementViewConnected, magnet, arrowhead) => {
+            // in some cases we need to move other labels of the link along with the which was clicked on
+            // console.log("link:pointerdown", linkView, event)
+            let eventTarget = event.originalEvent.target;
+            let eventTargetSelector = eventTarget.getAttribute("joint-selector") || eventTarget.parentElement.getAttribute("joint-selector");
+            setActiveLabel(eventTargetSelector);
+            setActiveLabelRef(eventTargetSelector)
+            // here we check if we clicked on the label, which should trigger moving other labels
+            // if (eventTargetSelector === "offsetLabelNegativeConnector" ||
+            //     eventTargetSelector === "offsetLabelPositiveConnector" ||
+            //     eventTargetSelector === "leverageCircle" ||
+            //     eventTargetSelector === "leverageText") {
+            //     let linkModel = linkView.model;
+            //     let linkLabels = linkModel.labels();
+            //     // here we find which exactly label was clicked on
+            //     setLabelsToMove(linkLabels);
+            //     setLabelsToMoveRef(linkLabels);
+            //     linkLabels.forEach(label => {
+            //         if (label.attrs[eventTargetSelector]) {
+            //             console.log("set active label", label)
+            //             setActiveLabel(label);
+            //             setActiveLabelRef(label)
+            //         }
+            //     })
+            // }
+        }))
 
         paper.on("cell:pointerclick", ((cellView, e, x, y) => {
             let activeCells = getActiveCellViewsArrayRef();
@@ -822,7 +920,7 @@ function Paper(props) {
                     cellsToUpdateLink = [cellView];
                 }
                 let theLinks = [];
-                
+
                 cellsToUpdateLink.forEach(cellV => {
                     theLinks = [...theLinks, ...getGraphRef().getConnectedLinks(cellV.model)];
                 });
@@ -833,32 +931,32 @@ function Paper(props) {
                 // cellsToUpdateLink.forEach(cellV => {
                 //     let theLinks = getGraphRef().getConnectedLinks(cellV.model);
 
-                    theLinks.forEach(link => {
-                        if (link.get("vertices")) {
-                            let currentVertices = [...link.get("vertices")];
-                            currentVertices = currentVertices.map(currentVertex => {
+                theLinks.forEach(link => {
+                    if (link.get("vertices")) {
+                        let currentVertices = [...link.get("vertices")];
+                        currentVertices = currentVertices.map(currentVertex => {
 
-                                let dx = originalEvent.movementX / paperScale;
-                                let dy = originalEvent.movementY / paperScale;
-                                let newVertex = {
-                                    x: Math.round(currentVertex.x + dx),
-                                    y: Math.round(currentVertex.y + dy)
-                                };
-                                return newVertex;
-                            })
-                            link.vertices(currentVertices);
-                        } else {
-                            let linkView = link.findView(getPaperRef());
-                            let verticeX = (linkView.sourceAnchor.x + linkView.targetAnchor.x) / 2;
-                            let verticeY = (linkView.sourceAnchor.y + linkView.targetAnchor.y) / 2;
-                            verticeX -= (verticeX % 10);
-                            verticeY -= (verticeY % 10);
-                            link.vertices([{
-                                x: verticeX,
-                                y: verticeY
-                            }]);
-                        }
-                    })
+                            let dx = originalEvent.movementX / paperScale;
+                            let dy = originalEvent.movementY / paperScale;
+                            let newVertex = {
+                                x: Math.round(currentVertex.x + dx),
+                                y: Math.round(currentVertex.y + dy)
+                            };
+                            return newVertex;
+                        })
+                        link.vertices(currentVertices);
+                    } else {
+                        let linkView = link.findView(getPaperRef());
+                        let verticeX = (linkView.sourceAnchor.x + linkView.targetAnchor.x) / 2;
+                        let verticeY = (linkView.sourceAnchor.y + linkView.targetAnchor.y) / 2;
+                        verticeX -= (verticeX % 10);
+                        verticeY -= (verticeY % 10);
+                        link.vertices([{
+                            x: verticeX,
+                            y: verticeY
+                        }]);
+                    }
+                })
                 // })
             }
         })
@@ -883,9 +981,21 @@ function Paper(props) {
                         );
                         // then snap it to grid
                         thePos = activeCellModel.attributes.position;
+                        let roundByBaseX = thePos.x % 10;
+                        if (roundByBaseX <= 5) {
+                            roundByBaseX = -roundByBaseX
+                        } else {
+                            roundByBaseX = 10 - roundByBaseX
+                        }
+                        let roundByBaseY = thePos.y % 10;
+                        if (roundByBaseY <= 5) {
+                            roundByBaseY = -roundByBaseY
+                        } else {
+                            roundByBaseY = 10 - roundByBaseY
+                        }
                         activeCellModel.translate(
-                            -(thePos.x % 10),
-                            -(thePos.y % 10),
+                            roundByBaseX,
+                            roundByBaseY,
                         );
                     }
                 })
@@ -907,8 +1017,20 @@ function Paper(props) {
                             let currentVertices = [...link.get("vertices")];
                             currentVertices = currentVertices.map(currentVertex => {
                                 let newVertex = { ...link.get("vertices")[0] };
-                                newVertex.x -= (currentVertex.x % 10);
-                                newVertex.y -= (currentVertex.y % 10);
+                                let roundByBaseX = currentVertex.x % 10;
+                                if (roundByBaseX <= 5) {
+                                    roundByBaseX = -roundByBaseX
+                                } else {
+                                    roundByBaseX = 10 - roundByBaseX
+                                }
+                                let roundByBaseY = currentVertex.y % 10;
+                                if (roundByBaseY <= 5) {
+                                    roundByBaseY = -roundByBaseY
+                                } else {
+                                    roundByBaseY = 10 - roundByBaseY
+                                }
+                                newVertex.x += roundByBaseX;
+                                newVertex.y += roundByBaseY;
                                 return newVertex;
                             })
                             link.vertices(currentVertices);
@@ -924,25 +1046,34 @@ function Paper(props) {
                 // edit base token
                 setBaseTokenCellView(cellView);
             } else if (!cellView.model.isLink()) {
-                // edit protocol
-                let theCellProtocol = {}
                 let cellModel = cellView.model;
-                theCellProtocol.id = cellModel.attributes.protocolId;
-                theCellProtocol.name = cellModel.attributes.attrs.label.text;
-                theCellProtocol.url = cellModel.attributes.protocolUrl;
-                theCellProtocol.backgroundColor = cellModel.attributes.protocolBackgroundColor;
-                theCellProtocol.borderColor = cellModel.attributes.protocolBorderColor;
-                theCellProtocol.image = cellModel.attributes.attrs.image["xlink:href"];
-
-                let theElements = graph.getElements();
-                let elementsToChange = [...theElements];
-                elementsToChange = elementsToChange.filter((el) => {
-                    return el.attributes.protocolId === theCellProtocol.id;
-                })
-
-                setProtocolCells(elementsToChange);
-                setActiveProtocol(theCellProtocol);
-                setOpenModalWindow(true);
+                if (cellModel.attributes.type !== "custom.LoopAction") {
+                    // edit protocol
+                    let theCellProtocol = {}
+                    theCellProtocol.id = cellModel.attributes.protocolId;
+                    theCellProtocol.name = cellModel.attributes.attrs.label.text;
+                    theCellProtocol.url = cellModel.attributes.protocolUrl;
+                    theCellProtocol.backgroundColor = cellModel.attributes.protocolBackgroundColor;
+                    theCellProtocol.borderColor = cellModel.attributes.protocolBorderColor;
+                    theCellProtocol.image = cellModel.attributes.attrs.image["xlink:href"];
+    
+                    let theElements = graph.getElements();
+                    let elementsToChange = [...theElements];
+                    elementsToChange = elementsToChange.filter((el) => {
+                        return el.attributes.protocolId === theCellProtocol.id;
+                    })
+    
+                    setProtocolCells(elementsToChange);
+                    setActiveProtocol(theCellProtocol);
+                    setActiveLoopAction(null);
+                    setActiveLink(null);
+                    setOpenModalWindow(true);
+                } else {
+                    setActiveLoopAction(cellModel);
+                    setActiveProtocol(null);
+                    setActiveLink(null);
+                    setOpenModalWindow(true);
+                }
             }
         }))
 
@@ -951,10 +1082,11 @@ function Paper(props) {
                 let currentLink = linkView.model;
                 setActiveLink(currentLink);
                 setActiveProtocol(null);
+                setActiveLoopAction(null);
                 let targetCell = linkView.model.getTargetCell()
                 let sourceCell = linkView.model.getSourceCell()
                 // if (sourceCell.attributes.typeOfCell !== "root" && targetCell.attributes.typeOfCell !== "root") {
-                    setOpenModalWindow(true);
+                setOpenModalWindow(true);
                 // }
             }
         }))
@@ -971,21 +1103,71 @@ function Paper(props) {
                     x: paperPos.tx + movePos.x - newClickPos.x,
                     y: paperPos.ty + movePos.y - newClickPos.y
                 }
-                paper.translate(
-                    newTranslate.x,
-                    newTranslate.y
-                )
-                if (paper.options.restrictTranslate) {
-                    let paperTranslate = paper.translate();
-                    paper.options.restrictTranslate = {
-                        x: paperTranslate.x,
-                        y: paperTranslate.y,
-                        width: contextValues.frameDimensions.w,
-                        height: contextValues.frameDimensions.h
-                    };
+                let editingGeometry = getEditingGeometryRef();
+                if (editingGeometry) {
+                    console.log("resize the circle");
+                } else {
+                    paper.translate(
+                        newTranslate.x,
+                        newTranslate.y
+                    )
+                    if (paper.options.restrictTranslate) {
+                        let paperTranslate = paper.translate();
+                        paper.options.restrictTranslate = {
+                            x: paperTranslate.x,
+                            y: paperTranslate.y,
+                            width: contextValues.frameDimensions.w,
+                            height: contextValues.frameDimensions.h
+                        };
+                    }
                 }
-            }))
+
+            }));
+            let editingGeometry = getEditingGeometryRef();
+            if (editingGeometry) {
+                console.log("put the circle");
+            }
         }))
+
+        paper.on("blank:pointerup", () => {
+            let editingGeometry = getEditingGeometryRef();
+            if (editingGeometry) {
+                console.log("stop editing the circle");
+                setEditingGeometry(false);
+                setEditingGeometryRef(false);
+            }
+        })
+
+        paper.on("link:pointermove", (linkView, event) => {
+            // let eventTarget = event.originalEvent.target;
+            // let eventTargetSelector = eventTarget.getAttribute("joint-selector") || eventTarget.parentElement.getAttribute("joint-selector");
+            let eventTargetSelector = getActiveLabelRef();
+            let labelsToMove = [];
+            let activeLabel = null;
+            // here we check if we clicked on the label, which should trigger moving other labels
+            if (eventTargetSelector === "offsetLabelNegativeConnector" ||
+                eventTargetSelector === "offsetLabelPositiveConnector" ||
+                eventTargetSelector === "leverageCircle" ||
+                eventTargetSelector === "leverageText") {
+                let linkModel = linkView.model;
+                let linkLabels = linkModel.labels();
+                // here we find which exactly label was clicked on
+                labelsToMove = linkLabels;
+                linkLabels.forEach(label => {
+                    if (label.attrs[eventTargetSelector]) {
+                        activeLabel = label;
+                    }
+                })
+            }
+
+            if (activeLabel && labelsToMove.length > 0) {
+                labelsToMove.forEach(label => {
+                    if (!label.attrs.rect) {
+                        label.position = { ...label.position, distance: activeLabel.position.distance }
+                    }
+                })
+            }
+        })
 
         graph.on('add', (eventElement) => {
             paper.off("link:connect")
@@ -1006,11 +1188,12 @@ function Paper(props) {
                     // linkView.model.vertices([])
                     setActiveLink(linkView.model);
                     setActiveProtocol(null);
+                    setActiveLoopAction(null);
                     stackGraph(graph);
                     let targetCell = linkView.model.getTargetCell()
                     let sourceCell = linkView.model.getSourceCell()
                     // if (sourceCell.attributes.typeOfCell !== "root" && targetCell.attributes.typeOfCell !== "root") {
-                        setOpenModalWindow(true);
+                    setOpenModalWindow(true);
                     // }
                 }
             }))
@@ -1113,14 +1296,23 @@ function Paper(props) {
                     linkView.model.addTo(graph)
                     setActiveLink(linkView.model);
                     setActiveProtocol(null);
+                    setActiveLoopAction(null);
                     stackGraph(graph);
                     setOpenModalWindow(true);
                 }
             }
+            setActiveLabel(null);
+            setActiveLabelRef(null);
+            setLabelsToMove([]);
+            setLabelsToMoveRef([]);
         })
 
         paper.on('blank:mouseover', () => {
-            paper.removeTools();
+            // paper.removeTools();
+            let theLinks = getGraphRef().getLinks();
+            theLinks.forEach(link => {
+                link.findView(getPaperRef()).removeTools();
+            })
             setActiveLinkViewRef(null);
             setActiveLinkView(null);
         });
@@ -1170,6 +1362,17 @@ function Paper(props) {
 
         setProtocols(props.protocols);
 
+        let canvasEl = getCanvas();
+        let canvasStyle = canvasEl.getAttribute("style").split(";");
+        canvasStyle = canvasStyle.map(b => {
+            if (b.split(":")[0] === " height") {
+                return ` height: ${window.innerHeight - 20 || 884}px !important`;
+            }
+            return b;
+        })
+        canvasEl.setAttribute("style", canvasStyle.join(";"));
+
+
         window.addEventListener("dragstart", dragStart);
         window.addEventListener("dragenter", dragEnter);
         window.addEventListener("dragover", dragOver);
@@ -1208,16 +1411,20 @@ function Paper(props) {
                 setActiveProtocol={setActiveProtocol}
                 setOpenModalWindow={setOpenModalWindow}
                 addEmptyNode={addEmptyNode}
+                createCircle={createCircle}
             />
             <div
                 id='canvas'
                 onWheel={handleScroll}
                 ref={canvas}
+                style={{
+                    height: `${window.innerHeight || 884}px !important`
+                }}
             />
             {openModalWindow &&
                 // ((activeLink && !activeProtocol) ||
                 // (activeProtocol && !activeLink))
-                (activeProtocol || activeLink)
+                (activeLoopAction || activeProtocol || activeLink)
                 &&
                 <ModalWindow
                     joint={joint}
@@ -1241,6 +1448,8 @@ function Paper(props) {
                     protocolCells={protocolCells}
                     setProtocolCells={setProtocolCells}
                     setOpenAddTokenToSelect={setOpenAddTokenToSelect}
+                    activeLoopAction={activeLoopAction}
+                    setActiveLoopAction={setActiveLoopAction}
                 />}
             <InitButtons
                 addBaseToken={addBaseToken}

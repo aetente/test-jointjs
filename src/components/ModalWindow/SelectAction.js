@@ -6,7 +6,7 @@ import "./styles.css";
 
 export default function SelectAction(props) {
 
-    let { isSupply, updateEarnLinks } = props;
+    let { isSupply, updateEarnLinks, scrollInput } = props;
 
     let actionIndex = props.actionIndex;
     let linkLabel = props.activeLink && props.activeLink.label(actionIndex);
@@ -39,7 +39,6 @@ export default function SelectAction(props) {
             let linkLabel = props.activeLink && props.activeLink.label(actionIndex);
             let defaultSelectValue = linkLabel ? linkLabel.attrs.text.action : "Stake";
             setInitActionValue(defaultSelectValue)
-
         }
     }, [props.activeLink])
 
@@ -70,6 +69,9 @@ export default function SelectAction(props) {
                         setInitActionValue(e.target.value);
                         if (updateEarnLinks) {
                             updateEarnLinks(e.target.value);
+                        }
+                        if (actionIndex > 0 && e.target.value !== "No borrow") {
+                            scrollInput(9999);
                         }
                         // props.setAction(actionValue => [...actionValue.splice(actionIndex, 1, e.target.value)]);
                     }}

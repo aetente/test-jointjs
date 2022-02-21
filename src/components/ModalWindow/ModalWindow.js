@@ -39,7 +39,9 @@ export default function ModalWindow(props) {
         setProtocolCells,
         protocols,
         setProtocols,
-        setOpenAddTokenToSelect
+        setOpenAddTokenToSelect,
+        activeLoopAction,
+        setActiveLoopAction
     } = props;
 
     const [action, setAction] = useState([{ name: "Stake" }]);
@@ -58,10 +60,28 @@ export default function ModalWindow(props) {
     // the cell where the information about current connection would be stored
     const [infoCell, setInfoCell] = useState(null);
 
+    const modalScrollRef = useRef(null);
+
+    const getModalScrollRef = () => {
+        return modalScrollRef.current;
+    }
+
+    const setModalScrollRef = (val) => {
+        modalScrollRef.current = val;
+    }
 
     let tokenOptions = useSelector(state => state.ui.tokenOptions);
 
     const dispatch = useDispatch();
+
+    const scrollInput = (val) => {
+        let scrollEl = getModalScrollRef();
+        if (scrollEl && val !== null) {
+            setTimeout(() => {
+                scrollEl.scrollTo({ left: 0, top: val, behavior: "smooth" });
+            }, 100);
+        }
+    }
 
     const addStakeEarn = (activeLink) => {
         // here we add new cells representing the earn and according links
@@ -83,7 +103,7 @@ export default function ModalWindow(props) {
                 fontFamily: 'Roboto, sans-serif',
                 fontStyle: "normal",
                 fontWeight: 600,
-                fontSize: "15px",
+                // fontSize: "15px",
                 lineHeight: "18px",
             }
         });
@@ -132,6 +152,7 @@ export default function ModalWindow(props) {
             setEarnLinks(earnLinks => [...earnLinks, [newEarnLink, newEarnCell]]);
 
         }
+        scrollInput(9999);
     }
 
     const mapEarnOptions = (earnArray, action) => {
@@ -206,6 +227,7 @@ export default function ModalWindow(props) {
                 }
                 return (
                     <EarnInputsHolder
+                        scrollInput={scrollInput}
                         key={`earn-${i}`}
                         action={action}
                         arrayLength={earnArray.length}
@@ -230,110 +252,7 @@ export default function ModalWindow(props) {
         if (!typeOfLink || typeOfLink === "action") {
             // update how the link looks (change title and remember which exactly action was chosen)
             let isMoreActions = action.length > 1;
-            action.forEach((a, i) => {
-                let allocationValue = a.allocation || "50";
-                let offsetValue = 0;
-                let distanceValue = 0.6;
-                let arrowDistanceAttr = {
-                    atConnectionRatio: distanceValue,
-                    connection: true
-                }
-                if (isMoreActions && action[1].name === "Borrow the same token") {
-                    if (i === 0) {
-                        offsetValue = -70;
-                    } else {
-                        offsetValue = 70;
-                    }
-                    // distanceValue = -50;
-                    distanceValue = 0.5;
-                    // arrowDistanceAttr = {
-                    //     atConnectionLength: distanceValue,
-                    // }
-                    arrowDistanceAttr = {
-                        // atConnectionLength: 10,
-                        // atConnectionRatio: -10,
-                        connection: true
-                        // connection: { stubs: 200 }
-                    }
 
-                    // actionLink.attr({
-                    //     offsetLabelPositiveConnector: {
-                    //         ...arrowDistanceAttr,
-                    //         // refD: 'M 20 10 -10 10',
-                    //         refDx: 10,
-                    //         refDy: -10,
-                    //         // refHeight: 0.2,
-                    //         // refWidth: 0.2,
-                    //         stroke: 'black',
-                    //         fill: "none",
-                    //         elementMove: true,
-                    //         targetMarker: {
-                    //             type: "path",
-                    //             d: 'M 0 -3 -10 0.5 0 4'
-                    //         },
-                    //         // ref: "offsetLabelNegativeConnector"
-                    //         // strokeDasharray: '5 5'
-                    //     },
-                    //     offsetLabelNegativeConnector: {
-                    //         ...arrowDistanceAttr,
-                    //         // refD: 'M -10 -10 20 -10',
-                    //         // refDx: -1,
-                    //         refDx: -10,
-                    //         refDy: 10,
-                    //         // refHeight: 0.2,
-                    //         // refWidth: 0.2,
-                    //         stroke: 'black',
-                    //         fill: "none",
-                    //         elementMove: true,
-                    //         sourceMarker: {
-                    //             type: "path",
-                    //             d: 'M 0 -3 -10 0.5 0 4',
-                    //         },
-                    //         // ref: "offsetLabelPositiveConnector"
-                    //         // strokeDasharray: '5 5'
-                    //     },
-                    // });
-
-                } else if (isMoreActions && action[1].name !== "Borrow the same token") {
-                    // remove old labels
-                    actionLink.removeLabel(1);
-                    actionLink.removeLabel(2);
-                    actionLink.removeLabel(3);
-                }
-                if (isMoreActions && i > 0 && a.name === "No borrow") {
-                    return;
-                }
-                let actionName = a.name;
-                if (actionName === "Borrow other token") {
-                    return;
-                }
-                if (actionName === "Borrow the same token") {
-                    actionName = "Borrow";
-                }
-                actionLink.label(i, {
-                    attrs: {
-                        text: {
-                            text: `[\u00a0${allocationValue}%\u00a0${actionName}\u00a0]`,
-                            action: a.name,
-                            allocation: allocationValue,
-                            fontFamily: 'Roboto, sans-serif',
-                            fontStyle: "normal",
-                            fontWeight: 600,
-                            fontSize: "15px",
-                            lineHeight: "18px",
-                            textVerticalAnchor: 'top'
-                        },
-                        rect: {
-                            fill: "#f6f6f6",
-                        }
-                    },
-                    anchor: { name: "right" },
-                    position: {
-                        distance: distanceValue,
-                        offset: offsetValue
-                    }
-                });
-            })
             if (action.length > 1 && (action[1].name === "Borrow the same token")) {
                 actionLink.label(2, {
                     markup: [
@@ -385,15 +304,6 @@ export default function ModalWindow(props) {
                             strokeWidth: 2,
                             strokeDasharray: '5 5',
                             fill: 'none'
-                        },
-                        leverageText: {
-                            ref: 'leverageCircle',
-                            text: (action[1].leverage > 0 && `x${action[1].leverage}`) || "",
-                            x: -95,
-                            y: -55,
-                            transform: "rotate(-90)",
-                            // atConnectionLengthIgnoreGradient: 10,
-                            fill: '#ff0000',
                         }
                     },
                     position: {
@@ -403,7 +313,91 @@ export default function ModalWindow(props) {
                         }
                     }
                 });
+
+                actionLink.label(3, {
+                    markup: [
+                        {
+                            tagName: 'text',
+                            selector: 'leverageText'
+                        }
+                    ],
+                    attrs: {
+                        leverageText: {
+                            text: (action[1].leverage > 0 && `${action[1].leverage}x`) || "",
+                            fontSize: "26px",
+                            leverage: action[1].leverage,
+                            x: -95,
+                            y: -55,
+                            // x: -135,
+                            // y: -25,
+                            fontFamily: 'Roboto, sans-serif',
+                            fontStyle: "normal",
+                            fontWeight: 600,
+                            fill: '#ff0000',
+                        }
+                    },
+                    position: {
+                        distance: 0.5,
+                    }
+                });
             }
+            action.forEach((a, i) => {
+                let allocationValue = a.allocation || "50";
+                let offsetValue = 0;
+                let distanceValue = 0.6;
+                let arrowDistanceAttr = {
+                    atConnectionRatio: distanceValue,
+                    connection: true
+                }
+                if (isMoreActions && action[1].name === "Borrow the same token") {
+                    if (i === 0) {
+                        offsetValue = -70;
+                    } else {
+                        offsetValue = 70;
+                    }
+                    distanceValue = 0.5;
+
+                } else if (isMoreActions && action[1].name !== "Borrow the same token") {
+                    // remove old labels
+                    actionLink.removeLabel(1);
+                    actionLink.removeLabel(2);
+                    actionLink.removeLabel(3);
+                }
+                if (isMoreActions && i > 0 && a.name === "No borrow") {
+                    return;
+                }
+                let actionName = a.name;
+                if (actionName === "Borrow other token") {
+                    return;
+                }
+                if (actionName === "Borrow the same token") {
+                    actionName = "Borrow";
+                }
+                actionLink.label(i, {
+                    attrs: {
+                        text: {
+                            text: `[\u00a0${allocationValue}%\u00a0${actionName}\u00a0]`,
+                            action: a.name,
+                            allocation: allocationValue,
+                            fontFamily: 'Roboto, sans-serif',
+                            fontStyle: "normal",
+                            fontWeight: 600,
+                            fontSize: "15px",
+                            lineHeight: "18px",
+                            textVerticalAnchor: 'top'
+                        },
+                        rect: {
+                            fill: "#f6f6f6",
+                        }
+                    },
+                    anchor: { name: "right" },
+                    position: {
+                        distance: distanceValue,
+                        offset: offsetValue
+                    }
+                });
+            })
+
             // remember that it was a link representing action
             actionLink.attr({ typeOfLink: "action" });
         } else if (typeOfLink === "earn") {
@@ -574,6 +568,7 @@ export default function ModalWindow(props) {
                 updateProtocols();
                 // close the window
                 setActiveProtocol(null);
+                setActiveLoopAction(null);
                 setProtocolCells([]);
                 setOpenModalWindow(false);
             }
@@ -595,10 +590,19 @@ export default function ModalWindow(props) {
     }
 
     const updateEarnLinks = (actionValue) => {
-        console.log(actionValue,earnLinks.length)
+        console.log(actionValue, earnLinks.length)
         if (actionValue === "Borrow other token" && earnLinks.length === 0) {
             addStakeEarn(activeLink);
         }
+    }
+
+    const handleLoopActionDone = () => {
+        let leverageValue = (action[1] && action[1].leverage) || 0;
+        if (leverageValue) {
+            activeLoopAction.attr("loop-text/text", `${leverageValue}x`)
+        }
+        setActiveLoopAction(null);
+        setOpenModalWindow(false);
     }
 
     useEffect(() => {
@@ -609,7 +613,7 @@ export default function ModalWindow(props) {
         // and if it is earn link than it goes the opposite way with the exception that
         // if user modifies earn link than there for sure would be action link 
         let { activeProtocol } = props;
-        if (!activeProtocol) {
+        if (!activeProtocol && !activeLoopAction) {
             // convertObjToStr converts Object like {0: "a", 1: "b", 2: "c"} to string "abc"
             // if it is the type of object, otherwise it just returns what you passed
             // it is like this, because the history stack stores graph converted to json
@@ -696,7 +700,7 @@ export default function ModalWindow(props) {
                 setTargetCellsInfo(childElements);
                 setActionLink(actionLinkVal);
                 setAction(actionValue);
-                let earnLinksFromCell = graph.getConnectedLinks(infoCell, {outbound: true});
+                let earnLinksFromCell = graph.getConnectedLinks(infoCell, { outbound: true });
                 earnLinksFromCell = earnLinksFromCell.filter(theEarnLink => {
                     return convertObjToStr(theEarnLink.attributes.attrs.typeOfLink) === "earn";
                 })
@@ -737,9 +741,31 @@ export default function ModalWindow(props) {
         <div
             className="hold-modal"
         >
-            {!activeProtocol &&
+            {activeLoopAction &&
                 (
-                    <div className='modal-options'>
+                    <div ref={modalScrollRef} className='modal-options'>
+                        <div className="modal-title">
+                            <div>Set an leverage/repeat</div>
+                            <div
+                                className='title-close-button'
+                                onClick={() => {
+                                    setOpenModalWindow(false);
+                                }}
+                            >
+                                <img src={close} alt="close" />
+                            </div>
+                        </div>
+                        <LeverageInput
+                            scrollInput={scrollInput}
+                            key={`leverage-input`}
+                            actionIndex={1}
+                            setAction={setAction}
+                            activeLink={actionLink}
+                        />
+                    </div>
+                ) || (!activeProtocol &&
+                (
+                    <div ref={modalScrollRef} className='modal-options'>
                         <div className="modal-title">
                             <div>Set an action</div>
                             <div
@@ -763,12 +789,14 @@ export default function ModalWindow(props) {
                             activeLink={activeLink}
                         />
                         <AllocationInput
+                            scrollInput={scrollInput}
                             key={actionLink}
                             actionIndex={0}
                             setAction={setAction}
                             activeLink={actionLink}
                         />
                         <SelectAction
+                            scrollInput={scrollInput}
                             key={`select-action-${updateCounter}-0`}
                             actionIndex={0}
                             setAction={setAction}
@@ -777,6 +805,7 @@ export default function ModalWindow(props) {
                         {action.length > 0 && action[0].name === "Supply" && (
                             <>
                                 <SelectAction
+                                    scrollInput={scrollInput}
                                     key={`select-action-${updateCounter}-1`}
                                     isSupply
                                     actionIndex={1}
@@ -786,6 +815,7 @@ export default function ModalWindow(props) {
                                 />
                                 {action.length > 1 && action[1].name !== "No borrow" &&
                                     <AllocationInput
+                                        scrollInput={scrollInput}
                                         key={actionLink}
                                         actionIndex={1}
                                         setAction={setAction}
@@ -794,6 +824,7 @@ export default function ModalWindow(props) {
                                 }
                                 {action.length > 1 && action[1].name === "Borrow the same token" &&
                                     <LeverageInput
+                                        scrollInput={scrollInput}
                                         key={`leverage-input`}
                                         actionIndex={1}
                                         setAction={setAction}
@@ -804,8 +835,8 @@ export default function ModalWindow(props) {
                         )}
                         {mapEarnOptions(earnLinks, action)}
                     </div>
-                ) || (
-                    <div className='modal-options'>
+                )) || (
+                    <div ref={modalScrollRef} className='modal-options'>
                         <div className="modal-title">
                             <div>{(activeProtocol.id && "Edit the protocol") || "Add a new protocol"}</div>
                             <div
@@ -857,7 +888,7 @@ export default function ModalWindow(props) {
                     action[0].name === "Borrow" ||
                     action[0].name === "Harvest"
                 ) &&
-                    (!activeProtocol &&
+                    ((!activeProtocol && !activeLoopAction) &&
                         (<button
                             className="action-button"
                             onClick={() => {
@@ -866,7 +897,7 @@ export default function ModalWindow(props) {
                         >
                             <img src={iconPlus} alt="+" />
                         </button>) ||
-                        (
+                        ((activeProtocol && !activeLoopAction) && (
                             <label className="custom-file-upload">
                                 <input
                                     type="file"
@@ -881,11 +912,14 @@ export default function ModalWindow(props) {
                                     </div>
                                 </div>
                             </label>
-                        ))
+                        )))
                 }
                 <button
                     className="finish-button"
-                    onClick={(activeProtocol && handleProtocolDone) || handleLinkDone}
+                    onClick={
+                        (activeLoopAction && handleLoopActionDone) ||
+                        (activeProtocol && handleProtocolDone) ||
+                        handleLinkDone}
                 >
                     Done
                 </button>
