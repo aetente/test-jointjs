@@ -1,111 +1,20 @@
-import { all, call, put, takeLatest, select } from "redux-saga/effects";
-// import { writeJsonFile } from 'write-json-file';
-import { protocolTypes } from "../types";
-import { protocolActions } from "../actions";
-
-const baseUrl = "http://" + window.location.hostname + ":8080/api";
-
-function* fetchProtocols() {
-    try {
-        let protocols = yield call(fetch, baseUrl + "/protocols"
-            , {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
-            });
-        let protocolsJson = yield protocols.json();
-        yield put(protocolActions.setProtocols(protocolsJson));
-    }
-    catch (e) {
-        console.log("ERROR", e);
-    }
-}
-
-function* addProtocol(action) {
-    try {
-        let protocols = yield call(fetch, baseUrl + "/protocols"
-            , {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                method: "PUT",
-                body: JSON.stringify(action.payload)
-            });
-        let protocolsJson = yield protocols.json();
-        yield put(protocolActions.setProtocols(protocolsJson));
-    }
-    catch (e) {
-        console.log("ERROR", e);
-    }
-}
-
-function* postProtocol(action) {
-    // TODO after deal with the backend, put updating the protocols inside try
-    const state = yield select();
-    let allProtocols = [...state.protocols.protocols]
-    yield put(protocolActions.setProtocols([...allProtocols, action.payload]));
-    try {
-        let protocols = yield call(fetch, baseUrl + "/protocols"
-            , {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                method: "POST",
-                body: JSON.stringify(action.payload)
-            });
-        let protocolsJson = yield protocols.json();
-        // yield put(protocolActions.setProtocols(protocolsJson));
-    }
-    catch (e) {
-        console.log("ERROR", e);
-    }
-}
-
-
-function* putProtocol(action) {
-    // TODO after deal with the backend, put updating the protocols inside try
-    const state = yield select();
-    let allProtocols = [...state.protocols.protocols].map(pr => {
-        if (pr.id === action.payload.id) {
-            return action.payload.content
-        }
-        return pr;
-    });
-    yield put(protocolActions.setProtocols(allProtocols));
-    try {
-        const state = yield select();
-        let protocols = yield call(fetch, baseUrl + "/protocols/" + action.payload.id
-            , {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                method: "PUT",
-                body: JSON.stringify(action.payload.content)
-            });
-        let protocolsJson = yield protocols.json();
-        // let allProtocols = [...state.protocols.protocols].map(pr => {
-        //     if (pr.id === action.payload.id) {
-        //         return action.payload.content
-        //     }
-        //     return pr;
-        // });
-        // yield put(protocolActions.setProtocols(allProtocols));
-    }
-    catch (e) {
-        console.log("ERROR", e);
-    }
-}
+import { all, takeLatest } from "redux-saga/effects";
+import { protocolTypes, tokensTypes } from "../types";
+import { protocolSagas } from "./protocols";
+import { tokenSagas } from "./tokens"
 
 function* mySaga() {
     yield all([
-        yield takeLatest(protocolTypes.GET_PROTOCOLS, fetchProtocols),
-        yield takeLatest(protocolTypes.UPDATE_PROTOCOLS, addProtocol),
-        yield takeLatest(protocolTypes.POST_PROTOCOL, postProtocol),
-        yield takeLatest(protocolTypes.PUT_PROTOCOL, putProtocol)
+        yield takeLatest(protocolTypes.GET_PROTOCOLS, protocolSagas.fetchProtocols),
+        yield takeLatest(protocolTypes.UPDATE_PROTOCOLS, protocolSagas.addProtocol),
+        yield takeLatest(protocolTypes.POST_PROTOCOL, protocolSagas.postProtocol),
+        yield takeLatest(protocolTypes.PUT_PROTOCOL, protocolSagas.putProtocol),
+
+        
+        yield takeLatest(tokensTypes.GET_TOKENS, tokenSagas.fetchTokens),
+        yield takeLatest(tokensTypes.UPDATE_TOKENS, tokenSagas.addToken),
+        yield takeLatest(tokensTypes.POST_TOKENS, tokenSagas.postToken),
+        yield takeLatest(tokensTypes.PUT_TOKENS, tokenSagas.putToken),
     ]);
 }
 

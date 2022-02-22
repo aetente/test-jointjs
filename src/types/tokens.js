@@ -1,0 +1,7 @@
+export const tokensTypes = {
+    GET_TOKENS: "GET_TOKENS",
+    UPDATE_TOKENS: "UPDATE_TOKENS",
+    SET_TOKENS: "SET_TOKENS",
+    POST_TOKENS: "POST_TOKENS",
+    PUT_TOKENS: "PUT_TOKENS",
+}

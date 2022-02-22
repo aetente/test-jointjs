@@ -6,15 +6,17 @@ import "./styles.css";
 
 export default function SelectToken(props) {
 
-    let {action, tokensToSelect} = props;
+    let {action, tokensToSelect, earnCell} = props;
 
     const mapTokenOptions = (token) => {
         return <option key={token} value={token}>{token}</option>
     }
 
     // let linkLabel = props.activeLink && props.activeLink.label(0);
-    let linkLabel = props.activeLink && props.activeLink.label(0);
-    let defaultSelectValue = linkLabel ? linkLabel.attrs.text.tokenName : tokensToSelect[0].value;
+    // let linkLabel = props.activeLink && props.activeLink.label(0);
+    // let defaultSelectValue = linkLabel ? linkLabel.attrs.text.tokenName : tokensToSelect[0].value;
+    let cellLabel = earnCell && earnCell.attributes.attrs.label;
+    let defaultSelectValue = cellLabel ? cellLabel.text : tokensToSelect[0].value;
 
     useEffect(() => {
         props.setTokenName(defaultSelectValue);

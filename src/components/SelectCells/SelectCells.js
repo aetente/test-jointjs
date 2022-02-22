@@ -19,10 +19,12 @@ function SelectCells(props) {
   let {
     recentlyUsedProtocols,
     recentlyUsedActions,
+    recentlyUsedTokens,
     addRecentlyUsedAction,
     setActiveProtocol,
     setOpenModalWindow,
-    addEmptyNode
+    addEmptyNode,
+    addEmptyToken
   } = props;
 
 
@@ -32,6 +34,8 @@ function SelectCells(props) {
   const [isOpenAllProtocols, setIsOpenAllProtocols] = useState(true);
   const [isOpenRecentlyUsedActions, setIsOpenRecentlyUsedActions] = useState(true);
   const [isOpenAllActions, setIsOpenAllActions] = useState(true);
+  const [isOpenRecentlyUsedTokens, setIsOpenRecentlyUsedTokens] = useState(true);
+  const [isOpenAllTokens, setIsOpenAllTokens] = useState(true);
 
   const [isSelectOpen, setIsSelectOpen] = useState(true);
 
@@ -173,6 +177,55 @@ function SelectCells(props) {
     </div>);
   }
 
+  const mapTokens = (tokens, isVisible, isRecentlyUsed) => {
+    if (isRecentlyUsed) {
+      let originalTokens = props.tokens;
+      tokens = tokens.map((token) => {
+        let foundToken = null;
+        for (let i = 0; i < originalTokens.length; i++) {
+          if (token.id === originalTokens[i].id) {
+            foundToken = originalTokens[i];
+            break;
+          }
+        }
+        return foundToken
+      })
+    }
+    tokens = tokens.filter((token) => {
+      return token && token.name.toLowerCase().includes(filterString.toLowerCase());
+    });
+    tokens = listToMatrix(tokens, 2);
+    return (<div className={`mapped-menu-options ${!isVisible && "hidden-menu-options"}`}>
+
+      {tokens.map((tRow, i) => {
+        return (
+          <div key={`list-row-${i}`} className={`list-row`}>
+            {tRow.map(t => (
+              <div key={t.id} className="hold-menu-option hold-token-option">
+                <div
+                  className="draggable select-token"
+                  tokenname={t.name}
+                  tokenid={t.id}
+                  tokenurl={t.url}
+                  image={t.image}
+                  draggable
+                >
+                  {t.image && t.image !== "null" && <div className="menu-option-content no-transform">
+                    <img draggable={false} src={t.image} alt={t.name} />
+                  </div>}
+                </div>
+                <div
+                  className="menu-option-title"
+                >
+                  {t.name}
+                </div>
+              </div>
+            ))}
+          </div>)
+      })}
+    </div>);
+  }
+
 
   useEffect(() => {
 
@@ -180,7 +233,7 @@ function SelectCells(props) {
     };
   }, [])
 
-  let { protocols } = props;
+  let { protocols, tokens } = props;
 
   return (
     <div className={`hold-cells ${!isSelectOpen && "hide-cells"}`} >
@@ -252,6 +305,40 @@ function SelectCells(props) {
                 </div>
               </div>
               {mapActions(actionsList, isOpenAllActions)}
+            </div>
+            // mapActions(actionsList, true)
+          ) ||
+          (category === "Tokens" &&
+
+            <div>
+              <div className="list-row list-section">
+                <div onClick={() => { setIsOpenRecentlyUsedTokens(!isOpenRecentlyUsedTokens) }} className="list-selection-title">
+                  <img src={caretDown} alt="" />
+                  <div>
+                    Recently used
+                  </div>
+                </div>
+              </div>
+              {mapTokens(recentlyUsedTokens, isOpenRecentlyUsedTokens, true)}
+              <div className="list-row list-section">
+                <div onClick={() => { setIsOpenAllTokens(!isOpenAllTokens) }} className="list-selection-title">
+                  <img src={caretDown} alt="" />
+                  <div>
+                    All Tokens
+                  </div>
+                </div>
+
+                <div onClick={() => {
+                  addEmptyToken();
+                  // setActiveProtocol({ name: "" });
+                  setOpenModalWindow(true);
+                }} className="list-selection-title add-new">
+                  <div>
+                    + Add New
+                  </div>
+                </div>
+              </div>
+              {mapTokens(tokens, isOpenAllTokens)}
             </div>
             // mapActions(actionsList, true)
           )

@@ -1,39 +1,38 @@
 import { put, call, select } from "redux-saga/effects";
-import { protocolActions } from "../actions";
+import { tokenActions } from "../actions";
 
 // const baseUrl = "http://" + window.location.hostname + ":8080/api";
-
 const baseUrl = "https://test-builder-api.herokuapp.com";
 
-export const protocolSagas = {
-    fetchProtocols,
-    addProtocol,
-    postProtocol,
-    putProtocol
+export const tokenSagas = {
+    fetchTokens,
+    addToken,
+    postToken,
+    putToken
 }
 
 
-function* fetchProtocols() {
+function* fetchTokens() {
     try {
-        let protocols = yield call(fetch, baseUrl + "/protocols"
-        // let protocols = yield call(fetch, "db.json"
+        let tokens = yield call(fetch, baseUrl + "/tokens"
+        // let tokens = yield call(fetch, "db.json"
             , {
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 }
             });
-        let protocolsJson = yield protocols.json();
-        yield put(protocolActions.setProtocols(protocolsJson));
+        let tokensJson = yield tokens.json();
+        yield put(tokenActions.setTokens(tokensJson));
     }
     catch (e) {
         console.log("ERROR", e);
     }
 }
 
-function* addProtocol(action) {
+function* addToken(action) {
     try {
-        let protocols = yield call(fetch, baseUrl + "/protocols"
+        let tokens = yield call(fetch, baseUrl + "/tokens"
             , {
                 headers: {
                     'Content-Type': 'application/json',
@@ -42,22 +41,22 @@ function* addProtocol(action) {
                 method: "PUT",
                 body: JSON.stringify(action.payload)
             });
-        let protocolsJson = yield protocols.json();
-        yield put(protocolActions.setProtocols(protocolsJson));
+        let tokensJson = yield tokens.json();
+        yield put(tokenActions.setTokens(tokensJson));
     }
     catch (e) {
         console.log("ERROR", e);
     }
 }
 
-function* postProtocol(action) {
-    // TODO after deal with the backend, put updating the protocols inside try
+function* postToken(action) {
+    // TODO after deal with the backend, put updating the tokens inside try
     const state = yield select();
-    let allProtocols = [...state.protocols.protocols]
-    yield put(protocolActions.setProtocols([...allProtocols, action.payload]));
+    let allTokens = [...state.tokens.tokens]
+    yield put(tokenActions.setTokens([...allTokens, action.payload]));
     try {
-        let protocols = yield call(fetch, baseUrl + "/protocols"
-        // let protocols = yield call(fetch, "db.json"
+        let tokens = yield call(fetch, baseUrl + "/tokens"
+        // let tokens = yield call(fetch, "db.json"
             , {
                 headers: {
                     'Content-Type': 'application/json',
@@ -66,8 +65,8 @@ function* postProtocol(action) {
                 method: "POST",
                 body: JSON.stringify(action.payload)
             });
-        let protocolsJson = yield protocols.json();
-        // yield put(protocolActions.setProtocols(protocolsJson));
+        let tokensJson = yield tokens.json();
+        // yield put(tokenActions.setTokens(tokensJson));
     }
     catch (e) {
         console.log("ERROR", e);
@@ -75,19 +74,19 @@ function* postProtocol(action) {
 }
 
 
-function* putProtocol(action) {
-    // TODO after deal with the backend, put updating the protocols inside try
+function* putToken(action) {
+    // TODO after deal with the backend, put updating the tokens inside try
     const state = yield select();
-    let allProtocols = [...state.protocols.protocols].map(pr => {
+    let allTokens = [...state.tokens.tokens].map(pr => {
         if (pr.id === action.payload.id) {
             return action.payload.content
         }
         return pr;
     });
-    yield put(protocolActions.setProtocols(allProtocols));
+    yield put(tokenActions.setTokens(allTokens));
     try {
         const state = yield select();
-        let protocols = yield call(fetch, baseUrl + "/protocols/" + action.payload.id
+        let tokens = yield call(fetch, baseUrl + "/tokens/" + action.payload.id
             , {
                 headers: {
                     'Content-Type': 'application/json',
@@ -96,14 +95,14 @@ function* putProtocol(action) {
                 method: "PUT",
                 body: JSON.stringify(action.payload.content)
             });
-        let protocolsJson = yield protocols.json();
-        // let allProtocols = [...state.protocols.protocols].map(pr => {
+        let tokensJson = yield tokens.json();
+        // let allTokens = [...state.tokens.tokens].map(pr => {
         //     if (pr.id === action.payload.id) {
         //         return action.payload.content
         //     }
         //     return pr;
         // });
-        // yield put(protocolActions.setProtocols(allProtocols));
+        // yield put(tokenActions.setTokens(allTokens));
     }
     catch (e) {
         console.log("ERROR", e);

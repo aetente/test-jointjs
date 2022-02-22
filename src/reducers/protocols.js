@@ -40,7 +40,7 @@ const protocolsDefaults = [
 
 const INITIAL_STATE = { protocols: protocolsDefaults};
 
-const ui = (state = INITIAL_STATE, action) => {
+const protocols = (state = INITIAL_STATE, action) => {
   let { protocols } = state;
   switch (action.type) {
     case protocolTypes.SET_PROTOCOLS:
@@ -50,4 +50,4 @@ const ui = (state = INITIAL_STATE, action) => {
   }
 };
 
-export default ui;
+export default protocols;

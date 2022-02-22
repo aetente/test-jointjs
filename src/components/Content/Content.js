@@ -6,15 +6,17 @@ import { protocols } from './protocols';
 import "./styles.css";
 
 // import fetch
-import { protocolActions } from '../../actions';
+import { protocolActions, tokenActions } from '../../actions';
 
 function Content() {
 
-  let theProtocols = useSelector(state => state.protocols.protocols)
+  let theProtocols = useSelector(state => state.protocols.protocols);
+  let theTokens = useSelector(state => state.tokens.tokens);
   const dispatch = useDispatch();
   
   useEffect(() => {
     dispatch(protocolActions.getProtocols());
+    dispatch(tokenActions.getTokens());
   }, [])
 
   return (
@@ -23,6 +25,7 @@ function Content() {
         <DiagramContext.Provider value={contextValues}>
           <Paper
             protocols={theProtocols}
+            tokens={theTokens}
           />
         </DiagramContext.Provider>
       </div>

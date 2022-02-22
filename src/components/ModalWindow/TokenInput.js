@@ -3,10 +3,12 @@ import "./styles.css";
 
 export default function TokenInput(props) {
 
-    let {action} = props;
+    let {action, earnCell} = props;
 
-    let linkLabel = props.activeLink && props.activeLink.label(0);
-    let defaultInputValue = linkLabel ? linkLabel.attrs.text.tokenName : "COIN";
+    // let linkLabel = props.activeLink && props.activeLink.label(0);
+    // let defaultInputValue = linkLabel ? linkLabel.attrs.text.tokenName : "COIN";
+    let cellLabel = earnCell && earnCell.attributes.attrs.label;
+    let defaultInputValue = cellLabel ? cellLabel.text : "COIN";
 
     return (
 

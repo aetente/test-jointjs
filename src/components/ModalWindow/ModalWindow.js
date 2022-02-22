@@ -1,20 +1,16 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import ConnectionInfo from './ConnectionInfo';
-import SelectAction from './SelectAction';
-import AllocationInput from './AllocationInput';
 import EarnInputsHolder from './EarnInputsHolder';
-import ProtocolNameInput from './ProtocolNameInput';
-import ProtocolUrlInput from './ProtocolUrlInput';
-import ProtocolPoolInput from './ProtocolPoolInput';
-import ProtocolColorPicker from './ProtocolColorPicker';
-import LeverageInput from './LeverageInput';
+
+import LinkBody from './LinkBody';
+import ProtocolsBody from './ProtocolsBody';
+import LoopActionBody from './LoopActionBody';
+import TokensBody from './TokensBody';
+
 import { convertObjToStr } from '../../utils/utils';
 import "./styles.css";
 
-import { protocolActions } from '../../actions';
-
-import close from "../../assets/drawings/close.svg";
+import { protocolActions, tokenActions } from '../../actions';
 import iconPlus from "../../assets/drawings/icon-plus.svg";
 
 export default function ModalWindow(props) {
@@ -34,10 +30,15 @@ export default function ModalWindow(props) {
         subLayout,
         stackGraph,
         activeProtocol,
+        activeToken,
         setActiveProtocol,
+        setActiveToken,
+        tokenCells,
         protocolCells,
         setProtocolCells,
+        setTokenCells,
         protocols,
+        tokens,
         setProtocols,
         setOpenAddTokenToSelect,
         activeLoopAction,
@@ -231,6 +232,7 @@ export default function ModalWindow(props) {
                         key={`earn-${i}`}
                         action={action}
                         arrayLength={earnArray.length}
+                        earnCell={earnCell}
                         setTokenName={setTokenName}
                         setEarn={setEarn}
                         activeLink={earnLink}
@@ -528,12 +530,45 @@ export default function ModalWindow(props) {
         })
     }
 
+    const updateTokens = (forcedActiveToken) => {
+        let currentActiveToken = activeProtocol;
+        if (forcedActiveToken) {
+            currentActiveToken = forcedActiveToken
+        }
+        // update every cell on the paper for the according token (should we do it?)
+        tokenCells.forEach(tCell => {
+            tCell.attributes = {
+                ...tCell.attributes,
+                tokenId: currentActiveToken.id,
+                tokenUrl: currentActiveToken.url,
+                image: currentActiveToken.image || ""
+            };
+            //lol
+            // let scaleText = (currentActiveProtocol.name.length > 5 && Math.pow(5 / currentActiveProtocol.name.length, 1 / 2)) || 1;
+            tCell.attr('label/text', currentActiveToken.name);
+            tCell.attr('text/text', currentActiveToken.name);
+            // pCell.attr('text/transform', `scale(${scaleText},${scaleText})`);
+        })
+    }
+
     const handleProtocolDone = () => {
         // allow creating new protocol only if entered a name
         if (activeProtocol.name) {
             // check if it is new protocol or already existing
-            let protocolIndex = protocols.findIndex((protocol) => {
-                return protocol.id === activeProtocol.id;
+            let protocolIndex = -1;
+            let alreadyExists = false;
+            // let protocolIndex = protocols.findIndex((protocol) => {
+            //     return protocol.id === activeProtocol.id;
+            // });
+            protocols.forEach((protocol, i) => {
+                if (protocol.id === activeProtocol.id) {
+                    protocolIndex = i;
+                }
+                if (protocol.id !== activeProtocol.id &&
+                    (protocol.name === activeProtocol.name ||
+                        (activeProtocol.url && (protocol.url === activeProtocol.url)))) {
+                    alreadyExists = true;
+                }
             });
             // set default colors if none were selected
             if (!activeProtocol.backgroundColor) {
@@ -542,39 +577,36 @@ export default function ModalWindow(props) {
             if (!activeProtocol.borderColor) {
                 activeProtocol.borderColor = "#19384d";
             }
-            // if it is a new protocol
-            if (protocolIndex < 0) {
-                // give it a new id
-                // (it should alredy have a new id, but I suppose in the future the real new id would be created from backend)
-                activeProtocol.id = String(protocols.length);
-                // add it to the list of already existion protocols
-                // setProtocols(protocols => {
-                dispatch(protocolActions.postProtocols(activeProtocol));
-                //     return [...protocols, activeProtocol]
-                // })
-                // close the window
-                setActiveProtocol(null);
-                setOpenModalWindow(false);
+            if (!alreadyExists) {
+                // if it is a new protocol
+                if (protocolIndex < 0) {
+                    // give it a new id
+                    // (it should alredy have a new id, but I suppose in the future the real new id would be created from backend)
+                    activeProtocol.id = String(protocols.length);
+                    // add it to the list of already existion protocols
+                    dispatch(protocolActions.postProtocols(activeProtocol));
+                    // close the window
+                    setActiveProtocol(null);
+                    setOpenModalWindow(false);
 
+                } else {
+                    // if the protocol already exists
+                    // replace the protocol and replace
+                    dispatch(protocolActions.putProtocols({ id: activeProtocol.id, content: activeProtocol }));
+                    // update how all cells of the protocol look on the paper
+                    updateProtocols();
+                    // close the window
+                    setActiveProtocol(null);
+                    setProtocolCells([]);
+                    setOpenModalWindow(false);
+                }
             } else {
-                // if the protocol already exists
-                // replace the protocol and replace
-                // setProtocols(protocols => {
-                //     protocols.splice(protocolIndex, 1, activeProtocol);
-                dispatch(protocolActions.putProtocols({ id: activeProtocol.id, content: activeProtocol }));
-                //     return [...protocols];
-                // });
-                // update how all cells of the protocol look on the paper
-                updateProtocols();
-                // close the window
-                setActiveProtocol(null);
-                setActiveLoopAction(null);
-                setProtocolCells([]);
-                setOpenModalWindow(false);
+                console.log("ah")
             }
         }
 
     }
+
 
     const handleImageChange = (e) => {
         let file = e.target.files[0];
@@ -589,8 +621,20 @@ export default function ModalWindow(props) {
         };
     }
 
+    const handleTokenImageChange = (e) => {
+        let file = e.target.files[0];
+        let reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+            setActiveToken({ ...activeToken, image: reader.result });
+            updateTokens({ ...activeToken, image: reader.result });
+        };
+        reader.onerror = (error) => {
+            console.log('Error: ', error);
+        };
+    }
+
     const updateEarnLinks = (actionValue) => {
-        console.log(actionValue, earnLinks.length)
         if (actionValue === "Borrow other token" && earnLinks.length === 0) {
             addStakeEarn(activeLink);
         }
@@ -605,20 +649,69 @@ export default function ModalWindow(props) {
         setOpenModalWindow(false);
     }
 
+    const handleTokenDone = () => {
+        if (activeToken.name) {
+            let tokenIndex= -1;
+            let alreadyExists = false;
+            // let tokenIndex = tokens.findIndex((token) => {
+            //     return token.id === activeToken.id;
+            // });
+            
+            tokens.forEach((token, i) => {
+                if (token.id === activeToken.id) {
+                    tokenIndex = i;
+                }
+                if (token.id !== activeToken.id &&
+                    (token.name === activeToken.name ||
+                        (activeToken.url && (token.url === activeToken.url)))) {
+                    alreadyExists = true;
+                }
+            });
+            // if it is a new token
+            if (!alreadyExists) {
+                if (tokenIndex < 0) {
+                    activeToken.id = String(tokens.length);
+                    dispatch(tokenActions.postTokens(activeToken));
+                    setActiveToken(null);
+                    setOpenModalWindow(false);
+    
+                } else {
+                    // if it is a token which already exists, update it
+                    dispatch(tokenActions.putTokens({ id: activeToken.id, content: activeToken }));
+                    updateTokens(activeToken);
+                    setActiveToken(null);
+                    setActiveLoopAction(null);
+                    setTokenCells([]);
+                    setOpenModalWindow(false);
+                }
+            }
+        }
+    }
+
     useEffect(() => {
         // the idea is to define different kind of scenarios for modal window
         // for now it is to set if user modifies the action link or earn link
         // if user modifies the action link than it is the one that the parent sent in props
-        // and earn link would be (not necessary) found with the id which is stored inside action link
-        // and if it is earn link than it goes the opposite way with the exception that
-        // if user modifies earn link than there for sure would be action link 
+        // and earn link would be (not necessary) found with by finding outgoing links of target cell
+        // and if it is earn link than it goes the opposite way
         let { activeProtocol } = props;
-        if (!activeProtocol && !activeLoopAction) {
+        // if it is the link which is being modified
+        // may be change to checking for active link, but needs to be tested then
+        if (!activeProtocol && !activeLoopAction && !activeToken) {
             // convertObjToStr converts Object like {0: "a", 1: "b", 2: "c"} to string "abc"
             // if it is the type of object, otherwise it just returns what you passed
             // it is like this, because the history stack stores graph converted to json
             // and while it converts to json, it changes some strings to this kind of object
             let typeOfLink = convertObjToStr(activeLink.attributes.attrs.typeOfLink);
+            // the the target cell is earn/token cell and source cell is a protocol
+            // then it is not action link, but earn link for sure
+            if (activeLink) {
+                let targetCell = activeLink.getTargetCell();
+                let sourceCell = activeLink.getSourceCell();
+                if (targetCell.attributes.typeOfCell === "earn_cell" && sourceCell.attributes.type === "custom.RectDiamond") {
+                    typeOfLink = "earn"
+                }
+            }
             let actionLinkVal = null;
             let parentElements = [];
             let childElements = [];
@@ -626,20 +719,17 @@ export default function ModalWindow(props) {
             let actionValue = [{ name: "Stake", allocation: "50" }];
             setTypeOfLink(typeOfLink);
             let infoCell;
-            // if the link was of the type action, or it is a new link, or it is the cell which is being focused on
+            // if the link was of the type action, or it is a new link
             if (!typeOfLink || typeOfLink === "action") {
                 actionLinkVal = activeLink;
                 let targetCell = actionLinkVal.getTargetCell();
                 let sourceCell = actionLinkVal.getSourceCell();
+                // infocell is the one where incoming links are always action links and outgoing are earn links
                 infoCell = targetCell;
                 setInfoCell(infoCell);
                 let targetCellType = convertObjToStr(targetCell.attributes.typeOfCell);
                 let sourceCellType = convertObjToStr(sourceCell.attributes.typeOfCell);
                 // the default action for link between tokens should be reinvest
-                // let defaultAction = ((
-                //     (sourceCellType === "earn_cell" && targetCellType === "earn_cell") ||
-                //     (sourceCellType === "earn_cell" && targetCellType === "base_token") ||
-                //     (targetCellType === "earn_cell" && sourceCellType === "base_token")) && "Re-invest") || "Stake";
                 let defaultAction = ((
                     (targetCellType === "earn_cell") ||
                     (targetCellType === "base_token") ||
@@ -653,18 +743,15 @@ export default function ModalWindow(props) {
                     allocationValue = (actionLinkVal.label(1) && convertObjToStr(actionLinkVal.label(1).attrs.text.allocation)) || "50";
                     actionValue.push({ name: actionName, allocation: allocationValue });
                 }
-
+                // here we set from which protocol, to which protocol this whole connection goes
                 if (sourceCellType === "base_token" || sourceCellType === "earn_cell") {
                     tokenElements = [sourceCell];
                     parentElements = graph.getNeighbors(sourceCell, { inbound: true });
-                    // parentElements = [sourceCell];
-                    // childElements = graph.getNeighbors(sourceCell, { outbound: true });
                     childElements = [targetCell]
                 } else {
                     tokenElements = [targetCell];
                     parentElements = graph.getNeighbors(targetCell, { inbound: true });
                     childElements = graph.getNeighbors(targetCell, { outbound: true });
-                    // childElements = [targetCell]
                 }
                 if (targetCellType === "base_token" || targetCellType === "earn_cell") {
                     parentElements = [sourceCell];
@@ -673,59 +760,77 @@ export default function ModalWindow(props) {
             } else if (typeOfLink === "earn") {
                 // the same goes for double clicking the earn link
                 // but first we get the action link, and receive earn links from it 
-                let actionLinkIdVal = convertObjToStr(activeLink.attributes.attrs.actionLinkId);
-                if (actionLinkIdVal) {
-                    let actionLinkById = graph.getCell(actionLinkIdVal);
-                    actionLinkVal = actionLinkById;
-                    let actionName = "Stake";
-                    if (actionLinkVal) {
-                        actionName = (actionLinkVal.label(0) && convertObjToStr(actionLinkVal.label(0).attrs.text.action)) || "Stake";
-                    }
-                    actionValue = [{ name: actionName, allocation: "50" }];
-
-                }
                 let targetCell = activeLink.getTargetCell();
                 let sourceCell = activeLink.getSourceCell();
                 infoCell = sourceCell;
                 setInfoCell(infoCell);
+                // action links we get by getting the incoming links
+                let actionLinks = graph.getConnectedLinks(infoCell, { inbound: true });
+                // let actionLinkIdVal = convertObjToStr(activeLink.attributes.attrs.actionLinkId);
+                // it is not designed to be that there would be two action links, so we just get the first one
+                // let actionLinkIdVal = actionLinks[0];
+                actionLinkVal = actionLinks[0];
+                if (actionLinkVal) {
+                    let actionName = "Stake";
+                    actionName = (actionLinkVal.label(0) && convertObjToStr(actionLinkVal.label(0).attrs.text.action)) || "Stake";
+                    actionValue = [{ name: actionName, allocation: "50" }];
+                }
                 tokenElements = [targetCell];
                 parentElements = graph.getNeighbors(targetCell, { inbound: true });
-                // parentElements = [sourceCell];
                 childElements = graph.getNeighbors(targetCell, { outbound: true });
             }
 
             if (actionLinkVal) {
+                // set info about connected protocols
                 setTokenNamesInfo(tokenElements);
                 setSourceCellsInfo(parentElements);
                 setTargetCellsInfo(childElements);
                 setActionLink(actionLinkVal);
                 setAction(actionValue);
+                // get the outgoing links from info cell, which are going to be earn links
                 let earnLinksFromCell = graph.getConnectedLinks(infoCell, { outbound: true });
+                // we want to filter out the links which are not actually earn links
+                // not that it is a common case or something logical the user would do
+                // but just in case
+                // earnLinksFromCell? more like earnLinksFromHell, haha got 'em
                 earnLinksFromCell = earnLinksFromCell.filter(theEarnLink => {
-                    return convertObjToStr(theEarnLink.attributes.attrs.typeOfLink) === "earn";
+                    let targetCell = theEarnLink.getTargetCell();
+                    // return convertObjToStr(theEarnLink.attributes.attrs.typeOfLink) === "earn";
+                    return convertObjToStr(targetCell.attributes.typeOfCell) === "earn_cell";
                 })
-                // let earnLinksArray = actionLinkVal.attributes.attrs.earnLinkIds;
                 let earnLinksArray = earnLinksFromCell;
 
                 if (earnLinksArray) {
+                    // it could be that earnLinksArray would be objects
+                    // dont remember why though
+                    // probably after I changed to getting earn links from the cell and links, it shouldn't happen 
                     if (!earnLinksArray.map) {
                         earnLinksArray = Object.values(earnLinksArray);
                     }
                     if (earnLinksArray) {
+                        // we need to find target cells for each earn links
                         let earnLinksToSet = earnLinksArray.map(earnLinkId => {
                             let earnLinkById = graph.getCell(earnLinkId);
                             let earnCellById = null;
                             if (earnLinkById) {
-                                earnCellById = graph.getCell(convertObjToStr(earnLinkById.attributes.attrs.earnCellId));
+                                let earnCellIdFromLink = convertObjToStr(earnLinkById.attributes.attrs.earnCellId);
+                                if (earnCellIdFromLink) {
+                                    earnCellById = graph.getCell(earnCellIdFromLink);
+                                } else {
+                                    let targetCell = earnLinkById.getTargetCell();
+                                    earnCellById = targetCell;
+                                }
                                 return [earnLinkById, earnCellById];
                             }
                             return null;
                         });
+                        // remove empty
                         earnLinksToSet = earnLinksToSet.filter((links) => links !== null);
                         setEarnLinks(earnLinksToSet);
                     }
                 }
 
+                // if the action is Stake, then we should automatically add possible earn cell
                 if (actionValue[0].name === "Stake") {
                     addStakeEarn(activeLink);
                 }
@@ -743,41 +848,29 @@ export default function ModalWindow(props) {
         >
             {activeLoopAction &&
                 (
-                    <div ref={modalScrollRef} className='modal-options'>
-                        <div className="modal-title">
-                            <div>Set an leverage/repeat</div>
-                            <div
-                                className='title-close-button'
-                                onClick={() => {
-                                    setOpenModalWindow(false);
-                                }}
-                            >
-                                <img src={close} alt="close" />
-                            </div>
-                        </div>
-                        <LeverageInput
-                            scrollInput={scrollInput}
-                            key={`leverage-input`}
-                            actionIndex={1}
-                            setAction={setAction}
-                            activeLink={actionLink}
-                        />
-                    </div>
-                ) || (!activeProtocol &&
-                (
-                    <div ref={modalScrollRef} className='modal-options'>
-                        <div className="modal-title">
-                            <div>Set an action</div>
-                            <div
-                                className='title-close-button'
-                                onClick={() => {
-                                    setOpenModalWindow(false);
-                                }}
-                            >
-                                <img src={close} alt="close" />
-                            </div>
-                        </div>
-                        <ConnectionInfo
+                    <LoopActionBody
+                        modalScrollRef={modalScrollRef}
+                        setOpenModalWindow={setOpenModalWindow}
+                        scrollInput={scrollInput}
+                        setAction={setAction}
+                        actionLink={actionLink}
+                    />
+                ) || (activeToken &&
+                    <TokensBody
+                        modalScrollRef={modalScrollRef}
+                        setOpenModalWindow={setOpenModalWindow}
+                        activeToken={activeToken}
+                        tokens={tokens}
+                        tokenCells={tokenCells}
+                        setActiveToken={setActiveToken}
+                        updateTokens={updateTokens}
+                    />
+                ) || (
+                    !activeProtocol &&
+                    (
+                        <LinkBody
+                            modalScrollRef={modalScrollRef}
+                            setOpenModalWindow={setOpenModalWindow}
                             sourceCellsInfo={sourceCellsInfo}
                             targetCellsInfo={targetCellsInfo}
                             tokenNamesInfo={tokenNamesInfo}
@@ -787,99 +880,24 @@ export default function ModalWindow(props) {
                             updateCounter={updateCounter}
                             setUpdateCounter={setUpdateCounter}
                             activeLink={activeLink}
-                        />
-                        <AllocationInput
                             scrollInput={scrollInput}
-                            key={actionLink}
-                            actionIndex={0}
+                            actionLink={actionLink}
                             setAction={setAction}
-                            activeLink={actionLink}
+                            action={action}
+                            updateEarnLinks={updateEarnLinks}
+                            mapEarnOptions={mapEarnOptions}
+                            earnLinks={earnLinks}
                         />
-                        <SelectAction
-                            scrollInput={scrollInput}
-                            key={`select-action-${updateCounter}-0`}
-                            actionIndex={0}
-                            setAction={setAction}
-                            activeLink={actionLink}
-                        />
-                        {action.length > 0 && action[0].name === "Supply" && (
-                            <>
-                                <SelectAction
-                                    scrollInput={scrollInput}
-                                    key={`select-action-${updateCounter}-1`}
-                                    isSupply
-                                    actionIndex={1}
-                                    setAction={setAction}
-                                    updateEarnLinks={updateEarnLinks}
-                                    activeLink={actionLink}
-                                />
-                                {action.length > 1 && action[1].name !== "No borrow" &&
-                                    <AllocationInput
-                                        scrollInput={scrollInput}
-                                        key={actionLink}
-                                        actionIndex={1}
-                                        setAction={setAction}
-                                        activeLink={actionLink}
-                                    />
-                                }
-                                {action.length > 1 && action[1].name === "Borrow the same token" &&
-                                    <LeverageInput
-                                        scrollInput={scrollInput}
-                                        key={`leverage-input`}
-                                        actionIndex={1}
-                                        setAction={setAction}
-                                        activeLink={actionLink}
-                                    />
-                                }
-                            </>
-                        )}
-                        {mapEarnOptions(earnLinks, action)}
-                    </div>
-                )) || (
-                    <div ref={modalScrollRef} className='modal-options'>
-                        <div className="modal-title">
-                            <div>{(activeProtocol.id && "Edit the protocol") || "Add a new protocol"}</div>
-                            <div
-                                className='title-close-button'
-                                onClick={() => {
-                                    // check if the protocol which is being edited already exists
-                                    let protocolIndex = protocols.findIndex((protocol) => {
-                                        return protocol.id === activeProtocol.id;
-                                    });
-                                    // if not, it means that we should delete the cell from the paper
-                                    // when we press close button, but not "done" button
-                                    if (protocolIndex < 0) {
-                                        protocolCells.forEach(pCell => {
-                                            pCell.remove();
-                                        });
-                                    }
-                                    setOpenModalWindow(false);
-                                }}
-                            >
-                                <img src={close} alt="close" />
-                            </div>
-                        </div>
-                        <ProtocolNameInput
-                            activeProtocol={activeProtocol}
-                            setActiveProtocol={setActiveProtocol}
-                            updateProtocols={updateProtocols}
-                        />
-                        <ProtocolUrlInput
-                            activeProtocol={activeProtocol}
-                            setActiveProtocol={setActiveProtocol}
-                            updateProtocols={updateProtocols}
-                        />
-                        <ProtocolPoolInput
-                            activeProtocol={activeProtocol}
-                            setActiveProtocol={setActiveProtocol}
-                            updateProtocols={updateProtocols}
-                        />
-                        <ProtocolColorPicker
-                            activeProtocol={activeProtocol}
-                            setActiveProtocol={setActiveProtocol}
-                            updateProtocols={updateProtocols}
-                        />
-                    </div>
+                    )) || (
+                    <ProtocolsBody
+                        modalScrollRef={modalScrollRef}
+                        setOpenModalWindow={setOpenModalWindow}
+                        activeProtocol={activeProtocol}
+                        protocols={protocols}
+                        protocolCells={protocolCells}
+                        setActiveProtocol={setActiveProtocol}
+                        updateProtocols={updateProtocols}
+                    />
                 )}
             <div className="modal-actions">
                 {(
@@ -888,7 +906,7 @@ export default function ModalWindow(props) {
                     action[0].name === "Borrow" ||
                     action[0].name === "Harvest"
                 ) &&
-                    ((!activeProtocol && !activeLoopAction) &&
+                    ((!activeToken && !activeProtocol && !activeLoopAction) &&
                         (<button
                             className="action-button"
                             onClick={() => {
@@ -912,6 +930,22 @@ export default function ModalWindow(props) {
                                     </div>
                                 </div>
                             </label>
+                        )) ||
+                        ((activeToken && !activeLoopAction) && (
+                            <label className="custom-file-upload">
+                                <input
+                                    type="file"
+                                    onChange={handleTokenImageChange}
+                                />
+                                <div
+                                    className="action-button"
+                                >
+                                    <img src={iconPlus} alt="+" />
+                                    <div>
+                                        Upload token picture
+                                    </div>
+                                </div>
+                            </label>
                         )))
                 }
                 <button
@@ -919,6 +953,7 @@ export default function ModalWindow(props) {
                     onClick={
                         (activeLoopAction && handleLoopActionDone) ||
                         (activeProtocol && handleProtocolDone) ||
+                        (activeToken && handleTokenDone) ||
                         handleLinkDone}
                 >
                     Done

@@ -180,6 +180,25 @@
     color: black;
 }
 
+.select-token {min-height: 62px;
+    
+    background: #F7F7F7;
+    border-radius: 6.25806px;
+    font-weight: 500;
+    /* font-size: 8px; */
+    line-height: 12px;
+    text-align: center;
+
+    color: #777E90;
+
+    min-width: 87px;
+
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 
 
 .hold-menu-option {
@@ -190,7 +209,7 @@
     margin: 0 20px;
 }
 
-.hold-action-option {
+.hold-action-option, .hold-token-option {
     margin: 0
 }
 
@@ -227,6 +246,10 @@
 
 .menu-option-content {
     transform: rotate(-45deg);
+}
+
+.menu-option-content.no-transform {
+    transform: none !important;
 }
 
 .menu-option-content img {

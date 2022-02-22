@@ -6,10 +6,13 @@ import "./styles.css";
 
 export default function EarnInputsHolder(props) {
 
-    let { action, tokensToSelect, setOpenAddTokenToSelect } = props;
+    let { action, tokensToSelect, setOpenAddTokenToSelect, earnCell } = props;
+    console.log("EarnInputsHolder", earnCell)
 
     let linkLabel = props.activeLink && props.activeLink.label(0);
-    let tokenName = linkLabel ? linkLabel.attrs.text.tokenName : "COIN";
+    let cellLabel = earnCell && earnCell.attributes.attrs.label;
+    let tokenName = cellLabel ? cellLabel.text : "COIN";
+    // let tokenName = linkLabel ? linkLabel.attrs.text.tokenName : "COIN";
     let earn = linkLabel ? linkLabel.attrs.text.earn : "None";
 
     let [isMinimized, setIsMinimized] = useState(true)
@@ -60,12 +63,13 @@ export default function EarnInputsHolder(props) {
                         (<>
                             <SelectEarn action={action} setEarn={updateEarn} activeLink={props.activeLink} />
                             {earnValue !== "Trading fee" &&
-                                <TokenInput action={action} setTokenName={props.setTokenName} activeLink={props.activeLink} />
+                                <TokenInput earnCell={earnCell} action={action} setTokenName={props.setTokenName} activeLink={props.activeLink} />
                             }
 
                         </>)) || ((action[0].name === "Swap" ||
-                                (action[0].name === "Supply" && (action[1] && action[1].name === "Borrow other token"))) &&
+                            (action[0].name === "Supply" && (action[1] && action[1].name === "Borrow other token"))) &&
                             <SelectToken
+                                earnCell={earnCell}
                                 key={`select-token-${tokensToSelect.length}`}
                                 action={action}
                                 setTokenName={props.setTokenName}
@@ -77,6 +81,7 @@ export default function EarnInputsHolder(props) {
                             <>
                                 <SelectEarn action={action} setEarn={updateEarn} activeLink={props.activeLink} />
                                 <SelectToken
+                                    earnCell={earnCell}
                                     key={`select-token-${tokensToSelect.length}`}
                                     action={action}
                                     setTokenName={props.setTokenName}
