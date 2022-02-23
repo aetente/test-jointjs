@@ -53,6 +53,7 @@ function* postToken(action) {
     // TODO after deal with the backend, put updating the tokens inside try
     const state = yield select();
     let allTokens = [...state.tokens.tokens]
+    console.log(action)
     yield put(tokenActions.setTokens([...allTokens, action.payload]));
     try {
         let tokens = yield call(fetch, baseUrl + "/tokens"

@@ -119,6 +119,8 @@ function Paper(props) {
     const [activeToken, setActiveToken] = useState(null);
     const [tokenCells, setTokenCells] = useState([]);
 
+    const [isMerge, setIsMerge] = useState(false);
+
     const contextValues = useContext(DiagramContext);
 
     // we need refs for events
@@ -249,6 +251,7 @@ function Paper(props) {
         setActiveToken(null);
         setActiveLink(null);
         setOpenModalWindow(true);
+        loopCell.toBack();
         graph.addCell(loopCell)
         loopCell.findView(getPaperRef()).addTools(LoopActionTools)
     }
@@ -327,8 +330,8 @@ function Paper(props) {
                 ports: portCellOptions,
                 protocolId: event.dataTransfer.getData('id'),
                 protocolUrl: event.dataTransfer.getData('urlValue'),
-                protocolBackgroundColor: event.dataTransfer.getData('color'),
-                protocolBorderColor: event.dataTransfer.getData('borderColor')
+                backgroundColor: event.dataTransfer.getData('color'),
+                borderColor: event.dataTransfer.getData('borderColor')
             });
             newCell.attr('.rect-body/fill', event.dataTransfer.getData('color'))
             newCell.attr('.rect-body/stroke', event.dataTransfer.getData('borderColor'))
@@ -351,8 +354,13 @@ function Paper(props) {
                 ports: portCellOptions,
                 tokenId: event.dataTransfer.getData('id'),
                 tokenUrl: event.dataTransfer.getData('urlValue'),
+                backgroundColor: event.dataTransfer.getData('color'),
+                borderColor: event.dataTransfer.getData('borderColor'),
+                image: event.dataTransfer.getData('image') || "",
                 typeOfCell: "earn_cell"
             });
+            newCell.attr('body/fill', event.dataTransfer.getData('color'))
+            newCell.attr('body/stroke', event.dataTransfer.getData('borderColor'))
         }
 
         if (newCell) {
@@ -590,7 +598,7 @@ function Paper(props) {
     const subLayout = (link, cell) => {
         // the idea is not to layout the whole graph but only a little subtree
         let sourceCell = cell;
-        if (!sourceCell) {
+        if (!sourceCell && link) {
             sourceCell = link.getSourceCell();
         }
         if (sourceCell) {
@@ -599,11 +607,27 @@ function Paper(props) {
             let cellsToLayout = [sourceCell, ...sourceChildren];
 
             let sourceCellPosition = sourceCell.attributes.position;
-            joint.layout.DirectedGraph.layout(graph.getSubgraph(cellsToLayout), {
+            let cellsSubgraph = graph.getSubgraph(cellsToLayout);
+
+            const SUPPOSED_CELL_WIDTH = 100;
+            joint.layout.DirectedGraph.layout(cellsSubgraph, {
                 dagre: dagre,
                 graphlib: graphlib,
                 setVertices: true,
                 marginX: sourceCellPosition.x,
+                marginY: sourceCellPosition.y,
+                nodeSep: NODE_SEP,
+                edgeSep: EDGE_SEP,
+                rankSep: RANK_SEP,
+                setLinkVertices: false,
+                ranker: "network-simplex"
+            });
+            let subgraphBBox = graph.getCellsBBox(cellsSubgraph);
+            joint.layout.DirectedGraph.layout(cellsSubgraph, {
+                dagre: dagre,
+                graphlib: graphlib,
+                setVertices: true,
+                marginX: sourceCellPosition.x - subgraphBBox.width / 2 + SUPPOSED_CELL_WIDTH / 2,
                 marginY: sourceCellPosition.y,
                 nodeSep: NODE_SEP,
                 edgeSep: EDGE_SEP,
@@ -798,6 +822,57 @@ function Paper(props) {
         }
     }
 
+    const mergeAction = () => {
+        
+        let activeCells = [...getActiveCellViewsArrayRef()];
+        let graph = getGraphRef();
+        activeCells = activeCells.filter(activeCell => {
+            return activeCell.model.attributes.type === "standard.Rectangle"
+        })
+        if (activeCells.length > 1) {
+            let isTheSameParent = true;
+            let isSameToken = true;
+            let parentEl = graph.getNeighbors(activeCells[0].model, { inbound: true })[0];
+            let tokenName = activeCells[0].model.attributes.attrs.label.text;
+            activeCells.forEach(cell => {
+                let cellParents = graph.getNeighbors(cell.model, { inbound: true });
+                let cellTokenName = cell.model.attributes.attrs.label.text;
+                if (cellParents[0].id !== parentEl.id) {
+                    isTheSameParent = false;
+                }
+                if (cellTokenName !== tokenName) {
+                    isSameToken = false;
+                }
+            })
+            if (isTheSameParent) {
+                activeCells = activeCells.filter((cell, i) => {
+                    if (i === 0) {
+                        return true;
+                    }
+                    cell.model.remove();
+                    return false;
+                });
+                if (!isSameToken) {
+                    let theCellToken = {}
+                    theCellToken.id = activeCells[0].model.attributes.tokenId;
+                    theCellToken.name = activeCells[0].model.attributes.attrs.label.text;
+                    theCellToken.url = activeCells[0].model.attributes.tokenUrl;
+                    theCellToken.image = activeCells[0].model.attributes.image || "";
+                    setActiveToken(theCellToken);
+                    setTokenCells([activeCells[0].model]);
+                    setActiveProtocol(null);
+                    setActiveLoopAction(null);
+                    setActiveLink(null);
+                    setOpenModalWindow(true);
+                    setIsMerge(true);
+                }
+                subLayout(null, parentEl);
+                setActiveCellViewsArray(activeCells);
+                setActiveCellViewsArrayRef(activeCells);
+            }
+        }
+    }
+
     useEffect(() => {
         dispatch(uiActions.pushTokenOption(
             {
@@ -922,25 +997,7 @@ function Paper(props) {
             let eventTarget = event.originalEvent.target;
             let eventTargetSelector = eventTarget.getAttribute("joint-selector") || eventTarget.parentElement.getAttribute("joint-selector");
             setActiveLabel(eventTargetSelector);
-            setActiveLabelRef(eventTargetSelector)
-            // here we check if we clicked on the label, which should trigger moving other labels
-            // if (eventTargetSelector === "offsetLabelNegativeConnector" ||
-            //     eventTargetSelector === "offsetLabelPositiveConnector" ||
-            //     eventTargetSelector === "leverageCircle" ||
-            //     eventTargetSelector === "leverageText") {
-            //     let linkModel = linkView.model;
-            //     let linkLabels = linkModel.labels();
-            //     // here we find which exactly label was clicked on
-            //     setLabelsToMove(linkLabels);
-            //     setLabelsToMoveRef(linkLabels);
-            //     linkLabels.forEach(label => {
-            //         if (label.attrs[eventTargetSelector]) {
-            //             console.log("set active label", label)
-            //             setActiveLabel(label);
-            //             setActiveLabelRef(label)
-            //         }
-            //     })
-            // }
+            setActiveLabelRef(eventTargetSelector);
         }))
 
         paper.on("cell:pointerclick", ((cellView, e, x, y) => {
@@ -991,6 +1048,10 @@ function Paper(props) {
                 }
             }
         }))
+
+        paper.on("cell:pointerdown", (cellView) => {
+            cellView.model.toFront();
+        })
 
         paper.on("cell:pointermove", (cellView, e, x, y) => {
             let activeCells = getActiveCellViewsArrayRef();
@@ -1154,15 +1215,22 @@ function Paper(props) {
                     theCellProtocol.id = cellModel.attributes.protocolId;
                     theCellProtocol.name = cellModel.attributes.attrs.label.text;
                     theCellProtocol.url = cellModel.attributes.protocolUrl;
-                    theCellProtocol.backgroundColor = cellModel.attributes.protocolBackgroundColor;
-                    theCellProtocol.borderColor = cellModel.attributes.protocolBorderColor;
+                    theCellProtocol.backgroundColor = cellModel.attributes.backgroundColor;
+                    theCellProtocol.borderColor = cellModel.attributes.borderColor;
                     theCellProtocol.image = cellModel.attributes.attrs.image["xlink:href"];
 
                     let theElements = graph.getElements();
-                    let elementsToChange = [...theElements];
-                    elementsToChange = elementsToChange.filter((el) => {
-                        return el.attributes.protocolId === theCellProtocol.id;
-                    })
+                    // for now I changed the elements on the paper which should be update
+                    // only to the cell, which was double clicked on
+                    // because it seems to be intiutive thing that only that cell would change
+                    let elementsToChange = [];
+                    // let elementsToChange = [...theElements];
+                    // elementsToChange = elementsToChange.filter((el) => {
+                    //     return el.attributes.protocolId === theCellProtocol.id;
+                    // })
+                    if (elementsToChange.length === 0) {
+                        elementsToChange = [cellModel];
+                    }
                     setProtocolCells(elementsToChange);
                     setActiveProtocol(theCellProtocol);
                     setActiveToken(null);
@@ -1170,18 +1238,25 @@ function Paper(props) {
                     setActiveLink(null);
                     setOpenModalWindow(true);
                 } else if (cellModel.attributes.typeOfCell === "earn_cell") {
-                    // edit protocol
+                    // edit token
                     let theCellToken = {}
                     theCellToken.id = cellModel.attributes.tokenId;
                     theCellToken.name = cellModel.attributes.attrs.label.text;
                     theCellToken.url = cellModel.attributes.tokenUrl;
+                    theCellToken.backgroundColor = cellModel.attributes.backgroundColor;
+                    theCellToken.borderColor = cellModel.attributes.borderColor;
                     theCellToken.image = cellModel.attributes.image || "";
 
                     let theElements = graph.getElements();
-                    let elementsToChange = [...theElements];
-                    elementsToChange = elementsToChange.filter((el) => {
-                        return el.attributes.tokenId === theCellToken.id;
-                    })
+                    let elementsToChange = [];
+                    // let elementsToChange = [...theElements];
+                    // elementsToChange = elementsToChange.filter((el) => {
+                    //     //TODO change it when will start to implement syncing tokens for different inputs
+                    //     return theCellToken.id && el.attributes.tokenId === theCellToken.id;
+                    // })
+                    if (elementsToChange.length === 0) {
+                        elementsToChange = [cellModel];
+                    }
 
                     setTokenCells(elementsToChange);
                     setActiveToken(theCellToken);
@@ -1271,7 +1346,8 @@ function Paper(props) {
             if (eventTargetSelector === "offsetLabelNegativeConnector" ||
                 eventTargetSelector === "offsetLabelPositiveConnector" ||
                 eventTargetSelector === "leverageCircle" ||
-                eventTargetSelector === "leverageText") {
+                eventTargetSelector === "leverageText" ||
+                eventTargetSelector === "rect") {
                 let linkModel = linkView.model;
                 let linkLabels = linkModel.labels();
                 // here we find which exactly label was clicked on
@@ -1285,9 +1361,9 @@ function Paper(props) {
 
             if (activeLabel && labelsToMove.length > 0) {
                 labelsToMove.forEach(label => {
-                    if (!label.attrs.rect) {
-                        label.position = { ...label.position, distance: activeLabel.position.distance }
-                    }
+                    // if (!label.attrs.rect) {
+                    label.position = { ...label.position, distance: activeLabel.position.distance }
+                    // }
                 })
             }
         })
@@ -1547,6 +1623,7 @@ function Paper(props) {
                 addEmptyNode={addEmptyNode}
                 addEmptyToken={addEmptyToken}
                 createCircle={createCircle}
+                mergeAction={mergeAction}
             />
             <div
                 id='canvas'
@@ -1582,7 +1659,6 @@ function Paper(props) {
                     setActiveToken={setActiveToken}
                     protocols={props.protocols}
                     tokens={props.tokens}
-                    setProtocols={setProtocols}
                     protocolCells={protocolCells}
                     tokenCells={tokenCells}
                     setProtocolCells={setProtocolCells}
@@ -1590,6 +1666,8 @@ function Paper(props) {
                     setOpenAddTokenToSelect={setOpenAddTokenToSelect}
                     activeLoopAction={activeLoopAction}
                     setActiveLoopAction={setActiveLoopAction}
+                    isMerge={isMerge}
+                    setIsMerge={setIsMerge}
                 />}
             <InitButtons
                 addBaseToken={addBaseToken}

@@ -7,7 +7,6 @@ import "./styles.css";
 export default function EarnInputsHolder(props) {
 
     let { action, tokensToSelect, setOpenAddTokenToSelect, earnCell } = props;
-    console.log("EarnInputsHolder", earnCell)
 
     let linkLabel = props.activeLink && props.activeLink.label(0);
     let cellLabel = earnCell && earnCell.attributes.attrs.label;

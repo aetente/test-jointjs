@@ -7,6 +7,7 @@ import AutoLayoutButton from "./AutoLayoutButton";
 import ImageDownloadButton from "./ImageDownloadButton";
 import ShowFrameButton from "./ShowFrameButton";
 import LoopActionButton from "./LoopActionButton";
+import MergeButton from "./MergeButton";
 import { DiagramContext } from '../Content/context';
 import "./styles.css";
 
@@ -79,6 +80,15 @@ function SelectCells(props) {
         <LoopActionButton
           actionName={"Loop"}
           createCircle={props.createCircle}
+          addRecentlyUsedAction={addRecentlyUsedAction}
+        />
+    },
+    {
+      name: "Merge",
+      component:
+        <MergeButton
+          actionName={"Merge"}
+          mergeAction={props.mergeAction}
           addRecentlyUsedAction={addRecentlyUsedAction}
         />
     }
@@ -204,6 +214,8 @@ function SelectCells(props) {
               <div key={t.id} className="hold-menu-option hold-token-option">
                 <div
                   className="draggable select-token"
+                  color={t.backgroundColor}
+                  bordercolor={t.borderColor}
                   tokenname={t.name}
                   tokenid={t.id}
                   tokenurl={t.url}

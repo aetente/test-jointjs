@@ -14,7 +14,6 @@ import { protocolActions, tokenActions } from '../../actions';
 import iconPlus from "../../assets/drawings/icon-plus.svg";
 
 export default function ModalWindow(props) {
-
     let {
         joint,
         graph,
@@ -39,10 +38,18 @@ export default function ModalWindow(props) {
         setTokenCells,
         protocols,
         tokens,
-        setProtocols,
         setOpenAddTokenToSelect,
         activeLoopAction,
-        setActiveLoopAction
+        setActiveLoopAction,
+        isMerge,
+        setIsMerge,
+        stateProtocols,
+        setStateProtocols,
+        stateTokens,
+        setStateTokens,
+        isDesign,
+        parentUpdateCount,
+        setParentUpdateCount
     } = props;
 
     const [action, setAction] = useState([{ name: "Stake" }]);
@@ -487,68 +494,122 @@ export default function ModalWindow(props) {
             currentActiveProtocol = forcedActiveProtocol
         }
 
-        // update every cell on the paper for the according protocol
-        protocolCells.forEach(pCell => {
-            pCell.attributes = {
-                ...pCell.attributes,
-                protocolId: currentActiveProtocol.id,
-                protocolUrl: currentActiveProtocol.url,
-                protocolBackgroundColor: currentActiveProtocol.backgroundColor,
-                protocolBorderColor: currentActiveProtocol.borderColor
-            };
-            //lol
-            let scaleText = (currentActiveProtocol.name.length > 5 && Math.pow(5 / currentActiveProtocol.name.length, 1 / 2)) || 1;
-            pCell.attr('label/text', currentActiveProtocol.name);
-            pCell.attr('text/text', currentActiveProtocol.name);
-            pCell.attr('text/transform', `scale(${scaleText},${scaleText})`);
-            pCell.attr('.rect-body/fill', currentActiveProtocol.backgroundColor);
-            pCell.attr('.rect-body/stroke', currentActiveProtocol.borderColor);
-            // update image
-            if (currentActiveProtocol.image) {
-                pCell.attr('image/xlink:href', currentActiveProtocol.image);
-            }
-            // if added pool, need to change bottom port position to be lower
-            // and need to set the pool attributes
-            if (currentActiveProtocol.pool) {
-                if (pCell.attributes.ports.items[3]) {
-                    let bottomPortId = pCell.attributes.ports.items[3].id;
 
-                    pCell.portProp(bottomPortId, "attrs/portBody/refDy", 25)
-                    pCell.attr('text/refY', .5);
-                    pCell.attr('image/refY', .3);
-                    pCell.attr('.pool-text/text', currentActiveProtocol.pool);
-                    pCell.attr('.pool-body/fill', currentActiveProtocol.backgroundColor);
-                    pCell.attr('.pool-body/stroke', currentActiveProtocol.borderColor);
-                    pCell.attr('.pool-body/width', 45);
-                    pCell.attr('.pool-body/width', 45);
-                    pCell.attr('.pool-body/x', 27);
-                    pCell.attr('.pool-body/y', 75);
-                    pCell.attr('.pool-body/rx', 5.25);
-                    pCell.attr('.pool-body/transform', 'rotate(45, 51, 97.5)');
-                }
+        let alreadyExists = false;
+        // let protocolIndex = protocols.findIndex((protocol) => {
+        //     return protocol.id === activeProtocol.id;
+        // });
+        protocols.forEach((protocol, i) => {
+            if (!alreadyExists &&
+                protocol.id !== currentActiveProtocol.id &&
+                (protocol.name === currentActiveProtocol.name ||
+                    (currentActiveProtocol.url && (protocol.url === currentActiveProtocol.url)))) {
+                alreadyExists = true;
+                currentActiveProtocol = protocol;
+                setActiveProtocol(protocol);
             }
-        })
+        });
+
+        // update every cell on the paper for the according protocol
+        if (protocolCells) {
+            protocolCells.forEach(pCell => {
+                pCell.attributes = {
+                    ...pCell.attributes,
+                    protocolId: currentActiveProtocol.id,
+                    protocolUrl: currentActiveProtocol.url,
+                    backgroundColor: currentActiveProtocol.backgroundColor,
+                    borderColor: currentActiveProtocol.borderColor
+                };
+                //lol
+                let scaleText = (currentActiveProtocol.name.length > 5 && Math.pow(5 / currentActiveProtocol.name.length, 1 / 2)) || 1;
+                pCell.attr('label/text', currentActiveProtocol.name);
+                pCell.attr('text/text', currentActiveProtocol.name);
+                pCell.attr('text/transform', `scale(${scaleText},${scaleText})`);
+                pCell.attr('.rect-body/fill', currentActiveProtocol.backgroundColor);
+                pCell.attr('.rect-body/stroke', currentActiveProtocol.borderColor);
+                // update image
+                if (currentActiveProtocol.image) {
+                    pCell.attr('image/xlink:href', currentActiveProtocol.image);
+                }
+                // if added pool, need to change bottom port position to be lower
+                // and need to set the pool attributes
+                if (currentActiveProtocol.pool) {
+                    if (pCell.attributes.ports.items[3]) {
+                        let bottomPortId = pCell.attributes.ports.items[3].id;
+
+                        pCell.portProp(bottomPortId, "attrs/portBody/refDy", 25)
+                        pCell.attr('text/refY', .5);
+                        pCell.attr('image/refY', .3);
+                        pCell.attr('.pool-text/text', currentActiveProtocol.pool);
+                        pCell.attr('.pool-body/fill', currentActiveProtocol.backgroundColor);
+                        pCell.attr('.pool-body/stroke', currentActiveProtocol.borderColor);
+                        pCell.attr('.pool-body/width', 45);
+                        pCell.attr('.pool-body/width', 45);
+                        pCell.attr('.pool-body/x', 27);
+                        pCell.attr('.pool-body/y', 75);
+                        pCell.attr('.pool-body/rx', 5.25);
+                        pCell.attr('.pool-body/transform', 'rotate(45, 51, 97.5)');
+                    }
+                }
+            })
+        } else if (stateProtocols) {
+            let protocolIndex = -1;
+            protocolIndex = stateProtocols.findIndex(p => {
+                return currentActiveProtocol.id === p.id;
+            })
+            if (protocolIndex >= 0) {
+                let newStateProtocols = [...stateProtocols];
+                newStateProtocols.splice(protocolIndex, 1, currentActiveProtocol);
+                setStateProtocols(stateProtocols => [...newStateProtocols]);
+            }
+        }
     }
 
     const updateTokens = (forcedActiveToken) => {
-        let currentActiveToken = activeProtocol;
+        let currentActiveToken = activeToken;
         if (forcedActiveToken) {
             currentActiveToken = forcedActiveToken
         }
+        let alreadyExists = false;
+        tokens.forEach((token, i) => {
+            if (!alreadyExists &&
+                token.id !== currentActiveToken.id &&
+                (token.name === currentActiveToken.name ||
+                    (currentActiveToken.url && (token.url === currentActiveToken.url)))) {
+                alreadyExists = true;
+                currentActiveToken = token;
+                setActiveToken(token);
+            }
+        });
         // update every cell on the paper for the according token (should we do it?)
-        tokenCells.forEach(tCell => {
-            tCell.attributes = {
-                ...tCell.attributes,
-                tokenId: currentActiveToken.id,
-                tokenUrl: currentActiveToken.url,
-                image: currentActiveToken.image || ""
-            };
-            //lol
-            // let scaleText = (currentActiveProtocol.name.length > 5 && Math.pow(5 / currentActiveProtocol.name.length, 1 / 2)) || 1;
-            tCell.attr('label/text', currentActiveToken.name);
-            tCell.attr('text/text', currentActiveToken.name);
-            // pCell.attr('text/transform', `scale(${scaleText},${scaleText})`);
-        })
+        if (tokenCells) {
+            tokenCells.forEach(tCell => {
+                tCell.attributes = {
+                    ...tCell.attributes,
+                    tokenId: currentActiveToken && currentActiveToken.id,
+                    tokenUrl: currentActiveToken.url,
+                    backgroundColor: currentActiveToken.backgroundColor,
+                    borderColor: currentActiveToken.borderColor,
+                };
+                //lol
+                // let scaleText = (currentActiveProtocol.name.length > 5 && Math.pow(5 / currentActiveProtocol.name.length, 1 / 2)) || 1;
+                tCell.attr('label/text', currentActiveToken.name);
+                tCell.attr('text/text', currentActiveToken.name);
+                // pCell.attr('text/transform', `scale(${scaleText},${scaleText})`);
+                tCell.attr('body/fill', currentActiveToken.backgroundColor);
+                tCell.attr('body/stroke', currentActiveToken.borderColor);
+            })
+        } else if (stateTokens) {
+            let tokenIndex = -1;
+            tokenIndex = stateTokens.findIndex(t => {
+                return currentActiveToken.id === t.id;
+            })
+            if (tokenIndex >= 0) {
+                let newStateTokens = [...stateTokens];
+                newStateTokens.splice(tokenIndex, 1, currentActiveToken);
+                setStateTokens(stateTokens => [...newStateTokens]);
+            }
+        }
     }
 
     const handleProtocolDone = () => {
@@ -560,6 +621,7 @@ export default function ModalWindow(props) {
             // let protocolIndex = protocols.findIndex((protocol) => {
             //     return protocol.id === activeProtocol.id;
             // });
+            console.log(protocols, activeProtocol)
             protocols.forEach((protocol, i) => {
                 if (protocol.id === activeProtocol.id) {
                     protocolIndex = i;
@@ -644,6 +706,7 @@ export default function ModalWindow(props) {
         let leverageValue = (action[1] && action[1].leverage) || 0;
         if (leverageValue) {
             activeLoopAction.attr("loop-text/text", `${leverageValue}x`)
+            activeLoopAction.attr("hold-loop-text/opacity", 1)
         }
         setActiveLoopAction(null);
         setOpenModalWindow(false);
@@ -651,12 +714,12 @@ export default function ModalWindow(props) {
 
     const handleTokenDone = () => {
         if (activeToken.name) {
-            let tokenIndex= -1;
+            let tokenIndex = -1;
             let alreadyExists = false;
             // let tokenIndex = tokens.findIndex((token) => {
             //     return token.id === activeToken.id;
             // });
-            
+
             tokens.forEach((token, i) => {
                 if (token.id === activeToken.id) {
                     tokenIndex = i;
@@ -668,23 +731,21 @@ export default function ModalWindow(props) {
                 }
             });
             // if it is a new token
-            if (!alreadyExists) {
+            if (!alreadyExists && activeToken.id && !isMerge) {
                 if (tokenIndex < 0) {
                     activeToken.id = String(tokens.length);
                     dispatch(tokenActions.postTokens(activeToken));
-                    setActiveToken(null);
-                    setOpenModalWindow(false);
-    
+
                 } else {
                     // if it is a token which already exists, update it
                     dispatch(tokenActions.putTokens({ id: activeToken.id, content: activeToken }));
                     updateTokens(activeToken);
-                    setActiveToken(null);
-                    setActiveLoopAction(null);
-                    setTokenCells([]);
-                    setOpenModalWindow(false);
                 }
             }
+            setActiveToken(null);
+            setTokenCells([]);
+            setOpenModalWindow(false);
+            setIsMerge(false);
         }
     }
 
@@ -864,6 +925,10 @@ export default function ModalWindow(props) {
                         tokenCells={tokenCells}
                         setActiveToken={setActiveToken}
                         updateTokens={updateTokens}
+                        isMerge={isMerge}
+                        setIsMerge={setIsMerge}
+                        parentUpdateCount={parentUpdateCount}
+                        setParentUpdateCount={setParentUpdateCount}
                     />
                 ) || (
                     !activeProtocol &&
@@ -897,6 +962,9 @@ export default function ModalWindow(props) {
                         protocolCells={protocolCells}
                         setActiveProtocol={setActiveProtocol}
                         updateProtocols={updateProtocols}
+                        isDesign={isDesign}
+                        parentUpdateCount={parentUpdateCount}
+                        setParentUpdateCount={setParentUpdateCount}
                     />
                 )}
             <div className="modal-actions">

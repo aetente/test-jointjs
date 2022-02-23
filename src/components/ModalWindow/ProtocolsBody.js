@@ -15,7 +15,10 @@ export default function ProtocolsBody(props) {
         protocols,
         protocolCells,
         setActiveProtocol,
-        updateProtocols
+        updateProtocols,
+        isDesign,
+        parentUpdateCount,
+        setParentUpdateCount
     } = props;
 
     return (
@@ -31,10 +34,12 @@ export default function ProtocolsBody(props) {
                         });
                         // if not, it means that we should delete the cell from the paper
                         // when we press close button, but not "done" button
-                        if (protocolIndex < 0) {
+                        if (protocolCells && protocolIndex < 0) {
                             protocolCells.forEach(pCell => {
                                 pCell.remove();
                             });
+                        } else if (!protocolCells) {
+                            setParentUpdateCount(parentUpdateCount + 1);
                         }
                         setOpenModalWindow(false);
                     }}
@@ -52,11 +57,13 @@ export default function ProtocolsBody(props) {
                 setActiveProtocol={setActiveProtocol}
                 updateProtocols={updateProtocols}
             />
-            <ProtocolPoolInput
-                activeProtocol={activeProtocol}
-                setActiveProtocol={setActiveProtocol}
-                updateProtocols={updateProtocols}
-            />
+            {!isDesign &&
+                <ProtocolPoolInput
+                    activeProtocol={activeProtocol}
+                    setActiveProtocol={setActiveProtocol}
+                    updateProtocols={updateProtocols}
+                />
+            }
             <ProtocolColorPicker
                 activeProtocol={activeProtocol}
                 setActiveProtocol={setActiveProtocol}

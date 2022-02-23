@@ -1,0 +1,21 @@
+.design-cells {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.design-options {
+    padding: 20px;
+    overflow-y: auto;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none; 
+}
+
+
+.design-options::-webkit-scrollbar {
+    display: none;
+}
+
+.design-mapped-menu-options {
+    max-height: none !important;
+}
