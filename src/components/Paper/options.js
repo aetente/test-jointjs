@@ -390,7 +390,7 @@ export const loopActionAttrs = {
     // },
     "loop-text": {
         text: "",
-        fontSize: "26px",
+        fontSize: "12px",
         // ref: "loop-ellipse",
         ref: "hold-loop-text",
         // refX: "50%",
@@ -398,10 +398,10 @@ export const loopActionAttrs = {
         // refDy: "-7%",
         textAnchor: "middle",
         refX: "50%",
-        refY: "35%",
+        refY: "25%",
         fontFamily: 'Roboto, sans-serif',
         fontStyle: "normal",
-        fontWeight: 600,
+        fontWeight: 500,
         fill: '#ffffff',
     },
     "hold-loop-text": {
@@ -410,7 +410,7 @@ export const loopActionAttrs = {
         refX: "50%",
         // refX2: 13,
         refDy: "-7%",
-        r: "26",
+        r: "10",
         fill: '#FAC200',
         opacity: 0
     },
@@ -419,8 +419,8 @@ export const loopActionAttrs = {
         // refY: .35,
         // yAlignment: 'middle',
         // xAlignment: 'middle',
-        height: 100,
-        width: 100,
+        height: 130,
+        width: 130,
         href: loopActionImage
     },
     // "loop-arrow1": {

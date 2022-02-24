@@ -12,11 +12,36 @@ export const protocolSagas = {
     putProtocol
 }
 
+const initClient = async () => {
+    window.gapi.client.init({
+        apiKey: process.env.REACT_APP_API_KEY,
+        clientId: process.env.REACT_APP_CLIENT_ID,
+        scope: "https://www.googleapis.com/auth/spreadsheets"
+    }).then(() => {
+        window.gapi.auth2.getAuthInstance().isSignedIn.listen((res) => {console.log("help", res)})
+        console.log("very cool", window.gapi.auth2.getAuthInstance().isSignedIn.get())
+
+        // window.gapi.client.sheets.spreadsheets.values.get({
+        //     spreadsheetId: process.env.REACT_APP_SPREADSHEET_ID,
+        // }).then((response) => {
+        //     var result = response.result;
+        //     var numRows = result.values ? result.values.length : 0;
+        //     console.log(result);
+        // });
+
+    }, (error) => {
+        console.log("AAAAAAAAAAAAAAAAAAAAAAA")
+    });
+}
+
 
 function* fetchProtocols() {
+    yield window.gapi.load('client:auth2', function*() {yield initClient()});
+    yield console.log("very cool?")
+    // console.log(process.env.REACT_APP_API_KEY, process.env.REACT_APP_CLIENT_ID)
     try {
         let protocols = yield call(fetch, baseUrl + "/protocols"
-        // let protocols = yield call(fetch, "db.json"
+            // let protocols = yield call(fetch, "db.json"
             , {
                 headers: {
                     'Content-Type': 'application/json',
@@ -57,7 +82,7 @@ function* postProtocol(action) {
     yield put(protocolActions.setProtocols([...allProtocols, action.payload]));
     try {
         let protocols = yield call(fetch, baseUrl + "/protocols"
-        // let protocols = yield call(fetch, "db.json"
+            // let protocols = yield call(fetch, "db.json"
             , {
                 headers: {
                     'Content-Type': 'application/json',

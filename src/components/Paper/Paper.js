@@ -50,7 +50,7 @@ const globalOffsetY = 40;
 
 const NODE_SEP = 300;
 const EDGE_SEP = 150;
-const RANK_SEP = 97.5;
+const RANK_SEP = 157.5;
 
 // change direction of pareting for new cells
 // the jointjs defines parent cell as the on from which the link was dragged
@@ -657,7 +657,7 @@ function Paper(props) {
             text: {
                 fontFamily: 'Roboto, sans-serif',
                 fontStyle: "normal",
-                fontWeight: 600,
+                // fontWeight: 600,
                 // fontSize: "15px",
                 lineHeight: "18px",
             }
@@ -896,7 +896,7 @@ function Paper(props) {
             text: {
                 fontFamily: 'Roboto, sans-serif',
                 fontStyle: "normal",
-                fontWeight: 600,
+                // fontWeight: 600,
                 // fontSize: "15px",
                 lineHeight: "18px",
             }

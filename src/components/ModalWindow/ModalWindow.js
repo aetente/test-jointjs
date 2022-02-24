@@ -12,6 +12,7 @@ import "./styles.css";
 
 import { protocolActions, tokenActions } from '../../actions';
 import iconPlus from "../../assets/drawings/icon-plus.svg";
+import loopActionImage from "../../assets/images/loopActionImage.png";
 
 export default function ModalWindow(props) {
     let {
@@ -110,7 +111,7 @@ export default function ModalWindow(props) {
             text: {
                 fontFamily: 'Roboto, sans-serif',
                 fontStyle: "normal",
-                fontWeight: 600,
+                // fontWeight: 600,
                 // fontSize: "15px",
                 lineHeight: "18px",
             }
@@ -260,7 +261,7 @@ export default function ModalWindow(props) {
         // if it was the link we just added a new link or double clicked the link, which represents an action
         if (!typeOfLink || typeOfLink === "action") {
             // update how the link looks (change title and remember which exactly action was chosen)
-            let isMoreActions = action.length > 1;
+            let isMoreActions = action.length > 1 && action[1].name === "Borrow the same token";
 
             if (action.length > 1 && (action[1].name === "Borrow the same token")) {
                 actionLink.label(2, {
@@ -271,12 +272,6 @@ export default function ModalWindow(props) {
                         }, {
                             tagName: 'path',
                             selector: 'offsetLabelNegativeConnector'
-                        }, {
-                            tagName: 'ellipse',
-                            selector: 'leverageCircle'
-                        }, {
-                            tagName: 'text',
-                            selector: 'leverageText'
                         }
                     ],
                     attrs: {
@@ -305,14 +300,6 @@ export default function ModalWindow(props) {
                             },
                             // ref: "offsetLabelPositiveConnector"
                             // strokeDasharray: '5 5'
-                        },
-                        leverageCircle: {
-                            rx: (action[1].leverage > 0 && 70) || 0,
-                            ry: (action[1].leverage > 0 && 120) || 0,
-                            stroke: 'black',
-                            strokeWidth: 2,
-                            strokeDasharray: '5 5',
-                            fill: 'none'
                         }
                     },
                     position: {
@@ -324,25 +311,46 @@ export default function ModalWindow(props) {
                 });
 
                 actionLink.label(3, {
-                    markup: [
+                    markup: [ {
+                            tagName: 'image',
+                            selector: 'leverageCircle'
+                        }, {
+                            tagName: 'circle',
+                            selector: 'wrapLeverageText'
+                        },
                         {
                             tagName: 'text',
                             selector: 'leverageText'
-                        }
+                        },
                     ],
+                    // markup: '<g class="rotatable"><g class="scalable"><image joint-selector="leverageCircle" class="leverage-circle"/><circle class="hold-leverage-text" /><text joint-selector="leverageText" class="leverage-text"/></g></g>',
                     attrs: {
                         leverageText: {
                             text: (action[1].leverage > 0 && `${action[1].leverage}x`) || "",
-                            fontSize: "26px",
+                            fontSize: "12px",
                             leverage: action[1].leverage,
-                            x: -95,
-                            y: -55,
-                            // x: -135,
-                            // y: -25,
+                            ref: "wrapLeverageText",
+                            textAnchor: "middle",
+                            refX: "50%",
+                            refY: "25%",
                             fontFamily: 'Roboto, sans-serif',
                             fontStyle: "normal",
-                            fontWeight: 600,
-                            fill: '#ff0000',
+                            fontWeight: 500,
+                            fill: '#ffffff',
+                        },
+                        leverageCircle: {
+                            x: -65,
+                            y: -65,
+                            height: 130,
+                            width: 130,
+                            href: loopActionImage
+                        },
+                        wrapLeverageText: {
+                            ref: "leverageCircle",
+                            refX: "50%",
+                            refDy: "-7%",
+                            r: "10",
+                            fill: '#FAC200'
                         }
                     },
                     position: {
@@ -358,11 +366,14 @@ export default function ModalWindow(props) {
                     atConnectionRatio: distanceValue,
                     connection: true
                 }
+                let textAnchorValue = "middle";
                 if (isMoreActions && action[1].name === "Borrow the same token") {
                     if (i === 0) {
-                        offsetValue = -70;
+                        offsetValue = -80;
+                        textAnchorValue="start";
                     } else {
-                        offsetValue = 70;
+                        offsetValue = 80;
+                        textAnchorValue="end";
                     }
                     distanceValue = 0.5;
 
@@ -383,17 +394,25 @@ export default function ModalWindow(props) {
                     actionName = "Borrow";
                 }
                 actionLink.label(i, {
+                    // markup: [{
+                    //     tagName: "text",
+                    //     selector: "text"
+                    // },{
+                    //     tagName: "rect",
+                    //     selector: "rect"
+                    // }],
                     attrs: {
                         text: {
-                            text: `[\u00a0${allocationValue}%\u00a0${actionName}\u00a0]`,
+                            text: (isMoreActions && `${allocationValue}%\u00a0${actionName}`) || `[\u00a0${allocationValue}%\u00a0${actionName}\u00a0]`,
                             action: a.name,
                             allocation: allocationValue,
                             fontFamily: 'Roboto, sans-serif',
                             fontStyle: "normal",
-                            fontWeight: 600,
-                            fontSize: "15px",
-                            lineHeight: "18px",
-                            textVerticalAnchor: 'top'
+                            fontWeight: (isMoreActions && 500) || 600,
+                            fill: (isMoreActions && "#777E90") || "black",
+                            fontSize: (isMoreActions && "12px") || "15px",
+                            lineHeight: (isMoreActions && "14px") || "18px",
+                            textAnchor: textAnchorValue,
                         },
                         rect: {
                             fill: "#f6f6f6",

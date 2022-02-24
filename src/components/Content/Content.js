@@ -3,7 +3,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import Paper from '../Paper/Paper';
 import EditProtocolsDesign from '../EditProtocolsDesign/EditProtocolsDesign';
 import { contextValues, DiagramContext } from './context';
-import { protocols } from './protocols';
 import "./styles.css";
 
 // import fetch
@@ -28,24 +27,24 @@ function Content() {
   }, [])
 
   return (
-    <div className="hold-content">
-      {
-        (isEdit && <EditProtocolsDesign
-          protocols={theProtocols}
-          tokens={theTokens}
-        />) ||
+      <div className="hold-content">
+        {
+          (isEdit && <EditProtocolsDesign
+            protocols={theProtocols}
+            tokens={theTokens}
+          />) ||
 
-        (
-          <div className="content">
-            <DiagramContext.Provider value={contextValues}>
-              <Paper
-                protocols={theProtocols}
-                tokens={theTokens}
-              />
-            </DiagramContext.Provider>
-          </div>)
-      }
-    </div>
+          (
+            <div className="content">
+              <DiagramContext.Provider value={contextValues}>
+                <Paper
+                  protocols={theProtocols}
+                  tokens={theTokens}
+                />
+              </DiagramContext.Provider>
+            </div>)
+        }
+      </div>
   );
 }
 

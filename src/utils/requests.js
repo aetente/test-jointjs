@@ -1,4 +1,5 @@
 import axios from "axios";
+// console.log(auth2)
 
 const testBaseURL = "someurl";
 
