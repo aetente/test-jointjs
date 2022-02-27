@@ -32,3 +32,16 @@ export function modulusRound(n, base){
   let x = Math.round(n/base)*base;
   return  x + !!!(x + 180)*360;
 }
+
+export function googleSheetToArray(sheetValues) {
+  let sheetArray = [];
+  for (let i = 1; i < sheetValues.length; i++) {
+    let sheetTitles = sheetValues[0];
+    let sheetRow = {};
+    sheetTitles.forEach((title, j) => {
+      sheetRow[title] = sheetValues[i][j];
+    })
+    sheetArray.push(sheetRow)
+  }
+  return sheetArray;
+}

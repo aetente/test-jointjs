@@ -1,9 +1,12 @@
 import { put, call, select } from "redux-saga/effects";
 import { protocolActions } from "../actions";
+import { googleSheetToArray } from "../utils/utils";
 
 // const baseUrl = "http://" + window.location.hostname + ":8080/api";
 
 const baseUrl = "https://test-builder-api.herokuapp.com";
+const jsonBinUrl = "https://api.jsonbin.io/b/621b5c41c4790b3406246984"
+const jsonStorageUrl = "https://api.jsonstorage.net/v1/json/a8e231d8-705e-49c8-a5bd-4d0a2811e396/cc1fd566-b049-471b-996b-4cf37c69ef40"
 
 export const protocolSagas = {
     fetchProtocols,
@@ -12,35 +15,19 @@ export const protocolSagas = {
     putProtocol
 }
 
-const initClient = async () => {
-    window.gapi.client.init({
-        apiKey: process.env.REACT_APP_API_KEY,
-        clientId: process.env.REACT_APP_CLIENT_ID,
-        scope: "https://www.googleapis.com/auth/spreadsheets"
-    }).then(() => {
-        window.gapi.auth2.getAuthInstance().isSignedIn.listen((res) => {console.log("help", res)})
-        console.log("very cool", window.gapi.auth2.getAuthInstance().isSignedIn.get())
-
-        // window.gapi.client.sheets.spreadsheets.values.get({
-        //     spreadsheetId: process.env.REACT_APP_SPREADSHEET_ID,
-        // }).then((response) => {
-        //     var result = response.result;
-        //     var numRows = result.values ? result.values.length : 0;
-        //     console.log(result);
-        // });
-
-    }, (error) => {
-        console.log("AAAAAAAAAAAAAAAAAAAAAAA")
-    });
-}
-
 
 function* fetchProtocols() {
-    yield window.gapi.load('client:auth2', function*() {yield initClient()});
-    yield console.log("very cool?")
     // console.log(process.env.REACT_APP_API_KEY, process.env.REACT_APP_CLIENT_ID)
     try {
-        let protocols = yield call(fetch, baseUrl + "/protocols"
+        // yield window.gapi.client.sheets.spreadsheets.values.get({
+        //     spreadsheetId: process.env.REACT_APP_SPREADSHEET_ID,
+        //     range: 'protocols',
+        // }).then((response) => {
+        //     let result = response.result;
+        //     let protocols = googleSheetToArray(result.values);
+        //     put(protocolActions.setProtocols(protocols));
+        // });
+        let protocols = yield call(fetch, jsonStorageUrl
             // let protocols = yield call(fetch, "db.json"
             , {
                 headers: {
@@ -81,18 +68,39 @@ function* postProtocol(action) {
     let allProtocols = [...state.protocols.protocols]
     yield put(protocolActions.setProtocols([...allProtocols, action.payload]));
     try {
-        let protocols = yield call(fetch, baseUrl + "/protocols"
+        // let protocols = yield call(fetch, baseUrl + "/protocols"
+        //     // let protocols = yield call(fetch, "db.json"
+        //     , {
+        //         headers: {
+        //             'Content-Type': 'application/json',
+        //             'Accept': 'application/json'
+        //         },
+        //         method: "POST",
+        //         body: JSON.stringify(action.payload)
+        //     });
+        // let protocolsJson = yield protocols.json();
+        // yield window.gapi.client.sheets.spreadsheets.values.update({
+        //     spreadsheetId: process.env.REACT_APP_SPREADSHEET_ID,
+        //     range: `protocols!A${allProtocols.length + 1}`,
+        //     majorDimension: "ROWS",
+        //     values: Object.values(action.payload)
+        // }).then((response) => {
+        //     let result = response.result;
+        //     console.log(result)
+        //     // let protocols = googleSheetToArray(result.values);
+        //     // put(protocolActions.setProtocols(protocols));
+        // });
+        // yield put(protocolActions.setProtocols(protocolsJson));
+        let protocols = yield call(fetch, jsonStorageUrl+`?apiKey=${process.env.REACT_APP_JSONSTORAGE_KEY}`
             // let protocols = yield call(fetch, "db.json"
             , {
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                method: "POST",
-                body: JSON.stringify(action.payload)
+                method: "PUT",
+                body: JSON.stringify([...allProtocols, action.payload])
             });
-        let protocolsJson = yield protocols.json();
-        // yield put(protocolActions.setProtocols(protocolsJson));
     }
     catch (e) {
         console.log("ERROR", e);
@@ -112,16 +120,16 @@ function* putProtocol(action) {
     yield put(protocolActions.setProtocols(allProtocols));
     try {
         const state = yield select();
-        let protocols = yield call(fetch, baseUrl + "/protocols/" + action.payload.id
-            , {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                method: "PUT",
-                body: JSON.stringify(action.payload.content)
-            });
-        let protocolsJson = yield protocols.json();
+        // let protocols = yield call(fetch, baseUrl + "/protocols/" + action.payload.id
+        //     , {
+        //         headers: {
+        //             'Content-Type': 'application/json',
+        //             'Accept': 'application/json'
+        //         },
+        //         method: "PUT",
+        //         body: JSON.stringify(action.payload.content)
+        //     });
+        // let protocolsJson = yield protocols.json();
         // let allProtocols = [...state.protocols.protocols].map(pr => {
         //     if (pr.id === action.payload.id) {
         //         return action.payload.content
@@ -129,6 +137,17 @@ function* putProtocol(action) {
         //     return pr;
         // });
         // yield put(protocolActions.setProtocols(allProtocols));
+        
+        let protocols = yield call(fetch,  jsonStorageUrl+`?apiKey=${process.env.REACT_APP_JSONSTORAGE_KEY}`
+            // let protocols = yield call(fetch, "db.json"
+            , {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                method: "PUT",
+                body: JSON.stringify([...allProtocols])
+            });
     }
     catch (e) {
         console.log("ERROR", e);

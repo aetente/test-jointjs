@@ -16,7 +16,26 @@ function Content() {
   let theTokens = useSelector(state => state.tokens.tokens);
   const dispatch = useDispatch();
 
+  const initClient = () => {
+    window.gapi.client.init({
+        apiKey: process.env.REACT_APP_API_KEY,
+        clientId: process.env.REACT_APP_CLIENT_ID,
+        // clientEmail: process.env.REACT_APP_CLIENT_EMAIL,
+        // privateKey: process.env.REACT_APP_PRIVATE_KEY,
+        discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
+        scope: "https://www.googleapis.com/auth/spreadsheets"
+    }).then(() => {
+      window.gapi.auth2.getAuthInstance().signIn();
+      dispatch(protocolActions.getProtocols());
+      dispatch(tokenActions.getTokens());
+    }, (error) => {
+        console.log(error)
+    });
+}
+
   useEffect(() => {
+    // window.gapi.load('client:auth2', async () => {await initClient()});
+    
     dispatch(protocolActions.getProtocols());
     dispatch(tokenActions.getTokens());
 
