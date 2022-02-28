@@ -44,12 +44,14 @@ function* mySaga() {
         yield takeLatest(protocolTypes.UPDATE_PROTOCOLS, protocolSagas.addProtocol),
         yield takeLatest(protocolTypes.POST_PROTOCOL, protocolSagas.postProtocol),
         yield takeLatest(protocolTypes.PUT_PROTOCOL, protocolSagas.putProtocol),
+        yield takeLatest(protocolTypes.DELETE_PROTOCOL, protocolSagas.deleteProtocol),
 
         
         yield takeLatest(tokensTypes.GET_TOKENS, tokenSagas.fetchTokens),
         yield takeLatest(tokensTypes.UPDATE_TOKENS, tokenSagas.addToken),
         yield takeLatest(tokensTypes.POST_TOKENS, tokenSagas.postToken),
         yield takeLatest(tokensTypes.PUT_TOKENS, tokenSagas.putToken),
+        yield takeLatest(tokensTypes.DELETE_TOKEN, tokenSagas.deleteToken),
     ]);
 }
 

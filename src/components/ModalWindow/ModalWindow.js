@@ -80,6 +80,7 @@ export default function ModalWindow(props) {
     }
 
     let tokenOptions = useSelector(state => state.ui.tokenOptions);
+    let editAllowed = useSelector(state => state.ui.editAllowed);
 
     const dispatch = useDispatch();
 
@@ -256,12 +257,15 @@ export default function ModalWindow(props) {
         }
     }
 
-    const handleLinkDone = () => {
 
+    //TODO i think it is possible to simply this method
+    const handleLinkDone = () => {
+        let isMoreActions = action.length > 1 && action[1].name === "Borrow the same token";
         // if it was the link we just added a new link or double clicked the link, which represents an action
         if (!typeOfLink || typeOfLink === "action") {
             // update how the link looks (change title and remember which exactly action was chosen)
-            let isMoreActions = action.length > 1 && action[1].name === "Borrow the same token";
+
+            // the only way there is a second action is only we do Supply & Borrow, for now
 
             if (action.length > 1 && (action[1].name === "Borrow the same token")) {
                 actionLink.label(2, {
@@ -309,24 +313,29 @@ export default function ModalWindow(props) {
                         }
                     }
                 });
+                let leverageTextValue = (action[1].leverage > 0 && `${action[1].leverage}x`) || "";
+                // if the input value is empty and there was a previous value, set it to previous value
+                if (!leverageTextValue && actionLink.label(3) && actionLink.label(3).attrs.leverageText) {
+                    leverageTextValue = actionLink.label(3).attrs.leverageText.leverage + "x";
+                }
 
                 actionLink.label(3, {
-                    markup: [ {
-                            tagName: 'image',
-                            selector: 'leverageCircle'
-                        }, {
-                            tagName: 'circle',
-                            selector: 'wrapLeverageText'
-                        },
-                        {
-                            tagName: 'text',
-                            selector: 'leverageText'
-                        },
+                    markup: [{
+                        tagName: 'image',
+                        selector: 'leverageCircle'
+                    }, {
+                        tagName: 'circle',
+                        selector: 'wrapLeverageText'
+                    },
+                    {
+                        tagName: 'text',
+                        selector: 'leverageText'
+                    },
                     ],
                     // markup: '<g class="rotatable"><g class="scalable"><image joint-selector="leverageCircle" class="leverage-circle"/><circle class="hold-leverage-text" /><text joint-selector="leverageText" class="leverage-text"/></g></g>',
                     attrs: {
                         leverageText: {
-                            text: (action[1].leverage > 0 && `${action[1].leverage}x`) || "",
+                            text: leverageTextValue,
                             fontSize: "12px",
                             leverage: action[1].leverage,
                             ref: "wrapLeverageText",
@@ -370,14 +379,14 @@ export default function ModalWindow(props) {
                 if (isMoreActions && action[1].name === "Borrow the same token") {
                     if (i === 0) {
                         offsetValue = -80;
-                        textAnchorValue="start";
+                        textAnchorValue = "start";
                     } else {
                         offsetValue = 80;
-                        textAnchorValue="end";
+                        textAnchorValue = "end";
                     }
                     distanceValue = 0.5;
 
-                } else if (isMoreActions && action[1].name !== "Borrow the same token") {
+                } else if (action.length > 1 && action[1].name !== "Borrow the same token") {
                     // remove old labels
                     actionLink.removeLabel(1);
                     actionLink.removeLabel(2);
@@ -387,11 +396,14 @@ export default function ModalWindow(props) {
                     return;
                 }
                 let actionName = a.name;
-                if (actionName === "Borrow other token") {
-                    return;
-                }
                 if (actionName === "Borrow the same token") {
                     actionName = "Borrow";
+                }
+                let labelValue = (isMoreActions && `${allocationValue}%\u00a0${actionName}`) || `[\u00a0${allocationValue}%\u00a0${actionName}\u00a0]`
+                if (actionName === "Borrow other token") {
+                    // return;
+                    actionName = "Borrow";
+                    labelValue = ""
                 }
                 actionLink.label(i, {
                     // markup: [{
@@ -403,7 +415,7 @@ export default function ModalWindow(props) {
                     // }],
                     attrs: {
                         text: {
-                            text: (isMoreActions && `${allocationValue}%\u00a0${actionName}`) || `[\u00a0${allocationValue}%\u00a0${actionName}\u00a0]`,
+                            text: labelValue,
                             action: a.name,
                             allocation: allocationValue,
                             fontFamily: 'Roboto, sans-serif',
@@ -433,10 +445,20 @@ export default function ModalWindow(props) {
             action.forEach((a, i) => {
                 let allocationValue = a.allocation || "50";
                 if (actionLink) {
+                    let actionName = a.name;
+                    if (actionName === "Borrow the same token") {
+                        actionName = "Borrow";
+                    }
+                    let labelValue = (isMoreActions && `${allocationValue}%\u00a0${actionName}`) || `[\u00a0${allocationValue}%\u00a0${actionName}\u00a0]`
+                    if (actionName === "Borrow other token") {
+                        // return;
+                        actionName = "Borrow";
+                        labelValue = ""
+                    }
                     actionLink.label(i, {
                         attrs: {
                             text: {
-                                text: `[\u00a0${allocationValue}%\u00a0${a.name}\u00a0]`,
+                                text: labelValue,
                                 action: a.name,
                                 allocation: allocationValue,
                                 fontFamily: 'Roboto, sans-serif',
@@ -633,14 +655,13 @@ export default function ModalWindow(props) {
 
     const handleProtocolDone = () => {
         // allow creating new protocol only if entered a name
-        if (activeProtocol.name) {
+        if (activeProtocol.name && (activeProtocol.new || editAllowed)) {
             // check if it is new protocol or already existing
             let protocolIndex = -1;
             let alreadyExists = false;
             // let protocolIndex = protocols.findIndex((protocol) => {
             //     return protocol.id === activeProtocol.id;
             // });
-            console.log(protocols, activeProtocol)
             protocols.forEach((protocol, i) => {
                 if (protocol.id === activeProtocol.id) {
                     protocolIndex = i;
@@ -663,7 +684,7 @@ export default function ModalWindow(props) {
                 if (protocolIndex < 0) {
                     // give it a new id
                     // (it should alredy have a new id, but I suppose in the future the real new id would be created from backend)
-                    activeProtocol.id = String(protocols.length);
+                    // activeProtocol.id = String(protocols.length);
                     // add it to the list of already existion protocols
                     dispatch(protocolActions.postProtocols(activeProtocol));
                     // close the window
@@ -684,6 +705,10 @@ export default function ModalWindow(props) {
             } else {
                 console.log("ah")
             }
+        } else if (!editAllowed) {
+            setActiveProtocol(null);
+            setProtocolCells([]);
+            setOpenModalWindow(false);
         }
 
     }
@@ -732,7 +757,7 @@ export default function ModalWindow(props) {
     }
 
     const handleTokenDone = () => {
-        if (activeToken.name) {
+        if (activeToken.name && (activeToken.new || editAllowed)) {
             let tokenIndex = -1;
             let alreadyExists = false;
             // let tokenIndex = tokens.findIndex((token) => {
@@ -752,7 +777,7 @@ export default function ModalWindow(props) {
             // if it is a new token
             if (!alreadyExists && activeToken.id && !isMerge) {
                 if (tokenIndex < 0) {
-                    activeToken.id = String(tokens.length);
+                    // activeToken.id = String(tokens.length);
                     dispatch(tokenActions.postTokens(activeToken));
 
                 } else {
@@ -763,8 +788,32 @@ export default function ModalWindow(props) {
             }
             setActiveToken(null);
             setTokenCells([]);
-            setOpenModalWindow(false);
             setIsMerge(false);
+            setOpenModalWindow(false);
+        } else if (!editAllowed) {
+            setActiveToken(null);
+            setTokenCells([]);
+            setIsMerge(false);
+            setOpenModalWindow(false);
+        }
+    }
+
+    const handleProtocolDelete = () => {
+        if (activeProtocol) {
+            dispatch(protocolActions.deleteProtocol({ id: activeProtocol.id }));
+            setActiveProtocol(null);
+            setProtocolCells([]);
+            setOpenModalWindow(false);
+        }
+    }
+
+    const handleTokenDelete = () => {
+        if (activeToken) {
+            dispatch(tokenActions.deleteToken({ id: activeToken.id }));
+            setActiveToken(null);
+            setTokenCells([]);
+            setIsMerge(false);
+            setOpenModalWindow(false);
         }
     }
 
@@ -854,6 +903,12 @@ export default function ModalWindow(props) {
                     let actionName = "Stake";
                     actionName = (actionLinkVal.label(0) && convertObjToStr(actionLinkVal.label(0).attrs.text.action)) || "Stake";
                     actionValue = [{ name: actionName, allocation: "50" }];
+
+                    if (actionLinkVal.label(1)) {
+                        actionName = (actionLinkVal.label(1) && convertObjToStr(actionLinkVal.label(1).attrs.text.action)) || "No borrow";
+                        let allocationValue = (actionLinkVal.label(1) && convertObjToStr(actionLinkVal.label(1).attrs.text.allocation)) || "50";
+                        actionValue.push({ name: actionName, allocation: allocationValue });
+                    }
                 }
                 tokenElements = [targetCell];
                 parentElements = graph.getNeighbors(targetCell, { inbound: true });
@@ -937,6 +992,7 @@ export default function ModalWindow(props) {
                     />
                 ) || (activeToken &&
                     <TokensBody
+                        key={`token-${activeToken.id}`}
                         modalScrollRef={modalScrollRef}
                         setOpenModalWindow={setOpenModalWindow}
                         activeToken={activeToken}
@@ -948,6 +1004,7 @@ export default function ModalWindow(props) {
                         setIsMerge={setIsMerge}
                         parentUpdateCount={parentUpdateCount}
                         setParentUpdateCount={setParentUpdateCount}
+                        editAllowed={editAllowed}
                     />
                 ) || (
                     !activeProtocol &&
@@ -974,6 +1031,7 @@ export default function ModalWindow(props) {
                         />
                     )) || (
                     <ProtocolsBody
+                        key={`protocol-${activeProtocol.id}`}
                         modalScrollRef={modalScrollRef}
                         setOpenModalWindow={setOpenModalWindow}
                         activeProtocol={activeProtocol}
@@ -984,6 +1042,7 @@ export default function ModalWindow(props) {
                         isDesign={isDesign}
                         parentUpdateCount={parentUpdateCount}
                         setParentUpdateCount={setParentUpdateCount}
+                        editAllowed={editAllowed}
                     />
                 )}
             <div className="modal-actions">
@@ -1002,7 +1061,7 @@ export default function ModalWindow(props) {
                         >
                             <img src={iconPlus} alt="+" />
                         </button>) ||
-                        ((activeProtocol && !activeLoopAction) && (
+                        ((activeProtocol && !activeLoopAction && (activeProtocol.new || editAllowed)) && (
                             <label className="custom-file-upload">
                                 <input
                                     type="file"
@@ -1018,7 +1077,7 @@ export default function ModalWindow(props) {
                                 </div>
                             </label>
                         )) ||
-                        ((activeToken && !activeLoopAction) && (
+                        ((activeToken && !activeLoopAction && (activeToken.new || editAllowed)) && (
                             <label className="custom-file-upload">
                                 <input
                                     type="file"
@@ -1045,6 +1104,20 @@ export default function ModalWindow(props) {
                 >
                     Done
                 </button>
+                {
+                    editAllowed &&
+                    ((activeProtocol && !activeProtocol.new) ||
+                        (activeToken && !activeToken.new && !isMerge)) &&
+                    <button
+                        className="finish-button"
+                        onClick={
+                            (activeProtocol && handleProtocolDelete) ||
+                            (activeToken && handleTokenDelete)
+                        }
+                    >
+                        Delete
+                    </button>
+                }
             </div>
         </div>
     )

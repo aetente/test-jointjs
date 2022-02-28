@@ -3,7 +3,8 @@ import { uiTypes } from "../types";
 export const uiActions = {
     addTokenOption,
     pushTokenOption,
-    unshiftTokenOption
+    unshiftTokenOption,
+    setEditAccess
 }
 
 function addTokenOption(payload) {
@@ -25,4 +26,11 @@ function unshiftTokenOption(payload) {
         type: uiTypes.UNSHIFT_TOKEN_OPTION,
         payload,
     };
+}
+
+function setEditAccess(payload) {
+    return {
+        type: uiTypes.SET_EDIT_ACCESS,
+        payload
+    }
 }

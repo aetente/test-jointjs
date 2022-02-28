@@ -415,6 +415,13 @@ function Paper(props) {
         }
         cellCoords.x = cellCoords.x - (cellCoords.x % 10);
         cellCoords.y = cellCoords.y - (cellCoords.y % 10);
+        let newProtocolId = props.protocols.length;
+        props.protocols.forEach((p) => {
+            if (+p.id >= newProtocolId) {
+                newProtocolId = (+p.id) + 1;
+            }
+        })
+        newProtocolId = String(newProtocolId);
         let newCell = new rectDiamondShape({
             position: {
                 x: cellCoords.x,
@@ -424,7 +431,7 @@ function Paper(props) {
             inPorts: ['in'],
             outPorts: ['out'],
             ports: portCellOptions,
-            protocolId: String(props.protocols.length)
+            protocolId: newProtocolId,
         });
         // newCell.attr('polygon/fill', "#19384d");
         // newCell.attr('polygon/stroke', "#19384d");
@@ -435,10 +442,11 @@ function Paper(props) {
 
         setProtocolCells([newCell]);
         setActiveProtocol({
-            id: String(props.protocols.length),
+            id: newProtocolId,
             backgroundColor: "#19384d",
             borderColor: "#19384d",
-            name: ""
+            name: "",
+            new: true
         });
         setActiveLoopAction(null);
         setActiveToken(null);
@@ -456,6 +464,13 @@ function Paper(props) {
         }
         cellCoords.x = cellCoords.x - (cellCoords.x % 10);
         cellCoords.y = cellCoords.y - (cellCoords.y % 10);
+        let newTokenId = props.tokens.length;
+        props.tokens.forEach((t) => {
+            if (+t.id >= newTokenId) {
+                newTokenId = (+t.id) + 1;
+            }
+        })
+        newTokenId = String(newTokenId);
         let newCell = new joint.shapes.standard.Rectangle({
             ...earnCell,
             attrs: {
@@ -470,15 +485,16 @@ function Paper(props) {
             },
             ports: portCellOptions,
             typeOfCell: "earn_cell",
-            tokenId: String(props.tokens.length)
+            tokenId: newTokenId
         });
 
 
 
         setTokenCells([newCell]);
         setActiveToken({
-            id: String(props.tokens.length),
-            name: ""
+            id: newTokenId,
+            name: "",
+            new: true
         })
         setActiveLoopAction(null);
         setActiveProtocol(null);
@@ -823,7 +839,7 @@ function Paper(props) {
     }
 
     const mergeAction = () => {
-        
+
         let activeCells = [...getActiveCellViewsArrayRef()];
         let graph = getGraphRef();
         activeCells = activeCells.filter(activeCell => {
@@ -1209,7 +1225,7 @@ function Paper(props) {
                 setBaseTokenCellView(cellView);
             } else if (!cellView.model.isLink()) {
                 let cellModel = cellView.model;
-                if (cellModel.attributes.type === "custom.RectDiamond") {
+                if (cellModel.attributes.type === "custom.RectDiamond" && cellModel.attributes.attrs.label) {
                     // edit protocol
                     let theCellProtocol = {}
                     theCellProtocol.id = cellModel.attributes.protocolId;

@@ -18,7 +18,8 @@ export default function ProtocolsBody(props) {
         updateProtocols,
         isDesign,
         parentUpdateCount,
-        setParentUpdateCount
+        setParentUpdateCount,
+        editAllowed
     } = props;
 
     return (
@@ -51,11 +52,13 @@ export default function ProtocolsBody(props) {
                 activeProtocol={activeProtocol}
                 setActiveProtocol={setActiveProtocol}
                 updateProtocols={updateProtocols}
+                editAllowed={activeProtocol.new || editAllowed}
             />
             <ProtocolUrlInput
                 activeProtocol={activeProtocol}
                 setActiveProtocol={setActiveProtocol}
                 updateProtocols={updateProtocols}
+                editAllowed={activeProtocol.new || editAllowed}
             />
             {!isDesign &&
                 <ProtocolPoolInput
@@ -64,11 +67,14 @@ export default function ProtocolsBody(props) {
                     updateProtocols={updateProtocols}
                 />
             }
-            <ProtocolColorPicker
-                activeProtocol={activeProtocol}
-                setActiveProtocol={setActiveProtocol}
-                updateProtocols={updateProtocols}
-            />
+            {
+                (activeProtocol.new || editAllowed) &&
+                <ProtocolColorPicker
+                    activeProtocol={activeProtocol}
+                    setActiveProtocol={setActiveProtocol}
+                    updateProtocols={updateProtocols}
+                />
+            }
         </div>
     )
 }

@@ -1,11 +1,11 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import "./styles.css";
 
-import { ReactComponent as IconLoopAction } from "../../assets/drawings/circle-notch-solid.svg";
+import { ReactComponent as IconBridge } from "../../assets/drawings/icon-bridge.svg";
 
-export default function LoopActionButton(props) {
+export default function BridgeActionButton(props) {
 
-    let { addRecentlyUsedAction, actionName, createCircle } = props;
+    let {addRecentlyUsedAction} = props;
 
     let [isHovered, setIsHovered] = useState(false)
 
@@ -19,11 +19,10 @@ export default function LoopActionButton(props) {
                 setIsHovered(false);
             }}
             onClick={() => {
-                addRecentlyUsedAction(actionName);
-                createCircle();
+                addRecentlyUsedAction(props.actionName);
             }}
         >
-            <IconLoopAction stroke={(isHovered && "#000000") || "#777E91"} fill={(isHovered && "#000000") || "#777E91"} />
+            <IconBridge fill={(isHovered && "#000000") || "#777E91"} />
         </div>
     )
 }

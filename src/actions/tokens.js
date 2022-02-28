@@ -5,7 +5,8 @@ export const tokenActions = {
     setTokens,
     updateTokens,
     postTokens,
-    putTokens
+    putTokens,
+    deleteToken
 }
 
 function getTokens() {
@@ -40,4 +41,11 @@ function putTokens(payload) {
         type: tokensTypes.PUT_TOKENS,
         payload,
     };
+}
+
+function deleteToken(payload) {
+    return {
+        type: tokensTypes.DELETE_TOKEN,
+        payload
+    }
 }

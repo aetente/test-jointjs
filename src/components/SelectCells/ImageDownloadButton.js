@@ -3,9 +3,14 @@ import "./styles.css";
 
 import { unicodeUnEscape } from '../../utils/utils';
 
+
+import { ReactComponent as IconCameraSolid } from "../../assets/drawings/camera-solid.svg";
+
 export default function ImageDownloadButton(props) {
 
-    let {addRecentlyUsedAction} = props;
+    let { addRecentlyUsedAction } = props;
+
+    let [isHovered, setIsHovered] = useState(false)
 
     const cropImageFromCanvas = (ctx, w, h) => {
         var canvas = ctx.canvas,
@@ -211,7 +216,16 @@ export default function ImageDownloadButton(props) {
     }
 
     return (
-        <div className="select-action-button" onClick={handleImageDownload}>
+        <div className="select-action-button"
+            onMouseEnter={() => {
+                setIsHovered(true);
+            }}
+            onMouseLeave={() => {
+                setIsHovered(false);
+            }}
+            onClick={handleImageDownload}
+        >
+            <IconCameraSolid stroke={(isHovered && "#000000") || "#777E91"} fill={(isHovered && "#000000") || "#777E91"} />
         </div>
     )
 }

@@ -17,7 +17,7 @@ export default function InitButtons(props) {
         setOpenAddTokenToSelect
     } = props;
 
-    let [openModalWindow, setOpenModalWindow] = useState(false);
+    let [openModalWindow, setOpenModalWindow] = useState(true);
 
     const dispatch = useDispatch();
 

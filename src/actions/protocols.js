@@ -5,7 +5,8 @@ export const protocolActions = {
     setProtocols,
     updateProtocols,
     postProtocols,
-    putProtocols
+    putProtocols,
+    deleteProtocol
 }
 
 function getProtocols() {
@@ -40,4 +41,11 @@ function putProtocols(payload) {
         type: protocolTypes.PUT_PROTOCOL,
         payload,
     };
+}
+
+function deleteProtocol(payload) {
+    return {
+        type: protocolTypes.DELETE_PROTOCOL,
+        payload
+    }
 }

@@ -8,6 +8,7 @@ import ImageDownloadButton from "./ImageDownloadButton";
 import ShowFrameButton from "./ShowFrameButton";
 import LoopActionButton from "./LoopActionButton";
 import MergeButton from "./MergeButton";
+import BridgeActionButton from "./BridgeActionButton";
 import { DiagramContext } from '../Content/context';
 import "./styles.css";
 
@@ -89,6 +90,14 @@ function SelectCells(props) {
         <MergeButton
           actionName={"Merge"}
           mergeAction={props.mergeAction}
+          addRecentlyUsedAction={addRecentlyUsedAction}
+        />
+    },
+    {
+      name: "Bridge",
+      component:
+        <BridgeActionButton
+          actionName={"Bridge"}
           addRecentlyUsedAction={addRecentlyUsedAction}
         />
     }
@@ -264,7 +273,7 @@ function SelectCells(props) {
           (category === "Protocols" &&
 
             (
-              <div>
+              <div className="hold-action-category-content">
                 <div className="list-row list-section">
                   <div onClick={() => { setIsOpenRecentlyUsedProtocols(!isOpenRecentlyUsedProtocols) }} className="list-selection-title">
                     <img src={caretDown} alt="" />
@@ -298,7 +307,7 @@ function SelectCells(props) {
           ) ||
           (category === "Actions" &&
 
-            <div>
+            <div className="hold-action-category-content">
               <div className="list-row list-section">
                 <div onClick={() => { setIsOpenRecentlyUsedActions(!isOpenRecentlyUsedActions) }} className="list-selection-title">
                   <img src={caretDown} alt="" />
@@ -322,7 +331,7 @@ function SelectCells(props) {
           ) ||
           (category === "Tokens" &&
 
-            <div>
+            <div className="hold-action-category-content">
               <div className="list-row list-section">
                 <div onClick={() => { setIsOpenRecentlyUsedTokens(!isOpenRecentlyUsedTokens) }} className="list-selection-title">
                   <img src={caretDown} alt="" />

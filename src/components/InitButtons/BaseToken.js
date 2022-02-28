@@ -70,7 +70,7 @@ export default function BaseToken(props) {
 
 
                 <div className="modal-option">
-                    <div className="modal-option-title">URL</div>
+                    <div className="modal-option-title">Token address</div>
                     <div
                         className="hold-select-action"
                     >
@@ -80,7 +80,7 @@ export default function BaseToken(props) {
                             className='token-name-input base-token-input'
                             onChange={(e) => setTokenURL(e.target.value)}
                             defaultValue={tokenURL}
-                            placeholder='Enter token URL'
+                            placeholder='Enter token address'
                         />
                     </div>
                 </div>

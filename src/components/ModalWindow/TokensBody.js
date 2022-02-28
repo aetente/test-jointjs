@@ -18,7 +18,8 @@ export default function TokensBody(props) {
         isMerge,
         setIsMerge,
         parentUpdateCount,
-        setParentUpdateCount
+        setParentUpdateCount,
+        editAllowed
     } = props;
 
     return (
@@ -60,17 +61,21 @@ export default function TokensBody(props) {
                 activeProtocol={activeToken}
                 setActiveProtocol={setActiveToken}
                 updateProtocols={updateTokens}
+                editAllowed={activeToken.new || editAllowed}
             />
             <ProtocolUrlInput
                 activeProtocol={activeToken}
                 setActiveProtocol={setActiveToken}
                 updateProtocols={updateTokens}
+                editAllowed={activeToken.new || editAllowed}
             />
-            <ProtocolColorPicker
-                activeProtocol={activeToken}
-                setActiveProtocol={setActiveToken}
-                updateProtocols={updateTokens}
-            />
+            {(activeToken.new || editAllowed) &&
+                <ProtocolColorPicker
+                    activeProtocol={activeToken}
+                    setActiveProtocol={setActiveToken}
+                    updateProtocols={updateTokens}
+                />
+            }
         </div>
     )
 }

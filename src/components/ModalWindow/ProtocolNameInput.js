@@ -3,7 +3,7 @@ import "./styles.css";
 
 export default function ProtocolNameInput(props) {
 
-    let { activeProtocol, setActiveProtocol, updateProtocols } = props;
+    let { activeProtocol, setActiveProtocol, updateProtocols, editAllowed } = props;
 
     return (
 
@@ -22,6 +22,7 @@ export default function ProtocolNameInput(props) {
                     }}
                     placeholder={"Protocol Name"}
                     defaultValue={activeProtocol.name}
+                    readOnly={!editAllowed}
                 />
             </div>
         </div>

@@ -4,4 +4,5 @@ export const tokensTypes = {
     SET_TOKENS: "SET_TOKENS",
     POST_TOKENS: "POST_TOKENS",
     PUT_TOKENS: "PUT_TOKENS",
+    DELETE_TOKEN: "DELETE_TOKEN"
 }

@@ -3,7 +3,7 @@ import "./styles.css";
 
 export default function ProtocolUrlInput(props) {
 
-    let { activeProtocol, setActiveProtocol, updateProtocols } = props;
+    let { activeProtocol, setActiveProtocol, updateProtocols, editAllowed } = props;
 
     return (
 
@@ -21,6 +21,7 @@ export default function ProtocolUrlInput(props) {
                     }}
                     placeholder={"Enter URL"}
                     defaultValue={activeProtocol.url}
+                    readOnly={!editAllowed}
                 />
             </div>
         </div>
