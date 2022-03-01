@@ -95,7 +95,7 @@ export default function BaseToken(props) {
                                 if (baseTokenCellView) {
                                     editBaseToken(tokenName, tokenURL);
                                 } else if (openAddTokenToSelect) {
-                                    addNewTokenOption({ value: tokenName, url: tokenURL });
+                                    addNewTokenOption({ name: tokenName, url: tokenURL });
                                     setOpenAddTokenToSelect(false);
                                 } else {
                                     addBaseToken(tokenName, tokenURL);

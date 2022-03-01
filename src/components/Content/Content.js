@@ -28,7 +28,9 @@ function Content() {
     if ((editAccessValue && editAccessValue === process.env.REACT_APP_EDIT_ACCESS) || designValue) {
       dispatch(uiActions.setEditAccess(true));
     }
-    setIsDesign(designValue)
+    if (designValue === "true") {
+      setIsDesign(designValue)
+    }
   }, [])
 
   return (

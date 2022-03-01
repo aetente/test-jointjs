@@ -33,6 +33,7 @@ function SelectCells(props) {
         theCellProtocol.backgroundColor = protocol.backgroundColor;
         theCellProtocol.borderColor = protocol.borderColor;
         theCellProtocol.image = protocol.image;
+        theCellProtocol.designImage = protocol.designImage
         setActiveProtocol(theCellProtocol);
         setActiveToken(null);
         setOpenModalWindow(true);
@@ -46,6 +47,7 @@ function SelectCells(props) {
         theCellToken.backgroundColor = token.backgroundColor;
         theCellToken.borderColor = token.borderColor;
         theCellToken.image = token.image;
+        theCellToken.designImage = token.designImage;
         setActiveToken(theCellToken);
         setActiveProtocol(null);
         setOpenModalWindow(true);
@@ -92,17 +94,28 @@ function SelectCells(props) {
                                     key={p.id}
                                     className="hold-menu-option"
                                 >
-                                    <div
-                                        className="draggable protocol"
-                                        style={{
-                                            backgroundColor: p.backgroundColor,
-                                            border: `2px solid ${p.borderColor}`
-                                        }}
-                                    >
-                                        {p.image && p.image !== "null" && <div className="menu-option-content">
-                                            <img draggable={false} src={p.image} alt={p.name} />
-                                        </div>}
-                                    </div>
+                                    {(p.designImage &&
+                                        <div
+                                            className="draggable protocol no-transform design-image"
+                                            style={{
+                                                backgroundColor: "rgba(0,0,0,0)",
+                                                border: `none`
+                                            }}
+                                        >
+                                            <img draggable={false} src={p.designImage} alt={p.name} />
+                                        </div>) ||
+                                        <div
+                                            className="draggable protocol"
+                                            style={{
+                                                backgroundColor: p.backgroundColor,
+                                                border: `2px solid ${p.borderColor}`
+                                            }}
+                                        >
+                                            {p.image && p.image !== "null" && <div className="menu-option-content">
+                                                <img draggable={false} src={p.image} alt={p.name} />
+                                            </div>}
+                                        </div>
+                                    }
                                     <div
                                         className="menu-option-title"
                                     >
@@ -158,13 +171,20 @@ function SelectCells(props) {
                                     key={t.id}
                                     className="hold-menu-option hold-token-option"
                                 >
-                                    <div
-                                        className="draggable select-token"
-                                    >
-                                        {t.image && t.image !== "null" && <div className="menu-option-content no-transform">
-                                            <img draggable={false} src={t.image} alt={t.name} />
-                                        </div>}
-                                    </div>
+                                    {(t.designImage &&
+                                        <div
+                                            className="draggable select-token design-image"
+                                        >
+                                            <img draggable={false} src={t.designImage} alt={t.name} />
+                                        </div>) ||
+                                        <div
+                                            className="draggable select-token"
+                                        >
+                                            {t.image && t.image !== "null" && <div className="menu-option-content no-transform">
+                                                <img draggable={false} src={t.image} alt={t.name} />
+                                            </div>}
+                                        </div>
+                                    }
                                     <div
                                         className="menu-option-title"
                                     >

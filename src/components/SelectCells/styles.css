@@ -233,6 +233,18 @@
     align-items: center;
 }
 
+.protocol.design-image img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+}
+
+.select-token.design-image img {
+    width: 87px;
+    height: 31px;
+    object-fit: contain;
+}
+
 .menu-option-title {
     margin-top: 12px;
     
@@ -251,7 +263,7 @@
     transform: rotate(-45deg);
 }
 
-.menu-option-content.no-transform {
+.menu-option-content.no-transform, .protocol.no-transform {
     transform: none !important;
 }
 

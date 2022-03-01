@@ -6,7 +6,8 @@ import "./styles.css";
 
 export default function EarnInputsHolder(props) {
 
-    let { action, tokensToSelect, setOpenAddTokenToSelect, earnCell } = props;
+    let { action, tokens, setOpenAddTokenToSelect, earnCell } = props;
+
 
     let linkLabel = props.activeLink && props.activeLink.label(0);
     let cellLabel = earnCell && earnCell.attributes.attrs.label;
@@ -16,10 +17,32 @@ export default function EarnInputsHolder(props) {
 
     let [isMinimized, setIsMinimized] = useState(true)
     let [earnValue, setEarnValue] = useState("None");
+    let [tokensToSelect, setTokensToSelect] = useState([
+        {
+            value: "Add new...",
+            callback: () => { setOpenAddTokenToSelect(true) }
+        }
+    ]);
+
+    const mapTokensToSelect = (tokens) => {
+        let tokensToEdit = [...tokens];
+        return [...tokensToEdit.map(token => {
+            return {
+                img: token.designImage || token.image || "",
+                value: token.name,
+                id: token.id
+            }
+        }),
+        {
+            value: "Add new...",
+            callback: () => { setOpenAddTokenToSelect(true) }
+        }];
+    }
 
     useEffect(() => {
         setEarnValue(earn);
-    }, [])
+        setTokensToSelect(mapTokensToSelect(tokens));
+    }, [tokens])
 
     const updateEarn = (val) => {
         setEarnValue(val);
@@ -71,7 +94,7 @@ export default function EarnInputsHolder(props) {
                                 earnCell={earnCell}
                                 key={`select-token-${tokensToSelect.length}`}
                                 action={action}
-                                setTokenName={props.setTokenName}
+                                setTokenById={props.setTokenById}
                                 activeLink={props.activeLink}
                                 tokensToSelect={tokensToSelect}
                                 setOpenAddTokenToSelect={setOpenAddTokenToSelect}
@@ -83,7 +106,7 @@ export default function EarnInputsHolder(props) {
                                     earnCell={earnCell}
                                     key={`select-token-${tokensToSelect.length}`}
                                     action={action}
-                                    setTokenName={props.setTokenName}
+                                    setTokenById={props.setTokenById}
                                     activeLink={props.activeLink}
                                     tokensToSelect={tokensToSelect}
                                     setOpenAddTokenToSelect={setOpenAddTokenToSelect}

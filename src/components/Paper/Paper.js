@@ -12,7 +12,7 @@ import SelectCells from '../SelectCells/SelectCells';
 import { DiagramContext } from '../Content/context';
 import { cells, earnCell, frameCell, tradingFeeCell } from './cells';
 import { ports, portCellOptions, rootPortCellOptions, tradingFeePortCellOptions } from './ports';
-import { diamondShape, frameShape, rectDiamondShape, toolsView, toolsViewVertices, loopActionShape, LoopActionTools } from './options';
+import { diamondShape, frameShape, bridgeShape, rectDiamondShape, toolsView, toolsViewVertices, loopActionShape, LoopActionTools, tokenShape } from './options';
 import "./styles.css";
 import { convertObjToStr, swapItems } from '../../utils/utils';
 
@@ -40,7 +40,9 @@ const customNameSpace = Object.assign(joint.shapes, {
         RectDiamond: rectDiamondShape,
         Diamond: diamondShape,
         Frame: frameShape,
-        LoopAction: loopActionShape
+        LoopAction: loopActionShape,
+        Token: tokenShape,
+        Bridge: bridgeShape
     }
 });
 
@@ -120,6 +122,8 @@ function Paper(props) {
     const [tokenCells, setTokenCells] = useState([]);
 
     const [isMerge, setIsMerge] = useState(false);
+
+    const [activeBridge, setActiveBridge] = useState(null);
 
     const contextValues = useContext(DiagramContext);
 
@@ -249,6 +253,7 @@ function Paper(props) {
         setActiveLoopAction(loopCell)
         setActiveProtocol(null);
         setActiveToken(null);
+        setActiveBridge(null);
         setActiveLink(null);
         setOpenModalWindow(true);
         loopCell.toBack();
@@ -277,6 +282,7 @@ function Paper(props) {
         event.dataTransfer.setData("color", event.target.getAttribute("color") || "#FFFFFF");
         event.dataTransfer.setData("borderColor", event.target.getAttribute("bordercolor") || "#222222");
         event.dataTransfer.setData("image", event.target.getAttribute("image"));
+        event.dataTransfer.setData("designImage", event.target.getAttribute("designimage"));
         event.dataTransfer.setData("element", event.target);
     }, []);
 
@@ -303,7 +309,7 @@ function Paper(props) {
         }
         cellCoords.x = cellCoords.x - (cellCoords.x % 10);
         cellCoords.y = cellCoords.y - (cellCoords.y % 10);
-        let dragText = event.dataTransfer.getData('text');
+        let dragText = (event.dataTransfer.getData('designImage') === "null" && event.dataTransfer.getData('text')) || "";
         let scaleText = (dragText.length > 5 && Math.pow(5 / dragText.length, 1 / 2)) || 1;
         let scaleValue = `scale(${scaleText},${scaleText})`;
         let newCell = null;
@@ -328,18 +334,25 @@ function Paper(props) {
                 inPorts: ['in'],
                 outPorts: ['out'],
                 ports: portCellOptions,
+                protocolText: event.dataTransfer.getData('text'),
                 protocolId: event.dataTransfer.getData('id'),
                 protocolUrl: event.dataTransfer.getData('urlValue'),
                 backgroundColor: event.dataTransfer.getData('color'),
                 borderColor: event.dataTransfer.getData('borderColor')
             });
-            newCell.attr('.rect-body/fill', event.dataTransfer.getData('color'))
-            newCell.attr('.rect-body/stroke', event.dataTransfer.getData('borderColor'))
-            if (event.dataTransfer.getData('image') !== "null") {
-                newCell.attr('image/xlink:href', event.dataTransfer.getData('image'))
+            if (event.dataTransfer.getData('designImage') === "null") {
+                newCell.attr('.rect-body/fill', event.dataTransfer.getData('color'));
+                newCell.attr('.rect-body/stroke', event.dataTransfer.getData('borderColor'));
+                if (event.dataTransfer.getData('image') !== "null") {
+                    newCell.attr('image/xlink:href', event.dataTransfer.getData('image'));
+                }
+            } else {
+                newCell.attr('design-image/xlink:href', event.dataTransfer.getData('designImage'));
+                newCell.attr('.rect-body/fill', "none");
+                newCell.attr('.rect-body/stroke', "none");
             }
         } else {
-            newCell = new joint.shapes.standard.Rectangle({
+            newCell = new tokenShape({
                 ...earnCell,
                 attrs: {
                     ...earnCell.attrs,
@@ -352,6 +365,7 @@ function Paper(props) {
                     y: cellCoords.y
                 },
                 ports: portCellOptions,
+                tokenText: event.dataTransfer.getData('text'),
                 tokenId: event.dataTransfer.getData('id'),
                 tokenUrl: event.dataTransfer.getData('urlValue'),
                 backgroundColor: event.dataTransfer.getData('color'),
@@ -359,8 +373,15 @@ function Paper(props) {
                 image: event.dataTransfer.getData('image') || "",
                 typeOfCell: "earn_cell"
             });
-            newCell.attr('body/fill', event.dataTransfer.getData('color'))
-            newCell.attr('body/stroke', event.dataTransfer.getData('borderColor'))
+
+            if (event.dataTransfer.getData('designImage') === "null") {
+                newCell.attr('token-body/fill', event.dataTransfer.getData('color'));
+                newCell.attr('token-body/stroke', event.dataTransfer.getData('borderColor'));
+            } else {
+                newCell.attr('design-image/xlink:href', event.dataTransfer.getData('designImage'));
+                newCell.attr('token-body/fill', "none");
+                newCell.attr('token-body/stroke', "none");
+            }
         }
 
         if (newCell) {
@@ -450,6 +471,7 @@ function Paper(props) {
         });
         setActiveLoopAction(null);
         setActiveToken(null);
+        setActiveBridge(null);
         graph.addCell(newCell)
     }
 
@@ -471,7 +493,7 @@ function Paper(props) {
             }
         })
         newTokenId = String(newTokenId);
-        let newCell = new joint.shapes.standard.Rectangle({
+        let newCell = new tokenShape({
             ...earnCell,
             attrs: {
                 ...earnCell.attrs,
@@ -496,9 +518,18 @@ function Paper(props) {
             name: "",
             new: true
         })
+        setActiveBridge(null);
         setActiveLoopAction(null);
         setActiveProtocol(null);
         graph.addCell(newCell)
+    }
+
+    const addEmptyBridge = () => {
+        setActiveBridge({ from: "", to: "" });
+        setActiveLoopAction(null);
+        setActiveProtocol(null);
+        setActiveToken(null);
+        setOpenModalWindow(true);
     }
 
     const addRecentlyUsedAction = (actionName) => {
@@ -581,7 +612,9 @@ function Paper(props) {
         let elementsToLayout = theElements;
         elementsToLayout = [];
         theElements.forEach(element => {
-            if (element.attributes.typeOfCell !== "frame" && element.attributes.type !== "custom.LoopAction") {
+            if (element.attributes.typeOfCell !== "frame" &&
+                element.attributes.type !== "custom.LoopAction" &&
+                element.attributes.type !== "custom.Bridge") {
                 elementsToLayout.push(element)
             }
         })
@@ -660,7 +693,7 @@ function Paper(props) {
         let newLink = new joint.shapes.standard.Link({
             markup: linkMarkup
         });
-        newLink.router('manhattan', { excludeTypes: ['custom.Frame', 'custom.LoopAction'] });
+        newLink.router('manhattan', { excludeTypes: ['custom.Frame', 'custom.LoopAction', 'custom.Bridge'] });
 
         newLink.attr({
             line: {
@@ -679,7 +712,7 @@ function Paper(props) {
             }
         });
 
-        let newCell = new joint.shapes.standard.Rectangle({
+        let newCell = new tokenShape({
             ...earnCell,
             attrs: {
                 ...earnCell.attrs,
@@ -760,6 +793,7 @@ function Paper(props) {
         setActiveLink(null);
         setActiveProtocol(null);
         setActiveToken(null);
+        setActiveBridge(null);
         setActiveLoopAction(null);
     }
 
@@ -843,7 +877,7 @@ function Paper(props) {
         let activeCells = [...getActiveCellViewsArrayRef()];
         let graph = getGraphRef();
         activeCells = activeCells.filter(activeCell => {
-            return activeCell.model.attributes.type === "standard.Rectangle"
+            return activeCell.model.attributes.type === "custom.Token"
         })
         if (activeCells.length > 1) {
             let isTheSameParent = true;
@@ -876,6 +910,7 @@ function Paper(props) {
                     theCellToken.image = activeCells[0].model.attributes.image || "";
                     setActiveToken(theCellToken);
                     setTokenCells([activeCells[0].model]);
+                    setActiveBridge(null);
                     setActiveProtocol(null);
                     setActiveLoopAction(null);
                     setActiveLink(null);
@@ -900,7 +935,7 @@ function Paper(props) {
             markup: linkMarkup
         });
 
-        link.router('manhattan', { excludeTypes: ['custom.Frame', 'custom.LoopAction'] });
+        link.router('manhattan', { excludeTypes: ['custom.Frame', 'custom.LoopAction', 'custom.Bridge'] });
         link.attr({
             line: {
                 strokeDasharray: '8 4',
@@ -949,15 +984,15 @@ function Paper(props) {
             },
             // restrictTranslate: true,
             validateConnection: (cellViewS, magnetS, cellViewT, magnetT, end, linkView) => {
-                let sourceTypeOfCell = cellViewS.model.attributes.typeOfCell;
-                let targetTypeOfCell = cellViewT.model.attributes.typeOfCell;
-                return cellViewS.id !== cellViewT.id &&
+                let sourceTypeOfCell = cellViewS.model.attributes.type;
+                let targetTypeOfCell = cellViewT.model.attributes.type;
+                return cellViewS.id !== cellViewT.id && targetTypeOfCell !== "custom.Bridge" &&
                     !cellViewS.model.isLink() && !cellViewT.model.isLink()
             }
         });
 
         cells.cells = cells.cells.map((cellData, i) => {
-            let cell = new joint.shapes.standard.Rectangle({ ...cellData, ports: portCellOptions });
+            let cell = new tokenShape({ ...cellData, ports: portCellOptions });
             if (cellData.typeOfCell === "root") {
                 // cell = new diamondShape({ ...cellData, ports: rootPortCellOptions });
 
@@ -991,6 +1026,7 @@ function Paper(props) {
                 setActiveLink(linkView.model);
                 setActiveProtocol(null);
                 setActiveToken(null);
+                setActiveBridge(null);
                 setActiveLoopAction(null);
                 stackGraph(graph);
                 let targetCell = linkView.model.getTargetCell()
@@ -1092,49 +1128,56 @@ function Paper(props) {
             }
 
             if (cellView.model.isElement()) {
-                // let theLinks = getGraphRef().getLinks();
-                let cellsToUpdateLink = getActiveCellViewsArrayRef();
-                if (cellsToUpdateLink.length < 1 || !isHighlighted) {
-                    cellsToUpdateLink = [cellView];
-                }
-                let theLinks = [];
-
-                cellsToUpdateLink.forEach(cellV => {
-                    theLinks = [...theLinks, ...getGraphRef().getConnectedLinks(cellV.model)];
-                });
-                theLinks = theLinks.filter((l, i) => {
-                    let posInLinks = theLinks.findIndex(link => link.id === l.id);
-                    return posInLinks === i;
-                });
-                // cellsToUpdateLink.forEach(cellV => {
-                //     let theLinks = getGraphRef().getConnectedLinks(cellV.model);
-
-                theLinks.forEach(link => {
-                    if (link.get("vertices")) {
-                        let currentVertices = [...link.get("vertices")];
-                        currentVertices = currentVertices.map(currentVertex => {
-
-                            let dx = originalEvent.movementX / paperScale;
-                            let dy = originalEvent.movementY / paperScale;
-                            let newVertex = {
-                                x: Math.round(currentVertex.x + dx),
-                                y: Math.round(currentVertex.y + dy)
-                            };
-                            return newVertex;
-                        })
-                        link.vertices(currentVertices);
-                    } else {
-                        let linkView = link.findView(getPaperRef());
-                        let verticeX = (linkView.sourceAnchor.x + linkView.targetAnchor.x) / 2;
-                        let verticeY = (linkView.sourceAnchor.y + linkView.targetAnchor.y) / 2;
-                        verticeX -= (verticeX % 10);
-                        verticeY -= (verticeY % 10);
-                        link.vertices([{
-                            x: verticeX,
-                            y: verticeY
-                        }]);
+                let elementClassName = e.target.getAttribute("class")
+                if (elementClassName && (elementClassName.includes("to-circle") || elementClassName.includes("from-circle"))) {
+                    // cellView.model.attr("from-text/cx", x);
+                    // cellView.model.attr("from-circle/cy", y);
+                } else {
+                    // calculate placement for vertices of connected links
+                    // let theLinks = getGraphRef().getLinks();
+                    let cellsToUpdateLink = getActiveCellViewsArrayRef();
+                    if (cellsToUpdateLink.length < 1 || !isHighlighted) {
+                        cellsToUpdateLink = [cellView];
                     }
-                })
+                    let theLinks = [];
+    
+                    cellsToUpdateLink.forEach(cellV => {
+                        theLinks = [...theLinks, ...getGraphRef().getConnectedLinks(cellV.model)];
+                    });
+                    theLinks = theLinks.filter((l, i) => {
+                        let posInLinks = theLinks.findIndex(link => link.id === l.id);
+                        return posInLinks === i;
+                    });
+                    // cellsToUpdateLink.forEach(cellV => {
+                    //     let theLinks = getGraphRef().getConnectedLinks(cellV.model);
+    
+                    theLinks.forEach(link => {
+                        if (link.get("vertices")) {
+                            let currentVertices = [...link.get("vertices")];
+                            currentVertices = currentVertices.map(currentVertex => {
+    
+                                let dx = originalEvent.movementX / paperScale;
+                                let dy = originalEvent.movementY / paperScale;
+                                let newVertex = {
+                                    x: Math.round(currentVertex.x + dx),
+                                    y: Math.round(currentVertex.y + dy)
+                                };
+                                return newVertex;
+                            })
+                            link.vertices(currentVertices);
+                        } else {
+                            let linkView = link.findView(getPaperRef());
+                            let verticeX = (linkView.sourceAnchor.x + linkView.targetAnchor.x) / 2;
+                            let verticeY = (linkView.sourceAnchor.y + linkView.targetAnchor.y) / 2;
+                            verticeX -= (verticeX % 10);
+                            verticeY -= (verticeY % 10);
+                            link.vertices([{
+                                x: verticeX,
+                                y: verticeY
+                            }]);
+                        }
+                    })
+                }
                 // })
             }
         })
@@ -1229,7 +1272,7 @@ function Paper(props) {
                     // edit protocol
                     let theCellProtocol = {}
                     theCellProtocol.id = cellModel.attributes.protocolId;
-                    theCellProtocol.name = cellModel.attributes.attrs.label.text;
+                    theCellProtocol.name = cellModel.attributes.protocolText;
                     theCellProtocol.url = cellModel.attributes.protocolUrl;
                     theCellProtocol.backgroundColor = cellModel.attributes.backgroundColor;
                     theCellProtocol.borderColor = cellModel.attributes.borderColor;
@@ -1250,6 +1293,7 @@ function Paper(props) {
                     setProtocolCells(elementsToChange);
                     setActiveProtocol(theCellProtocol);
                     setActiveToken(null);
+                    setActiveBridge(null);
                     setActiveLoopAction(null);
                     setActiveLink(null);
                     setOpenModalWindow(true);
@@ -1257,7 +1301,7 @@ function Paper(props) {
                     // edit token
                     let theCellToken = {}
                     theCellToken.id = cellModel.attributes.tokenId;
-                    theCellToken.name = cellModel.attributes.attrs.label.text;
+                    theCellToken.name = cellModel.attributes.tokenText;
                     theCellToken.url = cellModel.attributes.tokenUrl;
                     theCellToken.backgroundColor = cellModel.attributes.backgroundColor;
                     theCellToken.borderColor = cellModel.attributes.borderColor;
@@ -1277,6 +1321,7 @@ function Paper(props) {
                     setTokenCells(elementsToChange);
                     setActiveToken(theCellToken);
                     setActiveProtocol(null);
+                    setActiveBridge(null);
                     setActiveLoopAction(null);
                     setActiveLink(null);
                     setOpenModalWindow(true);
@@ -1284,6 +1329,7 @@ function Paper(props) {
                     setActiveLoopAction(cellModel);
                     setActiveProtocol(null);
                     setActiveToken(null);
+                    setActiveBridge(null);
                     setActiveLink(null);
                     setOpenModalWindow(true);
                 }
@@ -1296,6 +1342,7 @@ function Paper(props) {
                 setActiveLink(currentLink);
                 setActiveProtocol(null);
                 setActiveToken(null);
+                setActiveBridge(null);
                 setActiveLoopAction(null);
                 let targetCell = linkView.model.getTargetCell()
                 let sourceCell = linkView.model.getSourceCell()
@@ -1404,6 +1451,7 @@ function Paper(props) {
                     setActiveLink(linkView.model);
                     setActiveProtocol(null);
                     setActiveToken(null);
+                    setActiveBridge(null);
                     setActiveLoopAction(null);
                     stackGraph(graph);
                     let targetCell = linkView.model.getTargetCell()
@@ -1426,7 +1474,7 @@ function Paper(props) {
             let sourceCell = graph.getCell(linkView.model.attributes.source.id);
             let jointSelector = e.target.getAttribute("joint-selector");
             // make sure that the link was released on a cell and not something else, for example other link
-            if (!jointSelector || jointSelector === "body" || jointSelector === ".rect-body" || jointSelector === ".pool-body" || jointSelector === "polygon" || jointSelector === "image") {
+            if (!jointSelector || jointSelector === "token-body" || jointSelector === "body" || jointSelector === ".rect-body" || jointSelector === ".pool-body" || jointSelector === "polygon" || jointSelector === "image" || jointSelector === "design-image") {
                 // there is no specific way to get which cell was the link released on
                 // get the id of the cell
                 // so we need to iterate through each cell and check the distance to
@@ -1513,6 +1561,7 @@ function Paper(props) {
                     setActiveLink(linkView.model);
                     setActiveProtocol(null);
                     setActiveToken(null);
+                    setActiveBridge(null);
                     setActiveLoopAction(null);
                     stackGraph(graph);
                     setOpenModalWindow(true);
@@ -1640,6 +1689,7 @@ function Paper(props) {
                 addEmptyToken={addEmptyToken}
                 createCircle={createCircle}
                 mergeAction={mergeAction}
+                addEmptyBridge={addEmptyBridge}
             />
             <div
                 id='canvas'
@@ -1652,7 +1702,7 @@ function Paper(props) {
             {openModalWindow &&
                 // ((activeLink && !activeProtocol) ||
                 // (activeProtocol && !activeLink))
-                (activeToken || activeLoopAction || activeProtocol || activeLink)
+                (activeBridge || activeToken || activeLoopAction || activeProtocol || activeLink)
                 &&
                 <ModalWindow
                     joint={joint}
@@ -1684,6 +1734,10 @@ function Paper(props) {
                     setActiveLoopAction={setActiveLoopAction}
                     isMerge={isMerge}
                     setIsMerge={setIsMerge}
+                    tokenShape={tokenShape}
+                    activeBridge={activeBridge}
+                    setActiveBridge={setActiveBridge}
+                    bridgeShape={bridgeShape}
                 />}
             <InitButtons
                 addBaseToken={addBaseToken}
@@ -1692,6 +1746,7 @@ function Paper(props) {
                 openAddTokenToSelect={openAddTokenToSelect}
                 setOpenAddTokenToSelect={setOpenAddTokenToSelect}
                 openModalWindow={openModalWindow}
+                tokens={props.tokens}
             />
         </div>
     );

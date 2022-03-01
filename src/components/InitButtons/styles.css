@@ -109,7 +109,8 @@ option, .custom-option {
 
 .custom-option img {
     width: 16px;
-    height: 16px
+    height: 16px;
+    object-fit: contain;
 }
 
 .option-image {

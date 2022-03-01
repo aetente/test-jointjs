@@ -8,8 +8,8 @@ export default function CustomSelect(props) {
     let { options, additionalClass, onChange, defaultValue } = props;
 
     useEffect(() => {
-        setSelectedOption(defaultValue || options[0].value);
-    }, []);
+        setSelectedOption(defaultValue || (options[0] && options[0].value || ""));
+    }, [options]);
 
     const mapOptions = (option) => {
         if (option.hidden) {

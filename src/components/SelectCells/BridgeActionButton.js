@@ -5,7 +5,7 @@ import { ReactComponent as IconBridge } from "../../assets/drawings/icon-bridge.
 
 export default function BridgeActionButton(props) {
 
-    let {addRecentlyUsedAction} = props;
+    let { addRecentlyUsedAction, addEmptyBridge } = props;
 
     let [isHovered, setIsHovered] = useState(false)
 
@@ -20,6 +20,7 @@ export default function BridgeActionButton(props) {
             }}
             onClick={() => {
                 addRecentlyUsedAction(props.actionName);
+                addEmptyBridge();
             }}
         >
             <IconBridge fill={(isHovered && "#000000") || "#777E91"} />

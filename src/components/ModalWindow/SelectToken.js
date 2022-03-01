@@ -7,20 +7,24 @@ import "./styles.css";
 export default function SelectToken(props) {
 
     let {action, tokensToSelect, earnCell} = props;
-
-    const mapTokenOptions = (token) => {
-        return <option key={token} value={token}>{token}</option>
-    }
-
+    
     // let linkLabel = props.activeLink && props.activeLink.label(0);
     // let linkLabel = props.activeLink && props.activeLink.label(0);
     // let defaultSelectValue = linkLabel ? linkLabel.attrs.text.tokenName : tokensToSelect[0].value;
     let cellLabel = earnCell && earnCell.attributes.attrs.label;
-    let defaultSelectValue = cellLabel ? cellLabel.text : tokensToSelect[0].value;
+    let cellTextFromAttributes = earnCell && earnCell.attributes.tokenText;
+    let defaultSelectValue = (cellLabel && cellLabel.text && cellLabel.text !== "") ?
+        cellLabel.text :
+        cellTextFromAttributes || (tokensToSelect[0] && tokensToSelect[0].value || "");
 
     useEffect(() => {
-        props.setTokenName(defaultSelectValue);
-    })
+        let cellLabel = earnCell && earnCell.attributes.attrs.label;
+        let cellTextFromAttributes = earnCell && earnCell.attributes.tokenText;
+        let defaultSelectValue = (cellLabel && cellLabel.text && cellLabel.text !== "") ?
+            cellLabel.text :
+            cellTextFromAttributes || (tokensToSelect[0] && tokensToSelect[0].value || "");
+        props.setTokenById(defaultSelectValue.id);
+    }, [tokensToSelect])
 
     return (
         <div className="modal-option">
@@ -34,10 +38,10 @@ export default function SelectToken(props) {
                 <CustomSelect
                     additionalClass="token-select"
                     name="actions"
-                    key={defaultSelectValue}
+                    key={defaultSelectValue.id}
                     className='select-actions'
                     onChange={e => {
-                        props.setTokenName(e.value);
+                        props.setTokenById(e.id)
                     }}
                     defaultValue={defaultSelectValue}
                     options={tokensToSelect}

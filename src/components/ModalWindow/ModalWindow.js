@@ -6,6 +6,7 @@ import LinkBody from './LinkBody';
 import ProtocolsBody from './ProtocolsBody';
 import LoopActionBody from './LoopActionBody';
 import TokensBody from './TokensBody';
+import BridgeBody from './BridgeBody';
 
 import { convertObjToStr } from '../../utils/utils';
 import "./styles.css";
@@ -50,7 +51,11 @@ export default function ModalWindow(props) {
         setStateTokens,
         isDesign,
         parentUpdateCount,
-        setParentUpdateCount
+        setParentUpdateCount,
+        tokenShape,
+        activeBridge,
+        setActiveBridge,
+        bridgeShape
     } = props;
 
     const [action, setAction] = useState([{ name: "Stake" }]);
@@ -68,6 +73,11 @@ export default function ModalWindow(props) {
 
     // the cell where the information about current connection would be stored
     const [infoCell, setInfoCell] = useState(null);
+
+
+
+    let [fromNetwork, setFromNetwork] = useState(null);
+    let [toNetwork, setToNetwork] = useState(null);
 
     const modalScrollRef = useRef(null);
 
@@ -99,7 +109,7 @@ export default function ModalWindow(props) {
             markup: linkMarkup
         });
         // set how the link looks and behaves
-        newEarnLink.router('manhattan', { excludeTypes: ['custom.Frame'] });
+        newEarnLink.router('manhattan', { excludeTypes: ['custom.Frame', 'custom.LoopAction', 'custom.Bridge'] });
         newEarnLink.attr({
             typeOfLink: "earn",
             line: {
@@ -118,7 +128,7 @@ export default function ModalWindow(props) {
             }
         });
         // create cell instance for the link
-        let newEarnCell = new joint.shapes.standard.Rectangle({
+        let newEarnCell = new tokenShape({
             ...cellData,
             attrs: {
                 ...cellData.attrs,
@@ -235,6 +245,81 @@ export default function ModalWindow(props) {
                         }
                     })
                 }
+                let setTokenById = (tokenId) => {
+                    let theFilteredTokens = [...tokens].filter(token => token.id === tokenId);
+                    if (theFilteredTokens.length > 0) {
+                        let theToken = theFilteredTokens[0];
+                        // earnCell.attr({
+                        //     label: {
+                        //         text: tokenName
+                        //     }
+                        // })
+                        // earnCell = new tokenShape({
+                        //     ...cellData,
+                        //     attrs: {
+                        //         ...cellData.attrs,
+                        //         label: {
+                        //             text: theToken.name
+                        //         }
+                        //     },
+                        //     ports: portCellOptions,
+                        //     tokenText: theToken.name,
+                        //     tokenId: theToken.id,
+                        //     tokenUrl: theToken.url,
+                        //     backgroundColor: theToken.backgroundColor,
+                        //     borderColor: theToken.borderColor,
+                        //     image: theToken.image || "",
+                        //     typeOfCell: "earn_cell"
+                        // })
+                        earnCell.attr({
+                            label: {
+                                text: (!theToken.designImage && theToken.name) || ""
+                            }
+                        })
+                        earnCell.attributes.tokenText = theToken.name;
+                        earnCell.attributes.tokenId = theToken.id;
+                        earnCell.attributes.tokenUrl = theToken.url;
+                        earnCell.attributes.backgroundColor = theToken.backgroundColor;
+                        earnCell.attributes.borderColor = theToken.borderColor;
+                        earnCell.attributes.image = theToken.image || "";
+
+                        if (!theToken.designImage) {
+                            earnCell.attr('token-body/fill', theToken.backgroundColor || "rgb(249, 250, 251)");
+                            earnCell.attr('token-body/stroke', theToken.borderColor || "rgb(119, 126, 144)");
+                            earnCell.attr('design-image/xlink:href', "");
+                        } else {
+                            earnCell.attr('design-image/xlink:href', theToken.designImage);
+                            earnCell.attr('token-body/fill', "none");
+                            earnCell.attr('token-body/stroke', "none");
+                        }
+                        let earnLinkEarnValue = (earnLink.label(0) && earnLink.label(0).attrs.text.earn) || "None";
+                        let earnValueString = earnLinkEarnValue !== "None" && `[\u00a0Earn\u00a0${earnLinkEarnValue}\u00a0]` || "";
+                        // for the case when we picked borrow other token as second action, it should appear in the earn link as label
+                        if (action[1] && action[1].name === "Borrow other token") {
+                            earnValueString = `[ ${action[1].allocation || 50}% Borrow ]`
+                        }
+                        earnLink.label(0, {
+                            attrs: {
+                                text: {
+                                    text: earnValueString,
+                                    earn: earnLinkEarnValue,
+                                    tokenName: tokenName,
+                                    fontFamily: 'Roboto, sans-serif',
+                                    fontStyle: "normal",
+                                    fontWeight: 600,
+                                    fontSize: "15px",
+                                    lineHeight: "18px",
+                                },
+                                rect: {
+                                    fill: "#f6f6f6"
+                                }
+                            },
+                            position: {
+                                distance: 0.6
+                            }
+                        })
+                    }
+                }
                 return (
                     <EarnInputsHolder
                         scrollInput={scrollInput}
@@ -243,9 +328,10 @@ export default function ModalWindow(props) {
                         arrayLength={earnArray.length}
                         earnCell={earnCell}
                         setTokenName={setTokenName}
+                        setTokenById={setTokenById}
                         setEarn={setEarn}
                         activeLink={earnLink}
-                        tokensToSelect={tokenOptions}
+                        tokens={tokens}
                         setOpenAddTokenToSelect={setOpenAddTokenToSelect}
                         i={i}
                     />
@@ -386,8 +472,9 @@ export default function ModalWindow(props) {
                     }
                     distanceValue = 0.5;
 
-                } else if (action.length > 1 && action[1].name !== "Borrow the same token") {
+                } else if (action.length <= 1 || (action.length > 1 && action[1].name !== "Borrow the same token")) {
                     // remove old labels
+                    // actionLink.removeLabel(0);
                     actionLink.removeLabel(1);
                     actionLink.removeLabel(2);
                     actionLink.removeLabel(3);
@@ -566,10 +653,17 @@ export default function ModalWindow(props) {
                 pCell.attr('label/text', currentActiveProtocol.name);
                 pCell.attr('text/text', currentActiveProtocol.name);
                 pCell.attr('text/transform', `scale(${scaleText},${scaleText})`);
-                pCell.attr('.rect-body/fill', currentActiveProtocol.backgroundColor);
-                pCell.attr('.rect-body/stroke', currentActiveProtocol.borderColor);
+
+                if (currentActiveProtocol.designImage) {
+                    pCell.attr('.rect-body/fill', "none");
+                    pCell.attr('.rect-body/stroke', "none");
+                    pCell.attr('design-image/xlink:href', currentActiveProtocol.designImage);
+                } else {
+                    pCell.attr('.rect-body/fill', currentActiveProtocol.backgroundColor);
+                    pCell.attr('.rect-body/stroke', currentActiveProtocol.borderColor);
+                }
                 // update image
-                if (currentActiveProtocol.image) {
+                if (currentActiveProtocol.image && !currentActiveProtocol.designImage) {
                     pCell.attr('image/xlink:href', currentActiveProtocol.image);
                 }
                 // if added pool, need to change bottom port position to be lower
@@ -637,8 +731,14 @@ export default function ModalWindow(props) {
                 tCell.attr('label/text', currentActiveToken.name);
                 tCell.attr('text/text', currentActiveToken.name);
                 // pCell.attr('text/transform', `scale(${scaleText},${scaleText})`);
-                tCell.attr('body/fill', currentActiveToken.backgroundColor);
-                tCell.attr('body/stroke', currentActiveToken.borderColor);
+                if (currentActiveToken.designImage) {
+                    tCell.attr('body/fill', "none");
+                    tCell.attr('body/stroke', "none");
+                    tCell.attr('design-image/xlink:href', currentActiveToken.designImage);
+                } else {
+                    tCell.attr('body/fill', currentActiveToken.backgroundColor);
+                    tCell.attr('body/stroke', currentActiveToken.borderColor);
+                }
             })
         } else if (stateTokens) {
             let tokenIndex = -1;
@@ -719,8 +819,13 @@ export default function ModalWindow(props) {
         let reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = () => {
-            setActiveProtocol({ ...activeProtocol, image: reader.result });
-            updateProtocols({ ...activeProtocol, image: reader.result });
+            if (!isDesign) {
+                setActiveProtocol({ ...activeProtocol, image: reader.result });
+                updateProtocols({ ...activeProtocol, image: reader.result });
+            } else {
+                setActiveProtocol({ ...activeProtocol, designImage: reader.result });
+                updateProtocols({ ...activeProtocol, designImage: reader.result });
+            }
         };
         reader.onerror = (error) => {
             console.log('Error: ', error);
@@ -732,8 +837,13 @@ export default function ModalWindow(props) {
         let reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = () => {
-            setActiveToken({ ...activeToken, image: reader.result });
-            updateTokens({ ...activeToken, image: reader.result });
+            if (!isDesign) {
+                setActiveToken({ ...activeToken, image: reader.result });
+                updateTokens({ ...activeToken, image: reader.result });
+            } else {
+                setActiveToken({ ...activeToken, designImage: reader.result });
+                updateTokens({ ...activeToken, designImage: reader.result });
+            }
         };
         reader.onerror = (error) => {
             console.log('Error: ', error);
@@ -798,6 +908,21 @@ export default function ModalWindow(props) {
         }
     }
 
+    const handleBridgeDone = () => {
+
+        if (fromNetwork !== toNetwork) {
+            let newBridge = new bridgeShape();
+            newBridge.attr("from-text/text", fromNetwork);
+            newBridge.attr("to-text/text", toNetwork);
+            graph.addCell(newBridge);
+
+            setActiveBridge(null);
+            setFromNetwork(null);
+            setToNetwork(null);
+            setOpenModalWindow(false);
+        }
+    }
+
     const handleProtocolDelete = () => {
         if (activeProtocol) {
             dispatch(protocolActions.deleteProtocol({ id: activeProtocol.id }));
@@ -826,7 +951,7 @@ export default function ModalWindow(props) {
         let { activeProtocol } = props;
         // if it is the link which is being modified
         // may be change to checking for active link, but needs to be tested then
-        if (!activeProtocol && !activeLoopAction && !activeToken) {
+        if (!activeBridge && !activeProtocol && !activeLoopAction && !activeToken) {
             // convertObjToStr converts Object like {0: "a", 1: "b", 2: "c"} to string "abc"
             // if it is the type of object, otherwise it just returns what you passed
             // it is like this, because the history stack stores graph converted to json
@@ -981,8 +1106,21 @@ export default function ModalWindow(props) {
         <div
             className="hold-modal"
         >
-            {activeLoopAction &&
-                (
+            {
+                (activeBridge &&
+                    <BridgeBody
+                        modalScrollRef={modalScrollRef}
+                        setOpenModalWindow={setOpenModalWindow}
+                        activeBridge={activeBridge}
+                        setActiveBridge={setActiveBridge}
+                        fromNetwork={fromNetwork}
+                        toNetwork={toNetwork}
+                        setFromNetwork={setFromNetwork}
+                        setToNetwork={setToNetwork}
+                    />
+                ) ||
+
+                (activeLoopAction &&
                     <LoopActionBody
                         modalScrollRef={modalScrollRef}
                         setOpenModalWindow={setOpenModalWindow}
@@ -990,7 +1128,8 @@ export default function ModalWindow(props) {
                         setAction={setAction}
                         actionLink={actionLink}
                     />
-                ) || (activeToken &&
+                ) ||
+                (activeToken &&
                     <TokensBody
                         key={`token-${activeToken.id}`}
                         modalScrollRef={modalScrollRef}
@@ -1005,6 +1144,7 @@ export default function ModalWindow(props) {
                         parentUpdateCount={parentUpdateCount}
                         setParentUpdateCount={setParentUpdateCount}
                         editAllowed={editAllowed}
+                        isDesign={isDesign}
                     />
                 ) || (
                     !activeProtocol &&
@@ -1046,7 +1186,7 @@ export default function ModalWindow(props) {
                     />
                 )}
             <div className="modal-actions">
-                {(
+                {!activeBridge && (
                     action[0].name === "Stake" ||
                     action[0].name === "Swap" ||
                     action[0].name === "Borrow" ||
@@ -1100,6 +1240,7 @@ export default function ModalWindow(props) {
                         (activeLoopAction && handleLoopActionDone) ||
                         (activeProtocol && handleProtocolDone) ||
                         (activeToken && handleTokenDone) ||
+                        (activeBridge && handleBridgeDone) ||
                         handleLinkDone}
                 >
                     Done

@@ -68,7 +68,7 @@ export default function ProtocolsBody(props) {
                 />
             }
             {
-                (activeProtocol.new || editAllowed) &&
+                (!isDesign && (activeProtocol.new || editAllowed)) &&
                 <ProtocolColorPicker
                     activeProtocol={activeProtocol}
                     setActiveProtocol={setActiveProtocol}

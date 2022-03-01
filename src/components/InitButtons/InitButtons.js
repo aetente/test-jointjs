@@ -4,7 +4,7 @@ import "./styles.css";
 import CustomSelect from '../CustomSelect/CustomSelect';
 import BaseToken from './BaseToken';
 
-import { uiActions } from '../../actions';
+import { uiActions, tokenActions } from '../../actions';
 
 
 export default function InitButtons(props) {
@@ -14,7 +14,8 @@ export default function InitButtons(props) {
         editBaseToken,
         baseTokenCellView,
         openAddTokenToSelect,
-        setOpenAddTokenToSelect
+        setOpenAddTokenToSelect,
+        tokens
     } = props;
 
     let [openModalWindow, setOpenModalWindow] = useState(true);
@@ -22,7 +23,15 @@ export default function InitButtons(props) {
     const dispatch = useDispatch();
 
     const addNewTokenOption = (val) => {
-        dispatch(uiActions.unshiftTokenOption(val));
+        let newTokenId = tokens.length;
+        tokens.forEach(t => {
+            if (+t.id >= newTokenId) {
+                newTokenId = (+t.id) + 1;
+            }
+        });
+        newTokenId = String(newTokenId);
+        val.id = newTokenId;
+        dispatch(tokenActions.postTokens(val));
     }
 
     return (

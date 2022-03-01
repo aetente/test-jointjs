@@ -1,5 +1,6 @@
 import * as joint from 'jointjs';
 import loopActionImage from "../../assets/images/loopActionImage.png";
+import cycleImage from "../../assets/images/cycle.png";
 
 const verticesToolEditable = new joint.linkTools.Vertices({
     redundancyRemoval: false,
@@ -172,6 +173,15 @@ export const rectDiamondAttrs = {
         height: 25,
         width: 25
     },
+    "design-image": {
+        refX: .5,
+        refY: .5,
+        yAlignment: 'middle',
+        xAlignment: 'middle',
+        // ref: ".rect-body",
+        height: 100,
+        width: 100
+    },
     text: {
         fontSize: 14,
         refX: .5,
@@ -207,7 +217,7 @@ export const rectDiamondAttrs = {
 
 export const rectDiamondShape = joint.dia.Element.extend({
 
-    markup: '<g class="rotatable"><g class="scalable"><rect className="rect-body"/><image class="image"/></g><text/><text className="pool-text"/><rect className="pool-body"/></g>',
+    markup: '<g class="rotatable"><g class="scalable"><rect className="rect-body"/><image class="design-image"/><image class="image"/></g><text/><text className="pool-text"/><rect className="pool-body"/></g>',
 
     defaults: {
         ...joint.dia.Element.prototype.defaults,
@@ -223,7 +233,12 @@ export const rectDiamondShape = joint.dia.Element.extend({
     {
         tagName: "image",
         selector: "image",
-        className: "joint-cell"
+        className: "joint-cell image"
+    },
+    {
+        tagName: "image",
+        selector: "design-image",
+        className: "joint-cell design-image"
     },
     {
         tagName: "text",
@@ -250,7 +265,12 @@ export const rectDiamondShape = joint.dia.Element.extend({
     {
         tagName: "image",
         selector: "image",
-        className: "joint-cell"
+        className: "joint-cell image"
+    },
+    {
+        tagName: "image",
+        selector: "design-image",
+        className: "joint-cell design-image"
     },
     {
         tagName: "text",
@@ -265,6 +285,83 @@ export const rectDiamondShape = joint.dia.Element.extend({
         tagName: "text",
         selector: ".pool-text",
         className: "joint-cell pool-text"
+    }]
+});
+
+export const tokenAttrs = {
+    "token-body": {
+        fill: 'rgb(249, 250, 251)',
+        stroke: 'rgb(119, 126, 144)',
+        strokeWidth: 2,
+        width: 120,
+        height: 43,
+        rx: 8,
+        ty: 8,
+    },
+    "design-image": {
+        refX: .5,
+        refY: .5,
+        yAlignment: 'middle',
+        xAlignment: 'middle',
+        // ref: ".rect-body",
+        height: 43,
+        width: 120
+    },
+    text: {
+        fontSize: 14,
+        ref: "token-body",
+        yAlignment: 'middle',
+        xAlignment: 'middle',
+        textAnchor: "middle",
+        refX: 0.5,
+        refY: 0.5,
+        fill: 'rgb(51,51,51)',
+        fontFamily: 'Poppins, sans-serif'
+    },
+};
+
+export const tokenShape = joint.dia.Element.extend({
+
+    markup: '<g class="rotatable"><g class="scalable"><rect className="token-body"/></g><text/><image class="design-image"/></g>',
+
+    defaults: {
+        ...joint.dia.Element.prototype.defaults,
+        type: 'custom.Token',
+        attrs: tokenAttrs
+    }
+}).define('custom.Token', {
+    markup: [{
+        tagName: "rect",
+        selector: "token-body",
+        className: "joint-cell token-body"
+    },
+    {
+        tagName: "image",
+        selector: "design-image",
+        className: "joint-cell design-image"
+    },
+    {
+        tagName: "text",
+        selector: "label",
+        className: "joint-cell"
+    }],
+    attrs: tokenAttrs
+
+}, {
+    markup: [{
+        tagName: "rect",
+        selector: "token-body",
+        className: "joint-cell token-body"
+    },
+    {
+        tagName: "image",
+        selector: "design-image",
+        className: "joint-cell design-image"
+    },
+    {
+        tagName: "text",
+        selector: "label",
+        className: "joint-cell"
     }]
 });
 
@@ -558,3 +655,150 @@ export const loopActionShape = joint.dia.Element.extend({
     }]
 }
 );
+
+export const bridgeAttrs = {
+    "middle-image": {
+        width: 66,
+        height: 66,
+        href: cycleImage,
+    },
+    "to-circle": {
+        refX: 40+66,
+        refY: 40+66,
+        ref: "middle-image",
+        fill: "white",
+        stroke: "#777E90",
+        strokeWidth: 2,
+        r: 23,
+    },
+    "to-text": {
+        refX: 0.5,
+        refY: -20,
+        ref: "to-circle",
+        fill: "black",
+        fontSize: 12,
+        textAnchor: "middle",
+        fontFamily: 'Poppins, sans-serif'
+    },
+    "from-circle": {
+        refX: -40,
+        refY: -40,
+        ref: "middle-image",
+        fill: "white",
+        stroke: "#777E90",
+        strokeWidth: 2,
+        r: 23,
+    },
+    "from-text": {
+        refX: 0.5,
+        refY: -20,
+        ref: "from-circle",
+        fill: "black",
+        fontSize: 12,
+        textAnchor: "middle",
+        fontFamily: 'Poppins, sans-serif'
+    },
+    "path1": {
+        fill: "none",
+        stroke: "#777E90",
+        strokeWidth: 2,
+        // ref: "middle-image",
+        d: "M 0 0 106 106 z"
+    },
+    "path2": {
+        fill: "none",
+        stroke: "#777E90",
+        strokeWidth: 2,
+        // ref: "middle-image",
+        d: "M 0 0 -40 -40 z"
+    }
+};
+
+export const bridgeShape = joint.dia.Element.extend({
+
+    markup: '<g class="rotatable"><g class="scalable"><image class="middle-image"/><cirlce className="to-circle"/><text class="to-text"/><image class="to-image"/><cirlce className="from-circle"/><text class="from-text"/><image class="from-image"/><path class="path1" /><path class="path2" /></g></g>',
+
+    defaults: {
+        ...joint.dia.Element.prototype.defaults,
+        type: 'custom.Bridge',
+        attrs: bridgeAttrs
+    }
+}).define('custom.Bridge', {
+    markup: [{
+        tagName: "path",
+        selector: "path1",
+        className: "joint-cell path1"
+    },{
+        tagName: "path",
+        selector: "path2",
+        className: "joint-cell path2"
+    },{
+        tagName: "circle",
+        selector: "to-circle",
+        className: "joint-cell to-circle"
+    },{
+        tagName: "circle",
+        selector: "from-circle",
+        className: "joint-cell from-circle"
+    },{
+        tagName: "image",
+        selector: "from-image",
+        className: "joint-cell from-image"
+    },{
+        tagName: "image",
+        selector: "to-image",
+        className: "joint-cell to-image"
+    },{
+        tagName: "image",
+        selector: "middle-image",
+        className: "joint-cell middle-image"
+    },{
+        tagName: "text",
+        selector: "from-text",
+        className: "joint-cell from-text"
+    },{
+        tagName: "text",
+        selector: "to-text",
+        className: "joint-cell to-text"
+    },],
+    attrs: bridgeAttrs
+
+}, {
+    markup: [{
+        tagName: "path",
+        selector: "path1",
+        className: "joint-cell path1"
+    },{
+        tagName: "path",
+        selector: "path2",
+        className: "joint-cell path2"
+    },{
+        tagName: "circle",
+        selector: "to-circle",
+        className: "joint-cell to-circle"
+    },{
+        tagName: "circle",
+        selector: "from-circle",
+        className: "joint-cell from-circle"
+    },{
+        tagName: "image",
+        selector: "from-image",
+        className: "joint-cell from-image"
+    },{
+        tagName: "image",
+        selector: "to-image",
+        className: "joint-cell to-image"
+    },{
+        tagName: "image",
+        selector: "middle-image",
+        className: "joint-cell middle-image"
+    },{
+        tagName: "text",
+        selector: "from-text",
+        className: "joint-cell from-text"
+    },{
+        tagName: "text",
+        selector: "to-text",
+        className: "joint-cell to-text"
+    },]
+});

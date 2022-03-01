@@ -19,7 +19,8 @@ export default function TokensBody(props) {
         setIsMerge,
         parentUpdateCount,
         setParentUpdateCount,
-        editAllowed
+        editAllowed,
+        isDesign
     } = props;
 
     return (
@@ -69,7 +70,7 @@ export default function TokensBody(props) {
                 updateProtocols={updateTokens}
                 editAllowed={activeToken.new || editAllowed}
             />
-            {(activeToken.new || editAllowed) &&
+            {!isDesign && (activeToken.new || editAllowed) &&
                 <ProtocolColorPicker
                     activeProtocol={activeToken}
                     setActiveProtocol={setActiveToken}
