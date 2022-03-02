@@ -125,6 +125,8 @@ function Paper(props) {
 
     const [activeBridge, setActiveBridge] = useState(null);
 
+    const [isBridgeRotate, setIsBridgeRotate] = useState(false);
+
     const contextValues = useContext(DiagramContext);
 
     // we need refs for events
@@ -225,6 +227,16 @@ function Paper(props) {
 
     const setEditingGeometryRef = (val) => {
         editingGeometryRef.current = val;
+    }
+
+    const isBridgeRotateRef = useRef(isBridgeRotate);
+
+    const getIsBridgeRotateRef = () => {
+        return isBridgeRotateRef.current;
+    }
+    
+    const setIsBridgeRotateRef = (val) => {
+        isBridgeRotateRef.current = val;
     }
 
 
@@ -872,6 +884,22 @@ function Paper(props) {
         }
     }
 
+    const restrictPositionValue = (oldPosition, value) => {
+        let position = {...oldPosition};
+        if (position.x >= 0 && position.x < value) {
+            position.x = value;
+        } else if (position.x < 0 && position.x > -value) {
+            position.x = -value;
+        }
+        
+        if (position.y >= 0 && position.y < value) {
+            position.y = value;
+        } else if (position.y < 0 && position.y > -value) {
+            position.y = -value;
+        }
+        return position;
+    }
+
     const mergeAction = () => {
 
         let activeCells = [...getActiveCellViewsArrayRef()];
@@ -1101,8 +1129,22 @@ function Paper(props) {
             }
         }))
 
-        paper.on("cell:pointerdown", (cellView) => {
+        paper.on("cell:pointerdown", (cellView, e) => {
             cellView.model.toFront();
+
+            let elementClassName = e.target.getAttribute("class")
+            if (elementClassName && (
+                elementClassName.includes("to-circle") ||
+                elementClassName.includes("from-circle") ||
+                elementClassName.includes("from-image") ||
+                elementClassName.includes("to-image")
+            )) {
+                getPaperRef().setInteractivity(false);
+                setIsBridgeRotate(true);
+                setIsBridgeRotateRef(true)
+                // cellView.model.attr("from-text/cx", x);
+                // cellView.model.attr("from-circle/cy", y);
+            }
         })
 
         paper.on("cell:pointermove", (cellView, e, x, y) => {
@@ -1129,9 +1171,44 @@ function Paper(props) {
 
             if (cellView.model.isElement()) {
                 let elementClassName = e.target.getAttribute("class")
-                if (elementClassName && (elementClassName.includes("to-circle") || elementClassName.includes("from-circle"))) {
-                    // cellView.model.attr("from-text/cx", x);
-                    // cellView.model.attr("from-circle/cy", y);
+                if (getIsBridgeRotateRef() || (elementClassName && (
+                    elementClassName.includes("to-circle") ||
+                    elementClassName.includes("from-circle") ||
+                    elementClassName.includes("from-image") ||
+                    elementClassName.includes("to-image"))
+                )) {
+                    let firstCircle = "from-circle";
+                    let firstPath = "path2";
+
+                    let secondCircle = "to-circle";
+                    let secondPath = "path1";
+                    if (elementClassName && (elementClassName.includes("from-circle") ||
+                        elementClassName.includes("from-image"))) {
+                            firstCircle = "to-circle";
+                            firstPath = "path1";
+    
+                            secondCircle = "from-circle";
+                            secondPath = "path2";
+                    }
+                    let centerPosition = cellView.model.position();
+                    
+                    centerPosition.x += 33;
+                    centerPosition.y += 33;
+                    //get relative position
+                    let pos1 = { x: centerPosition.x - x, y: centerPosition.y - y }
+                    // pos1 = restrictPositionValue(pos1, 33);
+
+                    cellView.model.attr(firstCircle + "/refX", pos1.x);
+                    cellView.model.attr(firstCircle + "/refY", pos1.y);
+                    cellView.model.attr(firstPath + "/d", `M 0 0 ${pos1.x - 33} ${pos1.y - 33} z`);
+
+                    centerPosition.x -= 66;
+                    centerPosition.y -= 66;
+                    let pos2 = { x: x - centerPosition.x, y: y - centerPosition.y }
+                    // pos2 = restrictPositionValue(pos2, 33);
+                    cellView.model.attr(secondCircle + "/refX", pos2.x);
+                    cellView.model.attr(secondCircle + "/refY", pos2.y);
+                    cellView.model.attr(secondPath + "/d", `M 0 0 ${pos2.x - 33} ${pos2.y - 33} z`);
                 } else {
                     // calculate placement for vertices of connected links
                     // let theLinks = getGraphRef().getLinks();
@@ -1140,7 +1217,7 @@ function Paper(props) {
                         cellsToUpdateLink = [cellView];
                     }
                     let theLinks = [];
-    
+
                     cellsToUpdateLink.forEach(cellV => {
                         theLinks = [...theLinks, ...getGraphRef().getConnectedLinks(cellV.model)];
                     });
@@ -1150,12 +1227,12 @@ function Paper(props) {
                     });
                     // cellsToUpdateLink.forEach(cellV => {
                     //     let theLinks = getGraphRef().getConnectedLinks(cellV.model);
-    
+
                     theLinks.forEach(link => {
                         if (link.get("vertices")) {
                             let currentVertices = [...link.get("vertices")];
                             currentVertices = currentVertices.map(currentVertex => {
-    
+
                                 let dx = originalEvent.movementX / paperScale;
                                 let dy = originalEvent.movementY / paperScale;
                                 let newVertex = {
@@ -1183,6 +1260,10 @@ function Paper(props) {
         })
 
         paper.on("cell:pointerup", (cellView, e, x, y) => {
+
+            getPaperRef().setInteractivity(true);
+            setIsBridgeRotate(false);
+            setIsBridgeRotateRef(false);
             let activeCells = getActiveCellViewsArrayRef();
             let isHighlighted = false;
             activeCells.forEach(activeCell => {
@@ -1330,6 +1411,17 @@ function Paper(props) {
                     setActiveProtocol(null);
                     setActiveToken(null);
                     setActiveBridge(null);
+                    setActiveLink(null);
+                    setOpenModalWindow(true);
+                } else if (cellModel.attributes.type === "custom.Bridge") {
+                    setActiveBridge({
+                        from: cellModel.attr("from-text/text"),
+                        to: cellModel.attr("to-text/text"),
+                        model: cellModel
+                    });
+                    setActiveProtocol(null);
+                    setActiveToken(null);
+                    setActiveLoopAction(null);
                     setActiveLink(null);
                     setOpenModalWindow(true);
                 }
@@ -1710,6 +1802,7 @@ function Paper(props) {
                     linkMarkup={linkMarkup}
                     tradingFeePortCellOptions={tradingFeePortCellOptions}
                     setOpenModalWindow={setOpenModalWindow}
+                    paper={getPaperRef()}
                     activeLink={activeLink}
                     key={(activeLink && `link-window-${activeLink.id}`) || "protocol-window"}
                     setActiveLink={setActiveLink}

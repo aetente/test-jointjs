@@ -661,6 +661,8 @@ export const bridgeAttrs = {
         width: 66,
         height: 66,
         href: cycleImage,
+        xAlignment: "middle",
+        yAlignment: "middle"
     },
     "to-circle": {
         refX: 40+66,
@@ -670,6 +672,15 @@ export const bridgeAttrs = {
         stroke: "#777E90",
         strokeWidth: 2,
         r: 23,
+    },
+    "to-image": {
+        refX: 0.5,
+        refY: 0.5,
+        ref: "to-circle",
+        xAlignment: "middle",
+        yAlignment: "middle",
+        width: 44,
+        height: 44
     },
     "to-text": {
         refX: 0.5,
@@ -689,6 +700,15 @@ export const bridgeAttrs = {
         strokeWidth: 2,
         r: 23,
     },
+    "from-image": {
+        refX: 0.5,
+        refY: 0.5,
+        ref: "from-circle",
+        xAlignment: "middle",
+        yAlignment: "middle",
+        width: 44,
+        height: 44
+    },
     "from-text": {
         refX: 0.5,
         refY: -20,
@@ -703,14 +723,14 @@ export const bridgeAttrs = {
         stroke: "#777E90",
         strokeWidth: 2,
         // ref: "middle-image",
-        d: "M 0 0 106 106 z"
+        d: "M 0 0 73 73 z"
     },
     "path2": {
         fill: "none",
         stroke: "#777E90",
         strokeWidth: 2,
         // ref: "middle-image",
-        d: "M 0 0 -40 -40 z"
+        d: "M 0 0 -73 -73 z"
     }
 };
 
@@ -733,6 +753,10 @@ export const bridgeShape = joint.dia.Element.extend({
         selector: "path2",
         className: "joint-cell path2"
     },{
+        tagName: "image",
+        selector: "middle-image",
+        className: "joint-cell middle-image"
+    },{
         tagName: "circle",
         selector: "to-circle",
         className: "joint-cell to-circle"
@@ -748,10 +772,6 @@ export const bridgeShape = joint.dia.Element.extend({
         tagName: "image",
         selector: "to-image",
         className: "joint-cell to-image"
-    },{
-        tagName: "image",
-        selector: "middle-image",
-        className: "joint-cell middle-image"
     },{
         tagName: "text",
         selector: "from-text",
@@ -773,6 +793,10 @@ export const bridgeShape = joint.dia.Element.extend({
         selector: "path2",
         className: "joint-cell path2"
     },{
+        tagName: "image",
+        selector: "middle-image",
+        className: "joint-cell middle-image"
+    },{
         tagName: "circle",
         selector: "to-circle",
         className: "joint-cell to-circle"
@@ -788,10 +812,6 @@ export const bridgeShape = joint.dia.Element.extend({
         tagName: "image",
         selector: "to-image",
         className: "joint-cell to-image"
-    },{
-        tagName: "image",
-        selector: "middle-image",
-        className: "joint-cell middle-image"
     },{
         tagName: "text",
         selector: "from-text",

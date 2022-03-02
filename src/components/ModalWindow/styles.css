@@ -1,7 +1,8 @@
 .hold-modal {
     position: absolute;
     width: 343px;
-    height: 743px;
+    /* height: 743px; */
+    height: 80%;
 
     background: #FFFFFF;
     border: 1px solid #F3F6F9;

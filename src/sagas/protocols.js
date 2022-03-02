@@ -4,9 +4,9 @@ import { googleSheetToArray } from "../utils/utils";
 
 // const baseUrl = "http://" + window.location.hostname + ":8080/api";
 
-const baseUrl = "https://test-builder-api.herokuapp.com";
+// const baseUrl = "https://test-builder-api.herokuapp.com";
 
-// const baseUrl = "https://test-builder.azurewebsites.net";
+const baseUrl = "https://test-builder.azurewebsites.net";
 const jsonBinUrl = "https://api.jsonbin.io/b/621b5c41c4790b3406246984"
 const jsonStorageUrl = "https://api.jsonstorage.net/v1/json/a8e231d8-705e-49c8-a5bd-4d0a2811e396/cc1fd566-b049-471b-996b-4cf37c69ef40"
 

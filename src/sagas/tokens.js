@@ -3,8 +3,8 @@ import { tokenActions } from "../actions";
 import { googleSheetToArray } from "../utils/utils";
 
 // const baseUrl = "http://" + window.location.hostname + ":8080/api";
-const baseUrl = "https://test-builder-api.herokuapp.com";
-// const baseUrl = "https://test-builder.azurewebsites.net";
+// const baseUrl = "https://test-builder-api.herokuapp.com";
+const baseUrl = "https://test-builder.azurewebsites.net";
 const jsonBinUrl = "https://api.jsonbin.io/b/621b6c9125fb1b26b18971a6"
 const jsonStorageUrl = "https://api.jsonstorage.net/v1/json/a8e231d8-705e-49c8-a5bd-4d0a2811e396/ee3d95df-e9f1-472b-bfb0-c546a517cf88"
 
