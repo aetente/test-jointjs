@@ -335,7 +335,7 @@ export default function ModalWindow(props) {
                 (actionLink.label(3) && actionLink.label(3).attrs.leverageText.leverage !== "0"));
         // the leverage value
         // the leverage entered in the input has more priority that the previous leverage value
-        let leverageValue = (action[1].leverage) || (actionLink.label(3) && actionLink.label(3).attrs.leverageText.leverage);
+        let leverageValue = (action[1] && action[1].leverage) || (actionLink.label(3) && actionLink.label(3).attrs.leverageText.leverage);
         // is the leverage value equals to zero
         let noZeroLeverage = isLeverage && leverageValue !== "0";
         // if it was the link we just added a new link or double clicked the link, which represents an action
